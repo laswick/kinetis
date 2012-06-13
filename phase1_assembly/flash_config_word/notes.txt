@@ -1,0 +1,56 @@
+Chris Atkinson
+June 7 2012
+
+Some Basics
+---- ------
+
+DN512   - NOR type
+        - 2 X 256KB blocks
+        - 2KB sized sectors
+        - 0x00000000 - 0x0007ffff
+        - Flash is modified via Flash Memory Module (FTFL)
+
+Flash Configuration Field
+----- ------------- -----
+
+kinetis_flash_config_field:
+    .word 0x01234567    - Backdoor Comparison Key
+    .word 0x89abcdef    - Backdoor Comparison Key (continued)
+    .word 0xffffffff    - Program Flash Protection
+    .byte 0xfe          - Flash Security Byte
+    .byte 0xff          - Flash Option Register
+    .byte 0xff          - EEPROM Protection (Reserved for DN512)
+    .byte 0xff          - Data Flash Protection (Reserved for DN512)
+
+Backdoor Comparison Key | If enabled via Flash Security Register, access to the
+                        | FTFL module is only given after the program runs the
+                        | Verify Backdoor Access Key command.
+                        | The program only gets one attempt to provide the
+                        | correct key.
+
+Program Flash Protection | Contents are copied to Program Flash Protection
+                         | Registers (FTFL_FPROT0..3) at reset. Flash is
+                         | divided in to 32 areas each being represented by a
+                         | bit - set means that area not protected, clear means
+                         | it is protected.
+
+Flash Security Byte | Contents copied to read only Flash Security Register
+                    | (FTFL_FSEC) at reset.
+                    | Four functions can be enabled:
+                    |   - Backdoor key security
+                    |   - Mass erase enable
+                    |   - Freescale Failure Analysis Access
+                    |   - Flash security
+
+Flash Option Register | Contents copied to read only Flash Option Register
+                      | (FTFL_FOPT) at reset.
+                      |   - Low power boot
+                      |   - EZPORT enable/disable
+
+EEPROM Protection | For devices with FlexNVM
+                  | Similar to Program Flash Protection except for EEPROM
+                  | region. Region is divided into 8 areas.
+
+Data Flash Protection | For devices with FlexNVM
+                      | Similar to Program Flash Protection except for Data
+                      | Flash region. Region is divided into 8 areas.
