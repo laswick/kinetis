@@ -1,0 +1,72 @@
+Freescale Kinetis K60 / Arm Cortex-M4 Project
+Notes by: Daryl Hillman
+
+Timer notes
+-----------
+
+Programmable delay block (PDB)
+    -16bit
+    -3bit prescaler
+    -supports DMA
+Flexible timer modules (FTM)
+    -selectable source clock
+    -16bit
+    -SW control of PWM outputs
+    -DMA support for FTM events
+Periodic Interrupt timers (PIT)
+    -4 timers
+    -32bit resolution
+    -clocked by system clock
+    -DMA support
+Low-power timer (LPTimer)
+    -selectable clock
+    -16bit timer of pulse counter
+Carrier modulator timer (CMT)
+    -4 CMT modes
+    -selectable input clock divider
+    -DMA support
+Real-time clock (RTC)
+    -independent power supply
+    -32bit seconds counter
+IEEE 1588 timers
+    -10/100 ethernet module
+
+
+PIT timers
+    - 4 timers
+    - 32bit count values
+    - counts are in clock ticks
+    - can be assigned to trigger DMA or ADC
+    - interrupt vectors for each timer
+    - all timers are independent
+    - timer loads the start value and counts down to 0
+    - when timer reaches 0, event is triggered.
+    - reference manual pg 1070
+
+DAC notes
+---------
+
+6bit DAC
+    -selectable voltage reference
+12bit DAC
+    -LP general purpose DAC
+    -set to external pin or to feed ADC/CMP
+VREF
+    -supplies accurate output voltages in 0.5 mV increments
+    -can be used to reference ADC, DAC, CMP etc.
+
+12bit DAC
+    - refered to as DAC0 in most sch. and docs
+    - step size 1/4096 * Vin
+    - 2 selectable references (1-VREF_OUT, 2-VDDA)
+        - if ADC and DAC use VREF_OUT, ADC accuracy degrades
+    - 16-word data buffer
+    - DMA support
+    - module is byte width
+    - can watermark the data buffer
+    - allows interrupts at the watermark, top of buffer, bottom of buffer
+    - trigger output with HW or SW
+    - data buffer modes: ring, swing, one-time scan
+
+
+

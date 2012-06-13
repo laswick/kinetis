@@ -1,0 +1,136 @@
+Freescale Kinetis / ARM Cortex-M4 "Getting Started" guide.
+Rob Laswick
+April 20 2012
+www.laswick.net/kinetis
+
+
+GETTING STARTED:
+
+    We'll be using the following:
+
+        Freescale Kinetis K60 Tower Development Kit:
+
+	  http://search.digikey.com/ca/en/products/TWR-K60N512-KIT/TWR-K60N512-KIT-ND/2444764
+	  http://www.freescale.com/webapp/sps/site/homepage.jsp?code=TOWER_HOME
+	  http://www.towergeeks.org
+
+
+        Mentor Graphics CodeSourcery GNU tools:
+
+	  http://www.mentor.com/embedded-software/sourcery-tools/sourcery-codebench
+
+          Note: The free version of the tools is sufficient.
+
+
+    	openOCD (for programming & debugging):
+
+	  http://openocd.sourceforge.net/
+
+
+DRIVERS:
+
+    The software and drivers in the tower kit are all garbage.  You need to
+    download and install the latest drivers.
+
+    Windows Drivers: pemicro_osbdm_osjtag_tower_toolkit.exe
+    Linux Drivers: PemicroLinuxDrivers_2012_01_19.tar.gz
+
+    I've posted them at www.laswick.net/kinetis/drivers.
+
+
+INSTALL THE LINUX USB DRIVERS:
+
+    Extract PemicroLinuxDrivers*. Enter the libusb_64_32 directory and run
+    the setup script (as root).  It should install painlessly and without
+    errors.
+
+
+INSTALL THE CODESOURCERY GNU TOOL CHAIN:
+
+    I've posted the free "lite" version of the tools at
+    www.laswick.net/kinetis/tools.
+
+    Install the tools in /opt.  During the install, the tools will modify
+    your PATH environment variable automatically.  If for some reason your
+
+    Note: I've noticed the PATH variable isn't always updated in
+          debian based distros such as Ubuntu and Mint.  This is because
+          these distros use .profile instead of .bash_profile.  If this
+          applies to you simply add the following line your ~/.profile:
+
+          PATH=$PATH:/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin
+
+          You'll need to run ". ~/.profile" in each shell for this update
+          to take effect, or logout and back in again.
+
+    The free tools only provide an assembler, compiler, and linker.  They
+    do not provide any Kinetis specific support files, such as startcode and
+    linker script(s) - BUT FEAR NOT - I've got you covered :)
+
+
+DOWNLOAD AND BUILD OPENOCD:
+
+    git clone git://openocd.git.sourceforge.net/gitroot/openocd/openocd
+
+    Enter the repo and run (as root):
+
+        ./bootstrap
+        ./configure --enable-osbdm --enable-maintainer-mode
+        make
+        make install
+
+    Note: You may need to install other libraries in order to complete the build
+          successfully, depending on which Linux distro you're using (i.e. I'm
+          running Mint, and I needed install libtool, libusb-1.0, automake,
+          and texinfo before openOCD would build properly.
+
+    This will install openocd in /usr/local (with no need to modify your path).
+
+    The kinetis tower includes a USB JTAG interface for programming and
+    debugging.  The particular USB JTAG interface is the OSBDM.  Support
+    for OSBDM was only recently added to openOCD, and as expected it's not
+    issue free.  You'll need to add the following to the end of
+    /usr/local/share/openocd/scripts/target/k60.cfg:
+
+        $_TARGETNAME configure -event gdb-attach {
+            echo "Halting target"
+            halt
+        }
+
+
+VERIFY YOUR TOOL CHAIN:
+
+    Download the following files from www.laswick.net/kinetis/getting_started
+
+      getting_started.s
+      getting_started.ld
+      getting_started.mak
+
+    Once the files have been downloaded sym-link the makefile as "makefile"
+    for convenience (ln -s getting_started.mak makefile).
+
+    Type "make".
+
+    Make should complete without errors and produce out.axf and out.s.
+      out.axf is the executable image you'll use to program and debug.
+      out.s is the disassembly listing.
+
+    Connect the tower to your computer via the supplied USB cable.
+
+    Type "make openocd" to launch openOCD.
+
+    In a separate shell (in the same direcotry) type "make gdb" to launch gdb
+    and automatically connect to openOCD.
+
+    In gdb:
+    Type "load" to program the tower with your executable image.
+
+    Type "layout split" to view the source and assembly listings.
+
+    Type "tb first_break" to set a temporary breakpoint in the source.
+
+    Type "c" to allow the software to run.  gdb will halt at first_break.
+
+    From here use the step instruction "si" command to step through the
+    rest of the program.
+

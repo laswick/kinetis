@@ -1,0 +1,95 @@
+Freescale Kinetis K60 / ARM Cortex-M4 Project
+Rob Laswick
+April 23 2012
+
+gpio notes
+
+** PORT CONTROLLER **
+
+EACH PIN:
+    -interrupt
+        -rising edge, falling edge, both edges, or level
+    -can wake up out of low power mode
+    -can cause a dma transfer to take place
+    -built in input filter (optional)
+    -pull up or pull down resistor (optional) (input mode only)
+    -high or low output drive strength
+    -fast or slow slew rate
+    -open drain (optional)
+
+CONTROL PIN REGISTER (every pin!)
+    -interrupt status flag
+    -interrupt enable/disable + mode
+    -pin config lock enable/disable
+    -pin mux control **note pins default to analog/disabled mode.
+    -drive strength select
+    -open drain enable
+    -passive filter enable
+    -slew rate select
+    -pull select (pull up or pull down)
+    -pull enable
+
+    **digital filter enable + config CANNOT be done here.
+      it must be enable and configured using the dig filt registers.
+      NOTE: the dig filt can be used WITH the muxed feature!
+
+
+GLOBAL PIN CONTROL HIGH & LOW PORT REGISTERS
+
+    LOW
+        Upper HalfWord controls the "write enable" mask.
+        Lower Halfword contains the lower halfword data.
+
+    HIGH
+        Upper halfword controls the "write enable" mask.
+        Lower halfword contains the upper halfword data.
+
+
+INTERRUPT STATUS FLAGS PORT REGISTER
+
+    Contains status flag info for all port pins.
+    -also contain in pin specific ctrl reg.
+
+
+DIGITAL FILTER ENABLE PORT REGISTER
+
+    Contains enable for all port pins.
+
+
+DIGITAL FILTER CLOCK SELECT PORT REGISTER
+
+    1 Khz LPO (low power operation) clock or main bus clock.
+
+
+DIGITAL FILTER WIDTH PORT REGISTER
+
+    Size of the std shift reg giltch filter (1 to 32 bits)(each bit = 1 clock)
+
+
+** SIM (SYSTEM INTEGRATION MODULE) **
+
+The SIM is the grand poobah and master overseer. The SIM documentation should
+be reviewed before attempting to use any and all features and peripherals.
+
+The System Integration Module contains a bunch of registers that control
+various system options as well as the fine grained clock gating control.
+
+System Clock Gating Control Register 5 SIM_SCGC5 enables/disables the clock
+gates to the PORT controllers.
+
+
+** GPIO CONTROLLER **
+
+PORT OUTPUT REGISTER
+
+PORT SET OUTPUT REGISTER: Atomic sets!
+
+PORT CLEAR OUTPUT REGISTER: Atomic clears!
+
+PORT TOGGLE OUTPUT REGISTER: Atmoic toggles!
+
+PORT INPUT REGISTER
+
+PORT DIRECTION REGISTER
+
+

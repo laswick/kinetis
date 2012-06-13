@@ -1,0 +1,47 @@
+Freescale Kinetis K60 / ARM Cortex-M4 Project
+Geoff Chapman
+May 17 2012
+
+UART notes
+
+K60 UART features:
+ - device contains 6 independent UART modules (UART0 -- UART5)
+ - each device has an two associated interrupt vectors for (UART status and UART errors)
+   (e.g Tx Buff Empty, Rx Buff Full, etc.)
+ - UART0 and UART1 contain 8-entry Tx and Rx FIFOs
+ - all other UARTS contain 1-entry Tx and RX FIFOs
+ - Section 5.7 (table 5.2) in reference manual summarizes clock sources for each
+   periperal module.  UARTs clocked as follows:
+	 - UART0 and UART1 are clocked from the core/system clock
+	 - all other UARTS are clocked from the bus/peripheral/module clock
+           (confusing, seems to be multiple names for same clock source ?!)
+
+- The Tower Serial Module DB25 interface is wired as follows:
+                   Pin          Port
+      UART3 Rx     A43        PORTC 16
+      UART3 Tx     A44        PORTC 17
+
+K60 Port Control Module
+- Using the Port Control Module, both PortC 16 and PortC 17 are configured for the
+  Alt. 3 function, which is UART3.
+
+Baud rate configuration:
+ - Need to determine UART3 module clock in order to configure baud rate.
+ - Note the following:
+   - Out of reset, K60 is in FEI (FLL Engaged Internal) mode
+   - In this mode, the bus/peripheral/module clock is driven by the slow
+     Internal Reference Clock (IRC) @32kHz.
+   - MCG_C4[DRST_DRS] and MCG_C4[DX32] are used to set the frequency for the FLL
+     output.
+   - default values of MCG_C4 apply an FLL factor of 640 to the IRC, resulting
+     in a module clock of 32kHz * 640 = 20.480 MHz.
+   - The UART baud rate is derived as follows (Section 51.4.3)
+
+        UART Baud rate = UART module clock / 16 * (SBR + BRFA)
+                       = 20480 kHz / (SBR + BRFA)
+   - I chose SBR = 133, BRFA = 11/32
+
+        UART Baud rate = 20480 kHz / (133 + 11/32)
+                       = 9600 bps (approx.)
+
+

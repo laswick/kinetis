@@ -1,0 +1,101 @@
+Power Modes
+Shaun Weise
+2012-06-07
+
+Modules:
+NVIC    Nested-vectored interrupt controller
+AWIC    Asynchronus wake-up interrupt controller
+            detect asynchronus wake-up events in stop modes
+            resumes system clocking to allow NVIC to continue processing
+LLWU    Low-leakage wakeup unit
+            allows the device to wake from low leakage power modes
+
+Special Instructions:
+WFI     Wait For Interrupt ARM instruction
+            Puts the ARM core into SLEEP or SLEEPDEEP modes
+WFE     Wait for Event ARM instruction
+            Puts the ARM core into SLEEP or SLEEPDEEP modes conditionally on events
+            Events can be interrupts, previous interrupts, previous exceptions (SEV)
+
+ARM Sleep Modes:
+    2 Modes:
+        SLEEP
+            Stops the processor clock
+        SLEEPDEEP
+            Stop the system clock and switches off the PLL and Flash
+    Invoked by the WFI & WFE instructions
+        Enter SLEEPDEEP if SLEEPDEEP bit in NVIC SCR
+    Waking from either WFI or WFE is conditional wrt:
+        The waking interrupt priority level
+        Special Registers BASEPRI and PRIMASK
+        SEVONPEND bit in the System Control Register
+
+Kinetis Power Modes:
+
+    Normal:
+        Run
+            Normal operation
+            Default out of reset
+            Can reduce power using SCGC
+        Wait
+            Core goes into sleep mode
+            Core is clock gated
+            Peripherals are clocked
+            Normal recovery via interrupt (NVIC)
+        Stop
+            MCU goes into static state
+            All registers are retained
+            Peripherals are stopped
+            Normal recovery via interrupt (AWIC)
+
+    Very Low Power (VLPx):
+        All:
+            CPU & Peripheral Clock Max Freq. Restricted 4Mhz ext clock
+            Flash Access restricted to 1Mhz
+        Run  (VLPR)
+        Wait (VLPW)
+            Core is put into sleep mode
+            Normal recovery via interrupt (NVIC)
+        Stop (VLPS)
+            MCU is in static state
+            Pin interrupts functional
+            Normal recovery via interrupt (AWIC)
+
+    Low Leakage Stop (LLS):
+        Core put to sleep deep
+        Select pin interrupts functional
+        Normal recovery via wakeup (LLWU)
+
+    Very Low Leakage Stop (VLLSx):
+        All:
+            Core put to sleep deep
+            I/O States held
+            Most peripherals disabled, except:
+                LLWU, LPTimer, RTC, CMP, TSI
+                These modules are used for wakeup
+            Normal recovery via wakeup reset event (LLWU)
+        Stop3 (VLLS3):
+            SRAM_U & L remain powered
+        Stop2 (VLLS2):
+            SRAM_U remains powered
+            SRAM_L powered off
+        Stop1 (VLLS1):
+            SRAM_U & L powered off
+            Only 32byte register file retained
+
+In General:
+
+    Run Modes
+        Core & MCU are running
+        Optionally Restrict core & peripheral frequencies
+        Can clock gate modules
+
+    Wait Modes
+        Core is put to sleep
+        Peripherals are still going
+
+    Stop Modes:
+        Core is put into deep sleep
+        MCU is put into static state
+        Most peripherals are disabled
+

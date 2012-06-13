@@ -1,0 +1,189 @@
+DMA notes.
+
+First thing some "plumbing" work.
+I generally like to modularize my code, functions in ".s" files, constants / defines in ".h" or ".inc" files.
+Problem with Makefiles is to properly deal with the ".inc" file dependancies to force re-compile of
+only the affected sources when a header changes.
+
+Fortunately GCC can handle that -> But I need to switch to using arm-none-eabi-gcc as my "assembler" in order
+to utilize the C pre-processor to accomplish this.
+
+Next thing is to add "-x assembler-with-cpp" to the assembly flags to tell gcc's front end to run it through
+the CPP before dumping it to the assembler.
+
+Next I R&D'd from the gcc manual to create the dependancy rules to make ".d" dependancy files from the source.
+
+Finally I have to use CPP's #include construct to pull in the ".inc" file.
+
+It works :)
+Bonus is you can use CPP's constucts like #defines or conditional compile with assembly language if you wish
+
+Now onto some real work.
+______________________________________________________________________________
+Ok, I tried to use the classic .bss and .data sections for zeroes and
+initialized data. The startup we have been using doesn't currently support 
+doing that. I have put that into my startup, I'm not doing a heap clear at this
+point.
+
+Other housekeeping (and you thought this was about DMA ;)
+I wanted a string dump to serial port function - Let me demonstrate
+that there is infact DMA activity going on. In stage 2 I wanted to actually
+use DMA to dump to the serial port.
+
+Tried to get the UART3 based demo going - unfortunately after much messing around
+it looks like the serial port on my laptop is hosed... What to do? Well, there is
+a virtual port connection from UART5 to the USB debug port on the board. It needs
+P&E's nasty terminal program to talk to it - not sure if there's a linux version.
+
+So, ported the orignal APP to use UART5 - Got it working. Then R&D'd what I needed
+into the DMA app and created a simple polled char and string output routine.
+
+Now I can dump the memory buffers (Yeah).
+
+______________________________________________________________________________
+
+DMA Finally.
+
+There are two aspects to DMA, 
+1. The DMA mux module that routes DMA signals through the chip to the DMA module.
+2. The DMA unit itself.
+
+Wow this is a complex module - Freescale goes all-out with the features / configurability.
+
+Going to demo two aspects:
+ - Using DMA for memory to memory transfers : Classic high performance memcopy
+ - Using DMA for memory to peripheral transfers : I'm doing to dump a buffer to the UART so activity can be demonstrated.
+
+Update: Reading deeper, there is actually a 3rd module to DMA you need to be aware
+of. I'll start there
+
+______________________________________________________________________________
+AXBS : Reference Manual Chapter 17 and 3.3.6
+
+There is a big crossbar switch inside the kinetis which connects all potential bus
+masters with all potential slaves. It is priority driven, it arbitrates and 
+switches automatically, it also come up out of power up in a sane initial state.
+That state works for CPU only oriented bus transactions, but if you are doing
+heavy DMA, the DMA port is a separate bus master. It will compete with the CPU and
+arbitrate for resource access. If the device is not parked on your master when it
+is idle you will always loose a clock cycle, even if no-one else is using it. 
+
+On reset, the default config is to park all devices on the CPU master - makes sense
+But depending on your DMA needs, this might not be the optimal setup.
+
+There are 6 masters and 5 slaves in our chip. Two of the slaves are "peripheral bus"
+connections which is yet another programmable bridge module connecting many peripherals 
+to the high-performance AXBS crossbar. Diagram is in section 3.3.6 of the refman.
+
+I won't program the crossbar in my sample code, this is just an FYI for the group.
+
+
+______________________________________________________________________________
+DMA MUX
+
+SIM clock enable bit for DMA MUX is SIM_SCGC6 bit 1
+
+DMA MUX is covered in Chapter 20 of the refman.
+
+The DMA mux has a mux matrix that connects the 63 DMA sources / sinks to the 16 DMA channels in the 
+eDMA unit. There are some restrictions / duplicates in each matrix to allow various 
+combinations to be set up. 52 peripheral sources, 10 always sources and 4 triggers. Not sure how
+that adds up to 63. Ahhh - in the chip specific portion, source '0' is "Channel Disabled". Table 3.24 in
+the ref manual has all the source and their associated numbers listed.
+
+One of the DMA trigger sources is an "always" trigger source. Typically would use that to
+do a 100% bandwidth memory copy - Note that bandwidth is shared, there are ways in the
+eDMA module to mitigate this. Cool thing is DMA channels 0 - 3 only can have a trigger gated
+by a PIT timer. So you can do peridic bursts, or periodically service a peripheral (like starting 
+an ADC conversion). Note the the timers and channels have a hard allocation : Pit 0 to DMA 0, 
+Pit 1 to DMA 1, etc.
+
+This leaves every routing channel with 3 modes, disabled, normal and if allowed, trigger. 
+There are 16, 8 bit registers that control enable, trigger, and the DMA source. They are byte 
+aligned, you can write 2 or 4 registers at once but only on the associated 2 or 4 byte alignment.
+
+I defined a bunch of the needed constants in registers.inc
+______________________________________________________________________________
+eDMA
+
+SIM clock enable bit for eDMA is SIM_SCGC7 bit 1
+
+eDMA is covered in Chapter 21 of the refman.
+
+Ok this thing is ridiculous. 
+An example I've come across:
+Use the PIT to trigger a periodic A/D conversion by writing to the A/D via a
+DMA transfer. Second DMA channel sits on the A/D ready and does a DMA transfer of
+the converted value once it is available into a buffer - No CPU intervention.
+
+Back to the controller. There are 16 channels. 
+Programmable source and destination widths.
+Built in 16-byte burst buffer.
+Each channel has a 32-byte TCD (Transfer Control Descriptor) that lets you set up
+inner / outer transfer loops, do chaining, etc.
+Transfers can be intiated by SW, other DMA channels or the DMA mux routing.
+Fixed priority and round-robin arbitration. Higher priority transfers can pre-empt.
+Interrupts for signalling of events - transfer complete or errors.
+
+Two memory regions for the eDMA.
+1. General control registers that configure the device.
+2. 16 x 32-byte TCD descriptor tables that control how the individual channels work.
+
+You don't have to use hardware activation via the DMA_MUX, you can explicitly activate
+a channel by writing a '1' to the channels TCD, in the TCD_CSR field.
+
+Pretty simple to set up a transfer
+Set the TCD for the channel with the source pointer, size, increment, etc
+Set the destination pointer, size, increment etc.
+You need to decide on major vs. minor loops.
+A minor loop can be programmed to "NBYTES" and occurs when the channel is activated.
+
+i.e. If I set 16-bytes, activate it will run back-to-back cycles to transfer 16-bytes, 
+incrementing the address pointers as requested. In general these cycles cannot be
+pre-empted (manual implies that you might be able to do this, I didn't try). Once
+your minor loop has finished, it decrements the programmed major loop counter. If there
+are still major loops to run it sits and waits for the next activation.
+If not, it adjusts the pointers with the end adjustment values you put in the TCD and
+disables the channel until you re-enable it.
+
+My first example sets up DMA0's TCB to transfer 16 bytes from a .data section
+string buffer to a .bss section zeroed buffer. I have it reading byte wise from the
+source, and writing word wise to the destination. There is one major loop, so once it
+is activated, it does a 16-byte -> 4 word memcopy and stops.
+
+My second example modifies the first one to use DMA1 to copy 16 bytes, but this time
+with 16 major loops as well (256 byte transfer). This one was trickier to set up.
+The DMA controller allows you to chain from one DMA channel to another by programming
+a DMA link number and enabling the bit - You can chain on minor loops or on major loops.
+What a chain does is "activate" the chained channel from the current channel.
+I set up the TCD to chain to itself at the end of each minor loop -> This means that
+after every 16-byte transfer, the major count drops, it not at the end it "activates"
+itself and then proceeds to do another minor loop. Once all the majors are done it halts.
+
+For my last example I tried to get really tricky.
+Intent was to :
+1. Setup the PIT, channel 2 for a 1 s timer.
+2. Through the DMA MUX, activate DMA2 all the time, but gated with the PIT - 1 second activation.
+3. DMA2's TCD setup to read and "activation code" from memory and write it to DMA control register
+that turns on hardware activation. It will periodically enable DMA3
+4. Set up DMA3 through the mux to activate on UART5 TX empty
+5. Setup DMA3's TCD to on activation transfer one single byte from a string to the UART5_D port.
+Setup 16 major loops (16 chars), set the source register back to the start at the end of the major
+loops. Setup the CSR to automatically disable the channel once the major loop completes - Stops it 
+from continually transmitting - I'm gating with the PIT activated DMA channel.
+
+He're where life got difficult.
+I started getting flash write errors - What the heck, Is my DMA engine setup hosing the debug
+port. I discovered that my flash code had exceeded 2048 bytes. After some digging, I discovered
+that the K60_100 chips use 2K sectors - Openocd understands these chip. My chip is a K60_120 with
+a meg of flash. It used 4K sectors... Crap... I did see a recent flash patch float through the openocd
+forums but it hasn't been gitted yet. Now I know what it's for.
+
+So I chopped the last example down by removing the string stuff, etc. Still isn't working. But at least
+it loads. 
+
+
+Final comment: Assembly language is not the nicest way to program this stuff - The TCD's naturally
+map to 'C' structures.
+
+______________________________________________________________________________

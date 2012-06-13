@@ -1,0 +1,32 @@
+README for Phase 2
+
+Rob Laswick
+June 12 2012
+
+1.  All source and header files shall coexist in the same directory.
+
+2.  The file "Makefile" shall not be altered on a per user / per project
+    basis as it serves as the default makefile template.
+
+    Users are encouraged to copy Makefile to a project specific .mak file
+    (i.e. uartDemo.mak) and sym-link it to makefile (lowercase 'm') as GNU
+    Make searches for "makefile" before "Makefile".
+
+    .mak files can be added to the repo, but makefile (lowercase 'm') is
+    alwasy to be considered an untracked personal file, and not to be added
+    to the repo.
+
+3.  One of the goals of Phase 2 is a common build system and driver library.
+    Therefore the provided Makefile, startcode, and linkerscript shall
+    serve be used for all builds.
+
+4.  All drivers should provide generic and full featured APIs with the goal of
+    ease of use in mind.
+
+    Each driver file should include as much comments as needed to help the
+    reader better understand what's going on.
+
+    At the top of each driver file in the file header comment block, the
+    main/global API(s) should be clearly described.
+
+

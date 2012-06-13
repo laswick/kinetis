@@ -1,0 +1,181 @@
+#ifndef __K60N512_H
+#define __K60N512_H
+
+#define BIT_0  0x00000001
+#define BIT_1  0x00000002
+#define BIT_2  0x00000004
+#define BIT_3  0x00000008
+#define BIT_4  0x00000010
+#define BIT_5  0x00000020
+#define BIT_6  0x00000040
+#define BIT_7  0x00000080
+#define BIT_8  0x00000100
+#define BIT_9  0x00000200
+#define BIT_10 0x00000400
+#define BIT_11 0x00000800
+#define BIT_12 0x00001000
+#define BIT_13 0x00002000
+#define BIT_14 0x00004000
+#define BIT_15 0x00008000
+#define BIT_16 0x00010000
+#define BIT_17 0x00020000
+#define BIT_18 0x00040000
+#define BIT_19 0x00080000
+#define BIT_20 0x00100000
+#define BIT_21 0x00200000
+#define BIT_22 0x00400000
+#define BIT_23 0x00800000
+#define BIT_24 0x01000000
+#define BIT_25 0x02000000
+#define BIT_26 0x04000000
+#define BIT_27 0x08000000
+#define BIT_28 0x10000000
+#define BIT_29 0x20000000
+#define BIT_30 0x40000000
+#define BIT_31 0x80000000
+
+/* Port Control and GPIO Modules (s11,s54) */
+#define PORTA_CTRL_BASE 0x40049000
+#define PORTA_ISFR      0x400490A0
+
+/* PIT Control */
+
+#define PIT_CTRL_BASE 0x40037000
+#define PIT_CH_OFFSET 0x010
+#define PIT_LDVALN_OFFSET 0x100
+#define	PIT_CVALN_OFFSET 0x104
+#define PIT_TCTRLN_OFFSET 0x108
+#define PIT_TFLGN_OFFSET 0x10C
+
+#define PIT0_MCR (PIT_CTRL_BASE + (PIT_CH_OFFSET * 0x0))
+#define PIT0_LDVAL (PIT_CTRL_BASE + PIT_LDVALN_OFFSET)
+#define PIT0_CVAL (PIT_CTRL_BASE + PIT_CVALN_OFFSET)
+#define PIT0_TCTRL (PIT_CTRL_BASE + PIT_TCTRLN_OFFSET)
+#define PIT0_TFLG (PIT_CTRL_BASE + PIT_TFLGN_OFFSET)
+
+#define MCR_MDIS (1 << 1)
+#define MCR_FRZ (1 << 0)
+#define TCTRL_TIE (1 << 1)
+#define TCTRL_TEN (1 << 0)
+#define TFLG_TIF (1 << 0)
+
+#define PIT_ENABLE (1 << 23)
+#define	SIM_SCGC6_FLAGS (PIT_ENABLE)
+
+/*
+ * DAC0
+ */
+
+#define DAC_BASE_ADDR  0x400CC000
+#define DAC_DAT0L_ADDR 0x400CC000
+#define DAC_DAT0H_ADDR 0x400CC001
+#define DAC_DAT1L_ADDR 0x400CC002
+#define DAC_DAT1H_ADDR 0x400CC003
+#define DAC_SR         0x400CC020
+#define DAC_CR0        0x400CC021
+#define DAC_CR1        0x400CC022
+#define DAC_CR2        0x400CC023
+
+#define DAC_DACEN (1 << 7)
+#define DAC_DACRFS_2 (1 << 6)
+#define DAC_DACTRGSEL (1 << 5)
+#define DAC_DACSWTRG (1 << 4)
+#define DAC_DACBFEN (1 << 0)
+#define DAC_CR0_FLAG (DAC_DACEN | DAC_DACRFS_2 | DAC_DACTRGSEL | DAC_DACBFEN)
+#define DAC_CR0_TRGF (DAC_CR0_FLAG | DAC_DACSWTRG)
+#define DAC_CR1_FLAG 0x01
+#define DAC_CR2_FLAG 0x0f
+
+#define DAC0_ENABLE (1 << 12)
+#define SIM_SCGC2_FLAGS (DAC0_ENABLE)
+
+
+/*
+ * PORT Controller Defines
+ */
+
+#define PORTA_CTRL_BASE 0x40049000
+#define PIN_11_OFFSET (4 * 11)
+#define PIN_28_OFFSET (4 * 28)
+#define PIN_29_OFFSET (4 * 29)
+#define PIN_10_OFFSET (4 * 10)
+#define PIN_19_OFFSET (4 * 19)
+
+#define LED_ORANGE_CTRL_ADDR (PORTA_CTRL_BASE + PIN_11_OFFSET)
+#define LED_YELLOW_CTRL_ADDR (PORTA_CTRL_BASE + PIN_28_OFFSET)
+#define LED_GREEN_CTRL_ADDR  (PORTA_CTRL_BASE + PIN_29_OFFSET)
+#define LED_BLUE_CTRL_ADDR   (PORTA_CTRL_BASE + PIN_10_OFFSET)
+
+#define SW_1_CTRL_ADDR       (PORTA_CTRL_BASE + PIN_19_OFFSET)
+
+#define PORTE_CTRL_BASE 0x4004d000
+#define PIN_26_OFFSET (4 * 26)
+
+#define SW_0_CTRL_ADDR       (PORTE_CTRL_BASE + PIN_26_OFFSET)
+
+#define GPIO_ENABLE (0x001 << 8)
+#define PULL_UP_ENABLE (1 << 1)
+#define PULL_UP_SELECT (1 << 0)
+#define PORT_CTRL_FLAGS (GPIO_ENABLE | PULL_UP_ENABLE | PULL_UP_SELECT)
+
+/*
+ * GPIO Controller Defines
+ */
+
+#define PORTA_BASE_ADDR 0x400ff000
+#define PORTA_OUTPUT_REG          (PORTA_BASE_ADDR + 0x0)
+#define PORTA_SET_REG             (PORTA_BASE_ADDR + 0x4)
+#define PORTA_CLR_REG             (PORTA_BASE_ADDR + 0x8)
+#define PORTA_TGL_REG             (PORTA_BASE_ADDR + 0xc)
+#define PORTA_INPUT_REG           (PORTA_BASE_ADDR + 0x10)
+#define PORTA_DATA_DIRECTION_ADDR (PORTA_BASE_ADDR + 0x14)
+
+#define LED_ORANGE (1 << 11)
+#define LED_YELLOW (1 << 28)
+#define LED_GREEN  (1 << 29)
+#define LED_BLUE   (1 << 10)
+#define LEDS_MASK  (LED_ORANGE | LED_YELLOW | LED_GREEN | LED_BLUE)
+
+#define SW_1_MASK (1 << 19)
+
+#define PORTE_BASE_ADDR 0x400ff100
+#define PORTE_INPUT_REG           (PORTE_BASE_ADDR + 0x10)
+
+#define SW_0_MASK (1 << 26)
+
+#define PORTA_ENABLE (1 << 9)
+#define	PORTE_ENABLE (1 << 13)
+#define	SIM_SCGC5_FLAGS (PORTA_ENABLE | PORTE_ENABLE)
+
+/* System Interface Module (SIM) (s12) */
+#define SIM_SCGC1       0x40048028
+#define SIM_SCGC2       0x4004802C
+#define SIM_SCGC3       0x40048030
+#define SIM_SCGC4       0x40048034
+#define SIM_SCGC5       0x40048038
+#define SIM_SCGC6       0x4004803C
+#define SIM_SCGC7       0x40048040
+
+/* Watchdog Timer (WDOG) Module (s23) */
+#define WDOG_STCTRLH    0x40052000
+#define WDOG_STCTRLL    0x40052002
+#define WDOG_TOVALH     0x40052004
+#define WDOG_TOVALL     0x40052006
+#define WDOG_WINH       0x40052008
+#define WDOG_WINL       0x4005200A
+#define WDOG_REFRESH    0x4005200C
+#define WDOG_UNLOCK     0x4005200E
+#define WDOG_TRMOUTH    0x40052010
+#define WDOG_TMROUTL    0x40052012
+#define WDOG_RSTCNT     0x40052014
+#define WDOG_PRESC      0x40052016
+
+/* Multipurpose Clock Generator (MCG) Module (s24) */
+#define MCG_C1     0x40064000
+#define MCG_C2     0x40064001
+#define MCG_C3     0x40064002
+#define MCG_C4     0x40064003
+#define MCG_C5     0x40064004
+#define MCG_C6     0x40064005
+#define MCG_S      0x40064006
+#endif

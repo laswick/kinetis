@@ -1,0 +1,15 @@
+Paul Quevedo
+April 26 2012
+
+PORT Control module configures the trigger for the external interrupt
+    -> Level High/Low
+    -> Edge  Rising/Falling
+    -> DMA Request Rising/Falling
+
+NVIC itself cannot be configured for a certain trigger type. The NVIC latches
+the interrupt signal fed into it. It is up to the peripheral module (in this
+case PORT control) to deassert the interrupt signal to the NVIC for edge trigs.
+-> Cortex-M3 Devices Generic User Guide:
+   s4.2.9 Level-sensitive and pulse interrupts
+
+NVIC has register to enable/disable specific peripheral interrupts atomically

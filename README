@@ -1,3 +1,41 @@
-test
-test from iMac
-test from home eng lab
+Freescale Kinetis K60 / ARM Cortex-M4 Project Outline
+Rob Laswick
+April 21 2012
+
+
+The goal of this project is to take a group of talented embedded
+software engineers on a soul searching journey to develop a detailed yet
+practical understanding of the ARM Cortex-M3/4 using the Freescale Kinetis
+family of microcontrollers using the K60 Tower development kit.
+
+A complete getting started guide is available in:
+
+   ./getting_started/getting_started.txt
+
+
+Also see www.laswick.net/kinetis for various related tools, drivers, docs, etc.
+
+
+OUTLINE
+
+The project will be broken down into 4 "phases".
+
+
+PHASE 1: Assembly Programming
+
+PHASE 2: Embedded C Programming
+
+
+PHASE 3: Real Time Embedded C Programing
+
+    MQX RTOS
+    Loadable Modules
+    Interactive CLI (target resident command line interface)
+    Thread Safe Low Level Drivers
+
+
+PHASE 4: Group Project
+
+    I don't know what this is going to be yet, but it's going to be awesome...
+    Possibly some type of mil-grade stabilized platform :)
+

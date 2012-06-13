@@ -1,0 +1,69 @@
+PRESENTATION SCHEDULE
+
+PHASE 1: Assembly Programming
+
+    Start Code & Linker Scripts (1)     April 19: Rob
+    GPIO                                April 26: Rob
+    Interrupts                          April 26: Paul
+    Watchdog                            May 10  : Paul
+    ADC                                 May 10  : Carlos
+    Timers                              May 10  : Daryl
+    DAC                                 May 10  : Daryl
+    Start Code & Linker Scripts (2)     May 17  : Rob
+    Clock Options                       May 17  : James
+    UART                                May 17  : Geoff
+    DMA                                 May 31  : Steve
+    Power Modes                         June 7  : Shaun
+    PWM                                 June 7  : Steve
+    TSI                                 June 7  : Neil
+    RNG & CRC                           June 7  : Andrew
+    Kinetis Flash Configuration Field   June 7  : Chris
+
+
+PHASE 2: Embedded C Programming
+
+    Start Code & Linker Scripts (3)     Rob
+    GPIO                                Rob
+    Interrupts                          Rob
+    Interfacing C & Assembly            Rob
+
+    Clock Options                       Jan
+    TSI                                 Ryan
+
+    Watchdog                            Andrew
+    Power Modes                         Andrew
+
+    Timers                              Daryl
+    DAC                                 Daryl
+
+    UART                                James
+    ADC                                 James
+
+    I2C                                 Chris
+    SPI                                 Shaun
+
+    FLASH                               Greg
+    USB                                 Neil
+
+    EBI                                 Greg
+    SDHC                                Geoff
+
+    Executing out of RAM                Rob
+    CAN                                 Carlos
+    DMA                                 Carlos
+
+    Boot Loader                         Paul
+    Ethernet                            Steve
+
+    CRC (WSCP)                          ?
+    MPU                                 ?
+
+
+
+
+PHASE 3: Real Time Embedded C Programing
+
+
+PHASE 4: Group Project
+
+

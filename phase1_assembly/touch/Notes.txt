@@ -1,0 +1,50 @@
+Neil Henderson
+June 7 2012
+
+Touch Sensitive Interface (TSI)
+
+Principle Of Operation: (Chapter 55, p 1757)
+
+- there are two capacitor-based oscillators on board: reference and external
+- the capacitors for both are charged and discharged by a programmable current source
+- the capacitor for the reference is on the chip
+- the capacitor for the external is the touch pad input and will have a different
+  capacitance when touched versus not touched.
+- the reference oscillator frequency is much higher than the external frequency
+- the TSI counts the number of reference cycles per n external cycles
+- a threshold register contains the max and min expected counts for an untouched input
+- when the count is outside this threshold a bit in the status register is set, which
+  can generate an interrupt, if enabled
+
+
+Functionality:
+- there are 16 TSI inputs, four of which are connected on the Kinetis board
+- each input can be individually enabled (PEN) and can have its own threshold (THLD) values.
+  This allows for variability between sensors and different size sensors.
+- the reference oscillator has the following register-based (SCANC) parameters:
+	current (1 to 32 uA, 1 uA resolution), capacitance (0.5 pF to 1.2 pF, 0.1 pF resolution).
+	These parameters are used to set the reference oscillator frequency.
+- the external oscillator had the following register-based (GENCS, SCANC) parameters:
+    current (1 to 32 uA, 1 uA resolution), delta voltage (100 mV to 600 mv, 50 mV resolution),
+	cycles per reading (1 to 32 times), prescaler (1 to 128, powers of 2).
+	These parameters are used to set the external oscillator frequency and determine
+	the number of reference cycles per TSI pad scan.
+- TSI can be set to scan one of the 16 inputs in low power mode (1 ms to 500 ms interval)
+  This input can then wake the CPU, which will then automatically begin normal scanning of
+  all enabled inputs.
+- The TSI can run in software-driven mode or fully automatic interrupt-driven mode
+- The TSI interrupt vector is 83, which is the 99th IVT entry (83 + 16).
+  There is only one interrupt to handle all conditions.
+- Interrupts can be enabled for: error (short to VCC, VDD, count=FFFF) and one of end of scan or
+  out of range.
+- The clock used to run the system in active mode can be one of: Bus Clock, MGIRCLK, OSCERCLK.
+  The active mode clock can be scaled 1 to 128, powers of 2
+- The low power mode clock can be one of: LPOCLK, VLPOSCCLK
+
+Problems:
+
+- On my board the orange switch is stuck and when an error condition occurs the CPU resets.
+  I disabled the orange TSI input for my demo.
+- I did not test it but I think that if error interrupts are enabled then the CPU will
+  not reset but will instead set the error status bits instead and interrupt the CPU.
+

@@ -1,0 +1,83 @@
+FTM notes.
+
+Who said this was about the FTM (PWM) ?
+First, to followup from DMA
+The tricky DMA that I mentioned last week is in the application code
+for this module.It works, mostly.
+
+Things I learned:
+1. My serial port isn't hosed - UART5 on the K120 board is connected to the
+lines that drive the tower serial card. Once I read the schematic it was 
+obvious.
+2. The K120 is a bit different that the K100 chip the rest of you are using.
+Specifically, it has two DMAMUX's vs. your one, and 32 DMA channels vs. your
+16. Why is this important, well in the SIM, I have to turn on both DMAMUXs
+even if I am only programming one, or the Kinetis will throw an exception.
+3. Once I got past that, the code worked as expected given the errata I sent
+you all last week - PIT fires, activates the UART DMA, string get sent and then
+everything slows down and the PIT doesn't re-activate the DMA because it never 
+acks the first DMA transaction. To prove the basic concept, I manually ping
+the hardware activate register in Rob's led loop to demonstrate what should
+happen. Key takeaway is the DMA2 activates DMA3 by writing to the activate
+register, DMA 3 transmits the string and deactivates waiting for #2 again.
+
+______________________________________________________________________________
+
+On to FTM
+
+There are 3 (4 on my chip) FTM modules - Flexible Timer Modules.
+Not all the modules are equal
+Module 0 and 3 (which you don't have) can drive / sample 8 channels based
+off the 16-bit timer resident in each FTM module.
+Module 1 and 2 have only two channels and can do quadrature encoder decoding.
+
+A channel can map to a physical pin on the device to act as triggers, fault
+inputs, capture inputs or PWM outputs. Fully programmable.
+
+Each module's timebase has a 16-bit timer that can act as an up-counter, or an
+up-down counter. Up-down count mode is designed for center aligned PWM driving.
+Up count is for edge aligned PWM.
+
+The counter has programmable init value, programmable modulus value - which sets
+the starting count and the overflow - This sets the timer period.
+
+There is a programmable prescale and you can select from a couple of clocking
+options (I'm using the system clock in my example).
+
+There are tons of registers. To set it up:
+
+1. Enable the FTM module in the SIM - FTM0 is in SIM_SCGC6.
+2. Set up the channel pin(s) you are going to use as the appropriate alternative
+in the output control mux. I'm using Port A6, which connects to Channel 3 on
+FTM0.
+3. Initialize the count register by writing '0' to it - Freescales recommendation.
+4. I disabled the write protection bit that protects some registers - it's enabled
+by default.This is in the FTM0_MODE register.
+5. Set up the count roll-over modulus in FTM0_MOD. I want a 20ms PWM period
+so with a 20,480,000 clock, a prescale of 8 (later) the modulus should be 51200.
+6. Zero the initial count in FTM0_CNTIN
+7. Turn on the PWM by writing the System clock selection and pre-scale to FTM0_SC.
+Up till this point nothing has been counting. This starts the master counter. You
+can start / stop the counter by writing and clearing the clock selection.
+8. Set up Channel 3 for edge-aligned active high PWM output by writing to the
+FTM0_C3SC - Channel 3 control register.
+9. Set up the channel 3 on-time by writing to the channel 3 compare value register,
+FTM0_C3V - I used a value of 3840 to give me a 1.5us pulse that repeats
+every 20ms - Greg knows what I'm doing...
+10. Finally, write the the FTM0_PWMLOAD register to tell it to load a new
+CnV value for channel 3 - It buffers writes to the various registers that
+control the period / PWM width, etc to ensure smooth, coordinated transitions. There
+are lots of sync modes, by default it syncs on counter roll-over.
+
+PWM is now running on channel 3.
+To make it more interesting I borrowed Carlos' POT reading routine. I read the pot
+value as a 12-bit number, scale it by 1.6 to produce a number from 0 to 2560. I add 2560
+to it to give me a range 2560 - 5120. I write that value to the FTM0_C3V register, followed
+by the update command to give me a pulse that varies from 1us to 2us with a 20ms repeat. 
+Which is what an RC-Servo needs for position control.
+
+The PWM update routine is just called at the end of Rob's LED loop. Pressing the buttons to
+speed up the loop makes the servo track the pot position in a more timely fashion.
+
+
+______________________________________________________________________________
