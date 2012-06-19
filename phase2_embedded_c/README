@@ -1,8 +1,5 @@
 README for Phase 2
 
-Rob Laswick
-June 12 2012
-
 1.  All source and header files shall coexist in the same directory.
 
 2.  The file "Makefile" shall not be altered on a per user / per project
@@ -15,6 +12,10 @@ June 12 2012
     .mak files can be added to the repo, but makefile (lowercase 'm') is
     alwasy to be considered an untracked personal file, and not to be added
     to the repo.
+
+    Typically when adding an application module, you would add it and
+    your correspoding .mak file to the repo at the same time (i.e.
+    uartDemo.c uartDemo.mak).
 
 3.  One of the goals of Phase 2 is a common build system and driver library.
     Therefore the provided Makefile, startcode, and linkerscript shall

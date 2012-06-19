@@ -44,7 +44,7 @@ asm_main:                                         /* Called by our start code */
      * PORT Controller Defines
      */
 
-    .sset PORTA_CTRL_BASE, 0x40049000
+    .set PORTA_CTRL_BASE, 0x40049000
     .set PIN_11_OFFSET, (4 * 11)
     .set PIN_28_OFFSET, (4 * 28)
     .set PIN_29_OFFSET, (4 * 29)
