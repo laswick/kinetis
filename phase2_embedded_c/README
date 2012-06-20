@@ -25,7 +25,8 @@ README for Phase 2
     ease of use in mind.
 
     Each driver file should include as much comments as needed to help the
-    reader better understand what's going on.
+    reader better understand what's going on.  Blog in the source file
+    instead of creating a seperate notes file.
 
     At the top of each driver file in the file header comment block, the
     main/global API(s) should be clearly described.
