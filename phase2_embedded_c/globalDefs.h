@@ -22,6 +22,7 @@ typedef signed int     int32_t;
 typedef unsigned char  bool8_t;
 typedef unsigned short bool16_t;
 typedef unsigned int   bool32_t;
+typedef unsigned int   bool;
 
 #if defined(TRUE)
 #undef  TRUE

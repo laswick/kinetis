@@ -2,12 +2,22 @@
 *
 * gpioDemo2.c
 *
-* gpioDemo2.c
+* GPIO demo.
 *
 * Rob Laswick
 * June 19 2012
 *
 *******************************************************************************/
+//TODO put all the assert stuff in hardware.c and hardware.h.
+//TODO put all the global gpio APIs in gpio.c and extern them in hardware.h.
+
+
+/* There's nothing actually wrong with libc, but NDEBUG _MUST_ be defined
+ * otherwise routines like assert() will shit the bed as required routines
+ * like _write have not been implemented (re: libc_stubs.s).
+ */
+
+#define SAFE_TO_USE_LIBC
 #if defined(SAFE_TO_USE_LIBC)
 #include "assert.h"
 #endif
@@ -17,6 +27,40 @@
 //#include "hardware.h"
 
 #include "globalDefs.h"
+
+
+#if defined(assert)
+/*
+ * add file and line number info to our assert.
+ * disassembly the real assert to see what it's doing.
+ */
+#undef assert
+#if 0
+void assert(bool cond)
+{
+    if (cond)
+        return;
+
+    for (;;)
+        ;
+}
+#endif
+
+#define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
+
+void assert_(const char *file, const int line)
+{
+    /*
+     * This routine has no impact on the running software,
+     * however it's a good idea to set a breakpoint on assert
+     * and inspecting file and line with gdb.
+     *
+     * When this breakpoint hits, gdb will automatically display
+     * the functin arguments (files and line).
+     */
+}
+#endif
+
 
 #define N_LED_ORANGE_PORT PORTA
 #define N_LED_ORANGE_BIT  11
@@ -192,6 +236,7 @@ static void delay(void)
 
 int main(void)
 {
+    assert(0); // test
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_BIT, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_BIT, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_BIT,  GPIO_OUTPUT | GPIO_LOW);
