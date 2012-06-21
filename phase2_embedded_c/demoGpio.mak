@@ -1,6 +1,6 @@
-C_FILES = gpioDemo2
+C_FILES = hardware demoGpio gpio
 
-ARGS = TARGET=gpioDemo2 C_PIECES=${C_FILES} OPT_LEVEL=0
+ARGS = TARGET=gpioDemo C_PIECES=${C_FILES} OPT_LEVEL=0
 
 all:
 	make -f Makefile ${ARGS}

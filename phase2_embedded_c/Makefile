@@ -1,13 +1,12 @@
+################################################################################
 #
 # Makefile for the Freescale Kinetis K60 / ARM Cortex-M4
 #
-# Rob Laswick
-# June 5 2012
-#
+################################################################################
 
 # Name of project/output file:
 
-TARGET = demo
+TARGET = gpio_demo
 
 # List your asm files here (minus the .s):
 
@@ -15,7 +14,7 @@ ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES = test
+C_PIECES = hardware gpio demoGpio
 
 PATH :=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin:${PATH}
 CC = arm-none-eabi-gcc
