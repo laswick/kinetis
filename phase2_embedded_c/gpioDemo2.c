@@ -11,16 +11,12 @@
 //TODO put all the assert stuff in hardware.c and hardware.h.
 //TODO put all the global gpio APIs in gpio.c and extern them in hardware.h.
 
-
-/* There's nothing actually wrong with libc, but NDEBUG _MUST_ be defined
- * otherwise routines like assert() will shit the bed as required routines
- * like _write have not been implemented (re: libc_stubs.s).
+/*
+ * standard headers
+ * processors headers
+ * operating system headers
+ * custom headers
  */
-
-#define SAFE_TO_USE_LIBC
-#if defined(SAFE_TO_USE_LIBC)
-#include "assert.h"
-#endif
 
 #include "kinetis.h"
 
@@ -30,36 +26,22 @@
 
 
 #if defined(assert)
-/*
- * add file and line number info to our assert.
- * disassembly the real assert to see what it's doing.
- */
 #undef assert
-#if 0
-void assert(bool cond)
-{
-    if (cond)
-        return;
-
-    for (;;)
-        ;
-}
 #endif
 
 #define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
+//#define assert(cond) ( {if (!cond) assert_(__FILE__, __LINE__);} )
 
 void assert_(const char *file, const int line)
 {
     /*
      * This routine has no impact on the running software,
-     * however it's a good idea to set a breakpoint on assert
-     * and inspecting file and line with gdb.
+     * however it's a good idea to set a breakpoint on assert_.
      *
      * When this breakpoint hits, gdb will automatically display
      * the functin arguments (files and line).
      */
 }
-#endif
 
 
 #define N_LED_ORANGE_PORT PORTA
@@ -108,9 +90,7 @@ static volatile gpioPort_t *gpioPortGet(uint32_t port)
     case PORTD: addr = GPIOD_BASE_ADDR; break;
     case PORTE: addr = GPIOE_BASE_ADDR; break;
     default:
-#if defined(SAFE_TO_USE_LIBC)
         assert(0);
-#endif
         return 0;
     }
 
@@ -123,9 +103,7 @@ void gpioConfig(uint32_t port, uint32_t pin, uint32_t opt)
      * Ensure pin number is legal
      */
 
-#if defined(SAFE_TO_USE_LIBC)
-    assert(pin < 32);
-#endif
+    assert((pin < 32));
 
     /*
      * Config the SIM Clock Gate
@@ -138,9 +116,7 @@ void gpioConfig(uint32_t port, uint32_t pin, uint32_t opt)
     case PORTD: SIM_SCGC5 |= SIM_PORTD_ENABLE; break;
     case PORTE: SIM_SCGC5 |= SIM_PORTE_ENABLE; break;
     default:
-#if defined(SAFE_TO_USE_LIBC)
         assert(0);
-#endif
         return;
     }
 
@@ -163,9 +139,7 @@ void gpioConfig(uint32_t port, uint32_t pin, uint32_t opt)
             portCtrlBits |= PORT_PFE;
 
     } else {
-#if defined(SAFE_TO_USE_LIBC)
         assert(0);
-#endif
         return;
     }
 
@@ -222,39 +196,20 @@ unsigned gpioRead(uint32_t port, uint32_t pin)
 {
 }
 
-
-
-
-static uint32_t dTime = 0x0007ffff;
-
 static void delay(void)
 {
-    volatile uint32_t time = dTime;
-    while (--time)
-        ;
+    volatile uint32_t time = 0x0007ffff;
+    while (time)
+        --time;
 }
 
 int main(void)
 {
-    assert(0); // test
+    assert(0);                          /* test ... worth while demonstrating */
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_BIT, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_BIT, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_BIT,  GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_BIT,   GPIO_OUTPUT | GPIO_LOW);
-
-#if 0
-    SIM_SCGC5 |= (SIM_PORTA_ENABLE | SIM_PORTE_ENABLE);
-
-    PORT_PCR(N_LED_ORANGE_PORT, N_LED_ORANGE_BIT) = PORT_MUX_GPIO;
-    PORT_PCR(N_LED_YELLOW_PORT, N_LED_YELLOW_BIT) = PORT_MUX_GPIO;
-    PORT_PCR(N_LED_GREEN_PORT,  N_LED_GREEN_BIT)  = PORT_MUX_GPIO;
-    PORT_PCR(N_LED_BLUE_PORT,   N_LED_BLUE_BIT)   = PORT_MUX_GPIO;
-
-    GPIOA_PDDR |= LEDS_MASK;
-
-#endif
-
-    GPIOA_PSOR = LEDS_MASK;
 
     for (;;) {
         delay();
@@ -274,25 +229,6 @@ int main(void)
         gpioSet(N_LED_GREEN_PORT, N_LED_GREEN_BIT);
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_BIT);
-#if 0
-        delay();
-        GPIOA_PCOR = 1 << N_LED_ORANGE_BIT;
-        delay();
-        GPIOA_PCOR = 1 << N_LED_YELLOW_BIT;
-        delay();
-        GPIOA_PCOR = 1 << N_LED_GREEN_BIT;
-        delay();
-        GPIOA_PCOR = 1 << N_LED_BLUE_BIT;
-
-        delay();
-        GPIOA_PSOR = 1 << N_LED_BLUE_BIT;
-        delay();
-        GPIOA_PSOR = 1 << N_LED_GREEN_BIT;
-        delay();
-        GPIOA_PSOR = 1 << N_LED_YELLOW_BIT;
-        delay();
-        GPIOA_PSOR = 1 << N_LED_ORANGE_BIT;
-#endif
     }
 
     return 0;

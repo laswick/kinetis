@@ -28,7 +28,7 @@ PHASE 2: Embedded C Programming
     Interfacing C & Assembly            Rob
 
     Clock Options                       Jan
-    TSI                                 Ryan
+    TSI                                 ?
 
     Watchdog                            Andrew
     Power Modes                         Andrew

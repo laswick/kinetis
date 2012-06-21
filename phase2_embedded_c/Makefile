@@ -11,7 +11,7 @@ TARGET = demo
 
 # List your asm files here (minus the .s):
 
-ASM_PIECES = startcode libc_stubs
+ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
@@ -30,7 +30,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -c -g -O${OPT_LEVEL} #-DNDEBUG
+C_FLAGS = -c -g -O${OPT_LEVEL}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
@@ -41,14 +41,12 @@ CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 LD_SCRIPT = linkerscript.ld
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
-LIBPATH=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
+LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
 
 LIBS  = ${LIBPATH}/libc.a
-LIBS += ${LIBPATH}/libcs3.a
-LIBS += ${LIBPATH}/libcs3arm.a
-LIBS += ${LIBPATH}/libg.a
-
-LIBS = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2/libc.a
+#LIBS += ${LIBPATH}/libcs3.a
+#LIBS += ${LIBPATH}/libcs3arm.a
+#LIBS += ${LIBPATH}/libg.a
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
