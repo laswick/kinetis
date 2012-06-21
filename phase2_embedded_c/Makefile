@@ -6,7 +6,7 @@
 
 # Name of project/output file:
 
-TARGET = gpio_demo
+TARGET = demo
 
 # List your asm files here (minus the .s):
 
@@ -14,7 +14,7 @@ ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware gpio demoGpio
+C_PIECES = test
 
 PATH :=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin:${PATH}
 CC = arm-none-eabi-gcc
@@ -39,8 +39,9 @@ CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
 LD_SCRIPT = linkerscript.ld
 
-#I can't believe the ahole that wrote this didn't comment what -nostartfiles
-#means: nostartfiles to prevents the toolchain from including startup routines.
+# I can't believe the ahole that wrote this didn't comment what -nostartfiles
+# means: nostartfiles to prevents the toolchain from including startup routines.
+
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
