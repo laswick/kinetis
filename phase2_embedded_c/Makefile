@@ -38,6 +38,9 @@ O_FILES = ${ASM_O_FILES} ${C_O_FILES}
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
 LD_SCRIPT = linkerscript.ld
+
+#I can't believe the ahole that wrote this didn't comment what -nostartfiles
+#means: nostartfiles to prevents the toolchain from including startup routines.
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
