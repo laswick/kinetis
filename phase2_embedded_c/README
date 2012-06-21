@@ -6,7 +6,7 @@ README for Phase 2
     basis as it serves as the default makefile template.
 
     Users are encouraged to copy Makefile to a project specific .mak file
-    (i.e. uartDemo.mak) and sym-link it to makefile (lowercase 'm') as GNU
+    (i.e. demoUart.mak) and sym-link it to makefile (lowercase 'm') as GNU
     Make searches for "makefile" before "Makefile".
 
     .mak files can be added to the repo, but makefile (lowercase 'm') is
@@ -15,7 +15,7 @@ README for Phase 2
 
     Typically when adding an application module, you would add it and
     your correspoding .mak file to the repo at the same time (i.e.
-    uartDemo.c uartDemo.mak).
+    demoUart.c demoUart.mak).
 
 3.  One of the goals of Phase 2 is a common build system and driver library.
     Therefore the provided Makefile, startcode, and linkerscript shall

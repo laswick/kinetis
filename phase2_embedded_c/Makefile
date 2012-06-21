@@ -43,9 +43,6 @@ LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
 
 LIBS  = ${LIBPATH}/libc.a
-#LIBS += ${LIBPATH}/libcs3.a
-#LIBS += ${LIBPATH}/libcs3arm.a
-#LIBS += ${LIBPATH}/libg.a
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s

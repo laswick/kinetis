@@ -26,37 +26,26 @@ PHASE 2: Embedded C Programming
     GPIO                                Rob
     Interrupts                          Rob
     Interfacing C & Assembly            Rob
-
     Clock Options                       Jan
-    TSI                                 ?
-
+    TSI                                 David
     Watchdog                            Andrew
     Power Modes                         Andrew
-
     Timers                              Daryl
     DAC                                 Daryl
-
     UART                                James
     ADC                                 James
-
     I2C                                 Chris
     SPI                                 Shaun
-
     FLASH                               Greg
     USB                                 Neil
-
     EBI                                 Greg
     SDHC                                Geoff
-
     Executing out of RAM                Rob
     CAN                                 Carlos
-    DMA                                 Carlos
-
     Boot Loader                         Paul
-    Ethernet                            Steve
-
-    CRC (WSCP)                          ?
-    MPU                                 ?
+    Ethernet (w/DMA)                    Steve
+    CRC (WSCP)                          Shaun
+    MPU                                 Paul
 
 
 
