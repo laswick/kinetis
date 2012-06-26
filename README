@@ -21,21 +21,21 @@ OUTLINE
 The project will be broken down into 4 "phases".
 
 
-PHASE 1: Assembly Programming
+    PHASE 1: Assembly Programming
 
-PHASE 2: Embedded C Programming
+    PHASE 2: Embedded C Programming
 
+    PHASE 3: Real Time Embedded C Programing
 
-PHASE 3: Real Time Embedded C Programing
+        MQX RTOS
+        Loadable Modules
+        Interactive CLI (target resident command line interface)
+        Thread Safe Low Level Drivers
 
-    MQX RTOS
-    Loadable Modules
-    Interactive CLI (target resident command line interface)
-    Thread Safe Low Level Drivers
+    PHASE 4: Group Project
 
+        I don't know what this is going to be yet, but it's going to be
+        awesome...
 
-PHASE 4: Group Project
-
-    I don't know what this is going to be yet, but it's going to be awesome...
-    Possibly some type of mil-grade stabilized platform :)
+        Possibly some type of mil-grade stabilized platform :)
 
