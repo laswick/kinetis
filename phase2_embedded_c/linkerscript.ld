@@ -27,9 +27,10 @@ SECTIONS
         *(.default_handlers)
 
         *(.text*)
-        . = ALIGN(4);
-        _text_end = .;
     } > FLASH
+
+    . = ALIGN(4);
+    _text_end = .;
 
     .data : AT (_text_end)
     {
