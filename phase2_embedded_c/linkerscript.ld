@@ -17,6 +17,7 @@ SECTIONS
 {
     .text :
     {
+        . = ALIGN(4);
         _text_start = .;
         *(.vector_table)
 
@@ -26,20 +27,25 @@ SECTIONS
         *(.default_handlers)
 
         *(.text*)
+        . = ALIGN(4);
         _text_end = .;
     } > FLASH
 
     .data :
     {
+        . = ALIGN(4);
         _data_start = .;
         *(.data*)
+        . = ALIGN(4);
         _data_end = .;
     } > SRAM AT > FLASH
 
     .bss :
     {
+        . = ALIGN(4);
         _bss_start = .;
         *(.bss*)
+        . = ALIGN(4);
         _bss_end = .;
         _heap_start = .;
     } > SRAM
