@@ -31,14 +31,14 @@ SECTIONS
         _text_end = .;
     } > FLASH
 
-    .data :
+    .data : AT (_text_end)
     {
         . = ALIGN(4);
         _data_start = .;
         *(.data*)
         . = ALIGN(4);
         _data_end = .;
-    } > SRAM AT > FLASH
+    } > SRAM
 
     .bss :
     {
