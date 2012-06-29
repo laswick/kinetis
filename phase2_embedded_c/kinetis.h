@@ -53,6 +53,8 @@
 /*******************************************************************************
 * PORT CONTROLLER
 *******************************************************************************/
+#define PORT_PCR(port, pin) (*(volatile uint32_t *) (port + (4 * pin)))
+
 #define PORT_ISF BIT_24                              /* Interrupt Status Mask */
 
 enum {                                             /* Interrupt Configuration */
@@ -104,8 +106,6 @@ enum {                                                     /* Pin Mux Control */
 #define PORTD PORTD_BASE_ADDR
 #define PORTE PORTE_BASE_ADDR
 
-#define PORT_PCR(port, pin) (*(volatile uint32_t *) (port + (4 * pin)))
-
 /*******************************************************************************
 * GPIO
 *
@@ -127,6 +127,17 @@ typedef struct {
 } gpioPort_t;
 
 #define GPIOA_BASE_ADDR 0x400ff000
+#define GPIOB_BASE_ADDR 0x400ff040
+#define GPIOC_BASE_ADDR 0x400ff080
+#define GPIOD_BASE_ADDR 0x400ff0c0
+#define GPIOE_BASE_ADDR 0x400ff100
+
+#define gpioPortA ((volatile gpioPort_t *) GPIOA_BASE_ADDR)
+#define gpioPortB ((volatile gpioPort_t *) GPIOB_BASE_ADDR)
+#define gpioPortC ((volatile gpioPort_t *) GPIOC_BASE_ADDR)
+#define gpioPortD ((volatile gpioPort_t *) GPIOD_BASE_ADDR)
+#define gpioPortE ((volatile gpioPort_t *) GPIOE_BASE_ADDR)
+
 #define GPIOA_PDOR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x00))
 #define GPIOA_PSOR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x04))
 #define GPIOA_PCOR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x08))
@@ -134,7 +145,6 @@ typedef struct {
 #define GPIOA_PDIR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x10))
 #define GPIOA_PDDR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x14))
 
-#define GPIOB_BASE_ADDR 0x400ff040
 #define GPIOB_PDOR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x00))
 #define GPIOB_PSOR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x04))
 #define GPIOB_PCOR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x08))
@@ -142,7 +152,6 @@ typedef struct {
 #define GPIOB_PDIR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x10))
 #define GPIOB_PDDR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x14))
 
-#define GPIOC_BASE_ADDR 0x400ff080
 #define GPIOC_PDOR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x00))
 #define GPIOC_PSOR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x04))
 #define GPIOC_PCOR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x08))
@@ -150,7 +159,6 @@ typedef struct {
 #define GPIOC_PDIR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x10))
 #define GPIOC_PDDR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x14))
 
-#define GPIOD_BASE_ADDR 0x400ff0c0
 #define GPIOD_PDOR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x00))
 #define GPIOD_PSOR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x04))
 #define GPIOD_PCOR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x08))
@@ -158,7 +166,6 @@ typedef struct {
 #define GPIOD_PDIR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x10))
 #define GPIOD_PDDR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x14))
 
-#define GPIOE_BASE_ADDR 0x400ff100
 #define GPIOE_PDOR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x00))
 #define GPIOE_PSOR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x04))
 #define GPIOE_PCOR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x08))

@@ -22,12 +22,17 @@ PHASE 1: Assembly Programming
 
 PHASE 2: Embedded C Programming
 
+    Everyone has the entire summer to complete their project(s).
+    The deadline for _ALL_ projects to be in git is September 1 2012.
+    The presentation schedule for phase 2 will be determined in September.
+
     Start Code & Linker Scripts (3)     Rob
     GPIO                                Rob
     Interrupts                          Rob
     Interfacing C & Assembly            Rob
+    Executing out of RAM                Rob
     Clock Options                       Jan
-    TSI                                 David
+    Touch Sensor Interface (TSI)        David
     Watchdog                            Andrew
     Power Modes                         Andrew
     Timers                              Daryl
@@ -36,21 +41,27 @@ PHASE 2: Embedded C Programming
     ADC                                 James
     I2C                                 Chris
     SPI                                 Shaun
-    FLASH                               Greg
     USB                                 Neil
-    EBI                                 Greg
+    FLASH                               Greg
+    External Bus Interface (EBI)        Greg
     SDHC                                Geoff
-    Executing out of RAM                Rob
     CAN                                 Carlos
     Boot Loader                         Paul
-    Ethernet (w/DMA)                    Steve
-    CRC (WSCP)                          Shaun
     MPU                                 Paul
-
-
+    Ethernet                            Steve
+    DMA                                 Steve
+    CRC (WSCP)                          Shaun
 
 
 PHASE 3: Real Time Embedded C Programing
+
+    RTOS Initialization & Scheduler
+    RTOS Semaphores (including Mutexes)
+    RTOS Message Queues
+    RTOS Interrupts
+    RTOS Events
+    Loadable Modules
+    Interactive Target-Resident Command Line Interface (ITR-CLI)
 
 
 PHASE 4: Group Project
