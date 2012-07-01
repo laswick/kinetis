@@ -16,6 +16,10 @@ ASM_PIECES = startcode
 
 C_PIECES = hardware gpio demoGpio
 
+# Platform
+
+PLATFORM = FREESCALE_K60N512_TOWER
+
 PATH :=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin:${PATH}
 CC = arm-none-eabi-gcc
 AS = arm-none-eabi-as
@@ -29,7 +33,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -Wall -c -g -O${OPT_LEVEL}
+C_FLAGS = -Wall -c -g -O${OPT_LEVEL} -D${PLATFORM}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
