@@ -29,7 +29,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -c -g -O${OPT_LEVEL}
+C_FLAGS = -Wall -c -g -O${OPT_LEVEL}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 

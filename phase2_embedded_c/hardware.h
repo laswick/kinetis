@@ -33,7 +33,7 @@ void gpioConfig(uint32_t port, uint32_t pin, uint32_t opt);
 void gpioSet(uint32_t port, uint32_t pin);
 void gpioClear(uint32_t port, uint32_t pin);
 void gpioToggle(uint32_t port, uint32_t pin);
-uint32_t gpioPortWrite(uint32_t port, uint32_t mask, uint32_t value);
+void gpioPortWrite(uint32_t port, uint32_t mask, uint32_t value);
 uint32_t gpioPortRead(uint32_t port);
 uint32_t gpioRead(uint32_t port, uint32_t pin);
 
