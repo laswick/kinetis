@@ -4,6 +4,9 @@
 #
 ################################################################################
 
+# Hardware descriptor
+HW_TYPE = TWRK60
+
 # Name of project/output file:
 
 TARGET = demo
@@ -29,7 +32,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -c -g -O${OPT_LEVEL}
+C_FLAGS = -c -g -O${OPT_LEVEL} -DHW_TYPE=$(HW_TYPE)
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 

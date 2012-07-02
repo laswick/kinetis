@@ -49,21 +49,30 @@ int32_t featureRead(uint8_t *buffer, int32_t len);
 /******************************************************************************/
 
 /* UART    ********************************************************************/
+#if HW_TYPE == TWRK60
+#define UART4_PORT    PORTE
+#define UART4_RX_PIN  25
+#define UART4_TX_PIN  24
 
-enum {                                                  /* UART baud  Options */
-    UART_BAUD_1200,
-    UART_BAUD_2400,
-    UART_BAUD_4800,
-    UART_BAUD_9600,
-    UART_BAUD_14400,
-    UART_BAUD_19200,
-    UART_BAUD_38400,
-    UART_BAUD_57600,
-    UART_BAUD_115200,
-};
+#define UART3_PORT    PORTC
+#define UART3_RX_PIN  16
+#define UART3_TX_PIN  17
+
+#else
+#error "UNKNOWN UART CONFIGURATION"
+#endif
+
+typedef struct {
+    uint32_t uart;
+    int32_t  systemClockHz;
+    int32_t  busClockHz;
+    int32_t  baud;
+    uint16_t responseWaitTime;
+    uint8_t  loopback;
+} uartConfig_t;                                        /* i.e. spiConfig_t */
 
 
-int32_t featureInit(featureConfig_t *cfg);
+int32_t uartInit(uartConfig_t *cfg);
 int32_t featureWrite(uint8_t *buffer, int32_t len);
 int32_t featureRead(uint8_t *buffer, int32_t len);
 
