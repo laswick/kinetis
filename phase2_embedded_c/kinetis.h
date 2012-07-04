@@ -297,6 +297,18 @@ uint8_t tl7816;   /* 7816 Transmit Length Register,      0x1f */
 #define UART_C2_TX_READY_INT_ENABLE     BIT_7
 #define UART_C2_TX_DMA_TX_ENABLE        BIT_7
 
+
+/* S1 */
+#define UART_S1_TX_DATA_LOW      BIT_7 /* data <= TWFIFO[TXWATER] */
+#define UART_S1_TX_IDLE          BIT_6
+#define UART_S1_RX_DATA_FULL     BIT_5 /* data >= RWFIFO[RXWATER] */
+#define UART_S1_RX_IDLE          BIT_4
+#define UART_S1_RX_OVERRUN       BIT_3
+#define UART_S1_RX_NOISE         BIT_2
+#define UART_S1_RX_FRAMING_ERROR BIT_1
+#define UART_S1_RX_PARITY_ERROR  BIT_0
+
+
 /* C4 */
 #define UART_C4_10_BIT_MODE                 BIT_5
 #define UART_C4_MATCH_ADDRESS_MODE_ENABLE_2 BIT_6

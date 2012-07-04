@@ -51,7 +51,7 @@ int32_t featureRead(uint8_t *buffer, int32_t len);
 * CCA Hardware Defines
 *
 *******************************************************************************/
-#if defined(FREESCALE_K60N512_TOWER)
+#if PLATFORM == FREESCALE_K60N512_TOWER
 
 /* LEDS ***********************************************************************/
 
@@ -68,7 +68,11 @@ int32_t featureRead(uint8_t *buffer, int32_t len);
 #define N_LED_BLUE_PIN    10
 
 #endif
-#if HW_TYPE == TWRK60
+
+
+
+/* UART    ********************************************************************/
+#if PLATFORM == FREESCALE_K60N512_TOWER
 #define UART4_PORT    PORTE
 #define UART4_RX_PIN  25
 #define UART4_TX_PIN  24
@@ -87,13 +91,14 @@ typedef struct {
     int32_t  busClockHz;
     int32_t  baud;
     uint16_t responseWaitTime;
-    uint8_t  loopback;
-} uartConfig_t;                                        /* i.e. spiConfig_t */
+/* TODO    uint8_t  loopback; */
+} uartIF_t;
 
 
-int32_t uartInit(uartConfig_t *cfg);
-int32_t featureWrite(uint8_t *buffer, int32_t len);
-int32_t featureRead(uint8_t *buffer, int32_t len);
+int32_t uartInit(uartIF_t *cfg);
+void    uartFree(uartIF_t *cfg);
+int32_t uartWrite(uartIF_t *cfg, uint8_t *buffer, int32_t len);
+int32_t  uartRead(uartIF_t *cfg, uint8_t *buffer, int32_t len);
 
 /******************************************************************************/
 

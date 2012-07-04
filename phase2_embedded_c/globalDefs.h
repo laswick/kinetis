@@ -26,23 +26,23 @@ typedef unsigned int   bool;
 
 #if defined(TRUE)
 #undef  TRUE
-#define TRUE 1
 #endif
+#define TRUE 1
 
 #if defined(FALSE)
 #undef  FALSE
-#define FALSE 0
 #endif
+#define FALSE 0
 
 #if defined(ERROR)
 #undef  ERROR
-#define ERROR -1
 #endif
+#define ERROR -1
 
 #if defined(OK)
 #undef  OK
-#define OK 0
 #endif
+#define OK 0
 
 #define BIT_0  0x00000001
 #define BIT_1  0x00000002
