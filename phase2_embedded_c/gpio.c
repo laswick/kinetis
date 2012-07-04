@@ -159,7 +159,7 @@ void gpioToggle(uint32_t port, uint32_t pin)
 * RETURNS:
 *
 *******************************************************************************/
-unsigned gpioPortWrite(uint32_t port, uint32_t mask, uint32_t value)
+void gpioPortWrite(uint32_t port, uint32_t mask, uint32_t value)
 {
 }
 
@@ -172,8 +172,9 @@ unsigned gpioPortWrite(uint32_t port, uint32_t mask, uint32_t value)
 * RETURNS:
 *
 *******************************************************************************/
-unsigned gpioPortRead(uint32_t port)
+uint32_t gpioPortRead(uint32_t port)
 {
+    return 0;
 }
 
 /*******************************************************************************
@@ -185,7 +186,8 @@ unsigned gpioPortRead(uint32_t port)
 * RETURNS:
 *
 *******************************************************************************/
-unsigned gpioRead(uint32_t port, uint32_t pin)
+uint32_t gpioRead(uint32_t port, uint32_t pin)
 {
+    return 0;
 }
 

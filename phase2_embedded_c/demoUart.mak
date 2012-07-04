@@ -6,7 +6,7 @@
 
 # Name of project/output file:
 
-TARGET = demo
+TARGET = demoUart
 
 # List your asm files here (minus the .s):
 
@@ -14,7 +14,7 @@ ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES = test
+C_PIECES = hardware gpio uart util demoUart
 
 # Platform
 
@@ -43,7 +43,6 @@ CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
 LD_SCRIPT = linkerscript.ld
 
-# nostartfiles prevents the toolchain from including startup routines.
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2

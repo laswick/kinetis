@@ -24,7 +24,24 @@
 #define SIM_PINID_SHIFT 0
 #define SIM_PINID_MASK (0xf << SIM_PINID_SHIFT)                 /* Pincout Id */
 
-                                       /* System Clock Gate Control Registers */
+/* System Clock Gate Control Registers */
+#define SIM_SCGC1 (*(volatile uint32_t *) 0x40048028)
+#define SIM_UART4_ENABLE  BIT_10
+
+#define SIM_SCGC4 (*(volatile uint32_t *) 0x40048034)
+#define SIM_EWM_ENABLE    BIT_1
+#define SIM_CMT_ENABLE    BIT_2
+#define SIM_I2C0_ENABLE   BIT_6
+#define SIM_I2C1_ENABLE   BIT_7
+#define SIM_UART0_ENABLE  BIT_10
+#define SIM_UART1_ENABLE  BIT_11
+#define SIM_UART2_ENABLE  BIT_12
+#define SIM_UART3_ENABLE  BIT_13
+#define SIM_USBOTG_ENABLE BIT_18
+#define SIM_CMP_ENABLE    BIT_19
+#define SIM_VREF_ENABLE   BIT_20
+#define SIM_LLWU_ENABLE   BIT_28
+
 #define SIM_SCGC5 (*(volatile uint32_t *) 0x40048038)
 #define SIM_PORTA_ENABLE BIT_9
 #define SIM_PORTB_ENABLE BIT_10
@@ -32,9 +49,12 @@
 #define SIM_PORTD_ENABLE BIT_12
 #define SIM_PORTE_ENABLE BIT_13
 
+
 /*******************************************************************************
 * PORT CONTROLLER
 *******************************************************************************/
+#define PORT_PCR(port, pin) (*(volatile uint32_t *) (port + (4 * pin)))
+
 #define PORT_ISF BIT_24                              /* Interrupt Status Mask */
 
 enum {                                             /* Interrupt Configuration */
@@ -86,8 +106,6 @@ enum {                                                     /* Pin Mux Control */
 #define PORTD PORTD_BASE_ADDR
 #define PORTE PORTE_BASE_ADDR
 
-#define PORT_PCR(port, pin) (*(volatile uint32_t *) (port + (4 * pin)))
-
 /*******************************************************************************
 * GPIO
 *
@@ -109,6 +127,17 @@ typedef struct {
 } gpioPort_t;
 
 #define GPIOA_BASE_ADDR 0x400ff000
+#define GPIOB_BASE_ADDR 0x400ff040
+#define GPIOC_BASE_ADDR 0x400ff080
+#define GPIOD_BASE_ADDR 0x400ff0c0
+#define GPIOE_BASE_ADDR 0x400ff100
+
+#define gpioPortA ((volatile gpioPort_t *) GPIOA_BASE_ADDR)
+#define gpioPortB ((volatile gpioPort_t *) GPIOB_BASE_ADDR)
+#define gpioPortC ((volatile gpioPort_t *) GPIOC_BASE_ADDR)
+#define gpioPortD ((volatile gpioPort_t *) GPIOD_BASE_ADDR)
+#define gpioPortE ((volatile gpioPort_t *) GPIOE_BASE_ADDR)
+
 #define GPIOA_PDOR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x00))
 #define GPIOA_PSOR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x04))
 #define GPIOA_PCOR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x08))
@@ -116,7 +145,6 @@ typedef struct {
 #define GPIOA_PDIR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x10))
 #define GPIOA_PDDR (*(volatile uint32_t *) (GPIOA_BASE_ADDR + 0x14))
 
-#define GPIOB_BASE_ADDR 0x400ff040
 #define GPIOB_PDOR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x00))
 #define GPIOB_PSOR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x04))
 #define GPIOB_PCOR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x08))
@@ -124,7 +152,6 @@ typedef struct {
 #define GPIOB_PDIR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x10))
 #define GPIOB_PDDR (*(volatile uint32_t *) (GPIOB_BASE_ADDR + 0x14))
 
-#define GPIOC_BASE_ADDR 0x400ff080
 #define GPIOC_PDOR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x00))
 #define GPIOC_PSOR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x04))
 #define GPIOC_PCOR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x08))
@@ -132,7 +159,6 @@ typedef struct {
 #define GPIOC_PDIR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x10))
 #define GPIOC_PDDR (*(volatile uint32_t *) (GPIOC_BASE_ADDR + 0x14))
 
-#define GPIOD_BASE_ADDR 0x400ff0c0
 #define GPIOD_PDOR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x00))
 #define GPIOD_PSOR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x04))
 #define GPIOD_PCOR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x08))
@@ -140,13 +166,154 @@ typedef struct {
 #define GPIOD_PDIR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x10))
 #define GPIOD_PDDR (*(volatile uint32_t *) (GPIOD_BASE_ADDR + 0x14))
 
-#define GPIOE_BASE_ADDR 0x400ff100
 #define GPIOE_PDOR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x00))
 #define GPIOE_PSOR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x04))
 #define GPIOE_PCOR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x08))
 #define GPIOE_PTOR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x0c))
 #define GPIOE_PDIR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x10))
 #define GPIOE_PDDR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x14))
+
+
+
+/*******************************************************************************
+* UART
+*
+* BDH   = Baud Rate Register High
+* BDL   = Baus Rate Register Low
+* C1    = Control Register 1
+* C2    = Control Register 2
+* S1    = Status Register 1
+* S2    = Status Register 2
+* C3    = Control Register 3
+* D     = Data Register
+* MA1   = Match Address Registers 1
+* MA2   = Match Address Registers 2
+* C4    = Control Register 4
+* C5    = Control Register 5
+* ED    = Extended Data Register
+* MODEM = Modem Register
+* IR    = Infrared Register
+* PFIFO = FIFO Parameters
+* CFIFO = FIFO Control Register
+* SFIFO = FIFO Status Register
+* TWFIFO = FIFO Transmit Watermark
+* TCFIFO = FIFO Transmit Count
+* RWFIFO = Receive Watermark
+* RCFIFO = Receive Count
+* C7816  = 7816 Control Register
+* IE7816 = 7816 Interrupt Enable Register
+* IS7816 = 7816 Interrupt Status Register
+* WP7816T0 = 7816 Wait Parameter Register
+* WP7816T1 = 7816 Wait Parameter Register
+* WN7816   = 7816 Wait N Register
+* WF7816   = 7816 Wait FD Register
+* ET7816   = 7816 Error Threshold Register
+* TL7816   = 7816 Transmit Length Register
+*
+*******************************************************************************/
+
+typedef struct {
+                                                   /* offset */
+uint8_t bdh;      /* Baud Rate Register High,            0x0 */
+uint8_t bdl;      /* Baus Rate Register Low,             0x1 */
+uint8_t c1;       /* Control Register 1,                 0x2 */
+uint8_t c2;       /* Control Register 2,                 0x3 */
+uint8_t s1;       /* Status Register 1,                  0x4 */
+uint8_t s2;       /* Status Register 2,                  0x5 */
+uint8_t c3;       /* Control Register 3,                 0x6 */
+uint8_t d;        /* Data Register,                      0x7 */
+uint8_t ma1;      /* Match Address Registers 1,          0x8 */
+uint8_t ma2;      /* Match Address Registers 2,          0x9 */
+uint8_t c4;       /* Control Register 4,                 0xa */
+uint8_t c5;       /* Control Register 5,                 0xb */
+uint8_t ed;       /* Extended Data Register,             0xc */
+uint8_t modem;    /* Modem Register,                     0xd */
+uint8_t ir;       /* Infrared Register,                  0xe */
+uint8_t spare0;
+uint8_t pfifo;    /* FIFO Parameters,                    0x10 */
+uint8_t cfifo;    /* FIFO Control Register,              0x11 */
+uint8_t sfifo;    /* FIFO Status Register,               0x12 */
+uint8_t twfifo;   /* FIFO Transmit Watermark,            0x13 */
+uint8_t tcfifo;   /* FIFO Transmit Count,                0x14 */
+uint8_t rwfifo;   /* Receive Watermark,                  0x15 */
+uint8_t rcfifo;   /* Receive Count,                      0x16 */
+uint8_t spare1;
+uint8_t c7816;    /* 7816 Control Register,              0x18 */
+uint8_t ie7816;   /* 7816 Interrupt Enable Register,     0x19 */
+uint8_t is7816;   /* 7816 Interrupt Status Register,     0x1a */
+uint8_t wp7816tx; /* 7816 Wait Parameter Register T0/T1, 0x1b */
+uint8_t wn7816;   /* 7816 Wait N Register,               0x1c */
+uint8_t wf7816;   /* 7816 Wait FD Register,              0x1d */
+uint8_t et7816;   /* 7816 Error Threshold Register,      0x1e */
+uint8_t tl7816;   /* 7816 Transmit Length Register,      0x1f */
+} uartPort_t;
+
+#define UART0_BASE_ADDR 0x4006a000
+#define UART1_BASE_ADDR 0x4006b000
+#define UART2_BASE_ADDR 0x4006c000
+#define UART3_BASE_ADDR 0x4006d000
+#define UART4_BASE_ADDR 0x4006e000
+
+#define UART0 UART0_BASE_ADDR
+#define UART1 UART1_BASE_ADDR
+#define UART2 UART2_BASE_ADDR
+#define UART3 UART3_BASE_ADDR
+#define UART4 UART4_BASE_ADDR
+
+/* BDH */
+#define UART_BDH_RX_ACTIVE_INT_ENABLE BIT_6
+#define UART_BDH_LIN_BREAK_INT_ENABLE BIT_7
+#define UART_BDH_SBR_MASK 0x1f00
+#define UART_BDH_SBR_SHIFT 8
+
+/* BDL */
+#define UART_BDL_SBR_MASK 0xff
+
+
+/* C1 */
+#define UART_C1_PARITY_ODD            BIT_0
+#define UART_C1_PARITY_ENABLE         BIT_1
+#define UART_C1_IDLE_LINE_AFTER_STOP  BIT_2
+#define UART_C1_ADDRESS_MARK_WAKE     BIT_3
+#define UART_C1_9_BIT_MODE            BIT_4
+#define UART_C1_SINGLE_WIRE_LOOP_BACK BIT_5
+#define UART_C1_UART_FREEZE_IN_WAIT   BIT_6
+#define UART_C1_LOOP_BACK             BIT_7
+
+
+
+/* C2 */
+#define UART_C2_SEND_BREAK              BIT_0
+#define UART_C2_RX_WAKEUP               BIT_1
+#define UART_C2_RX_ENABLE               BIT_2
+#define UART_C2_TX_ENABLE               BIT_3
+#define UART_C2_IDLE_INT_ENABLE         BIT_4
+                                  /* BIT_5 depends on C5[RDMAS] to be either: */
+#define UART_C2_RX_FULL_INT_ENABLE      BIT_5
+#define UART_C2_RX_DMA_TX_ENABLE        BIT_5
+
+#define UART_C2_TX_COMPLETE_INT_ENABLE  BIT_6
+                                  /* BIT_5 depends on C5[TDMAS] to be either: */
+#define UART_C2_TX_READY_INT_ENABLE     BIT_7
+#define UART_C2_TX_DMA_TX_ENABLE        BIT_7
+
+
+/* S1 */
+#define UART_S1_TX_DATA_LOW      BIT_7 /* data <= TWFIFO[TXWATER] */
+#define UART_S1_TX_IDLE          BIT_6
+#define UART_S1_RX_DATA_FULL     BIT_5 /* data >= RWFIFO[RXWATER] */
+#define UART_S1_RX_IDLE          BIT_4
+#define UART_S1_RX_OVERRUN       BIT_3
+#define UART_S1_RX_NOISE         BIT_2
+#define UART_S1_RX_FRAMING_ERROR BIT_1
+#define UART_S1_RX_PARITY_ERROR  BIT_0
+
+
+/* C4 */
+#define UART_C4_10_BIT_MODE                 BIT_5
+#define UART_C4_MATCH_ADDRESS_MODE_ENABLE_2 BIT_6
+#define UART_C4_MATCH_ADDRESS_MODE_ENABLE_1 BIT_7
+#define UART_C4_BRFA_MASK 0xf
 
 #endif
 

@@ -13,9 +13,9 @@ README for Phase 2
     alwasy to be considered an untracked personal file, and not to be added
     to the repo.
 
-    Typically when adding an application module, you would add it and
-    your correspoding .mak file to the repo at the same time (i.e.
-    demoUart.c demoUart.mak).
+    Typically when adding a demonstation module, you would add it, your
+    driver, and your correspoding .mak file to the repo at the same time (i.e.
+    uart.c, demoUart.c demoUart.mak).
 
 3.  One of the goals of Phase 2 is a common build system and driver library.
     Therefore the provided Makefile, startcode, and linkerscript shall
@@ -30,5 +30,8 @@ README for Phase 2
 
     At the top of each driver file in the file header comment block, the
     main/global API(s) should be clearly described.
+
+5.  The focus of each presentation will be on the details, configuration, use,
+    and intricacies of the presentation topic - not on the source code.
 
 
