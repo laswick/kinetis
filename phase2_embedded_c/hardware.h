@@ -33,7 +33,7 @@ void gpioConfig(uint32_t port, uint32_t pin, uint32_t opt);
 void gpioSet(uint32_t port, uint32_t pin);
 void gpioClear(uint32_t port, uint32_t pin);
 void gpioToggle(uint32_t port, uint32_t pin);
-uint32_t gpioPortWrite(uint32_t port, uint32_t mask, uint32_t value);
+void gpioPortWrite(uint32_t port, uint32_t mask, uint32_t value);
 uint32_t gpioPortRead(uint32_t port);
 uint32_t gpioRead(uint32_t port, uint32_t pin);
 
@@ -46,9 +46,28 @@ int32_t featureInit(featureConfig_t *cfg);
 int32_t featureWrite(uint8_t *buffer, int32_t len);
 int32_t featureRead(uint8_t *buffer, int32_t len);
 
-/******************************************************************************/
+/*******************************************************************************
+*
+* CCA Hardware Defines
+*
+*******************************************************************************/
+#if defined(FREESCALE_K60N512_TOWER)
 
-/* UART    ********************************************************************/
+/* LEDS ***********************************************************************/
+
+#define N_LED_ORANGE_PORT PORTA
+#define N_LED_ORANGE_PIN  11
+
+#define N_LED_YELLOW_PORT PORTA
+#define N_LED_YELLOW_PIN  28
+
+#define N_LED_GREEN_PORT  PORTA
+#define N_LED_GREEN_PIN   29
+
+#define N_LED_BLUE_PORT   PORTA
+#define N_LED_BLUE_PIN    10
+
+#endif
 #if HW_TYPE == TWRK60
 #define UART4_PORT    PORTE
 #define UART4_RX_PIN  25
