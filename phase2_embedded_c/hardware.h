@@ -97,6 +97,7 @@ typedef struct {
 
 int32_t uartInit(uartIF_t *cfg);
 void    uartFree(uartIF_t *cfg);
+int32_t uartPrint(uartIF_t *cfg, char *string);
 int32_t uartWrite(uartIF_t *cfg, uint8_t *buffer, int32_t len);
 int32_t  uartRead(uartIF_t *cfg, uint8_t *buffer, int32_t len);
 
