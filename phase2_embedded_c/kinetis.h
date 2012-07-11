@@ -49,7 +49,6 @@
 #define SIM_PORTD_ENABLE BIT_12
 #define SIM_PORTE_ENABLE BIT_13
 
-
 /*******************************************************************************
 * PORT CONTROLLER
 *******************************************************************************/
@@ -173,8 +172,6 @@ typedef struct {
 #define GPIOE_PDIR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x10))
 #define GPIOE_PDDR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x14))
 
-
-
 /*******************************************************************************
 * UART
 *
@@ -211,41 +208,39 @@ typedef struct {
 * TL7816   = 7816 Transmit Length Register
 *
 *******************************************************************************/
-
 typedef struct {
-                                                   /* offset */
-uint8_t bdh;      /* Baud Rate Register High,            0x0 */
-uint8_t bdl;      /* Baus Rate Register Low,             0x1 */
-uint8_t c1;       /* Control Register 1,                 0x2 */
-uint8_t c2;       /* Control Register 2,                 0x3 */
-uint8_t s1;       /* Status Register 1,                  0x4 */
-uint8_t s2;       /* Status Register 2,                  0x5 */
-uint8_t c3;       /* Control Register 3,                 0x6 */
-uint8_t d;        /* Data Register,                      0x7 */
-uint8_t ma1;      /* Match Address Registers 1,          0x8 */
-uint8_t ma2;      /* Match Address Registers 2,          0x9 */
-uint8_t c4;       /* Control Register 4,                 0xa */
-uint8_t c5;       /* Control Register 5,                 0xb */
-uint8_t ed;       /* Extended Data Register,             0xc */
-uint8_t modem;    /* Modem Register,                     0xd */
-uint8_t ir;       /* Infrared Register,                  0xe */
-uint8_t spare0;
-uint8_t pfifo;    /* FIFO Parameters,                    0x10 */
-uint8_t cfifo;    /* FIFO Control Register,              0x11 */
-uint8_t sfifo;    /* FIFO Status Register,               0x12 */
-uint8_t twfifo;   /* FIFO Transmit Watermark,            0x13 */
-uint8_t tcfifo;   /* FIFO Transmit Count,                0x14 */
-uint8_t rwfifo;   /* Receive Watermark,                  0x15 */
-uint8_t rcfifo;   /* Receive Count,                      0x16 */
-uint8_t spare1;
-uint8_t c7816;    /* 7816 Control Register,              0x18 */
-uint8_t ie7816;   /* 7816 Interrupt Enable Register,     0x19 */
-uint8_t is7816;   /* 7816 Interrupt Status Register,     0x1a */
-uint8_t wp7816tx; /* 7816 Wait Parameter Register T0/T1, 0x1b */
-uint8_t wn7816;   /* 7816 Wait N Register,               0x1c */
-uint8_t wf7816;   /* 7816 Wait FD Register,              0x1d */
-uint8_t et7816;   /* 7816 Error Threshold Register,      0x1e */
-uint8_t tl7816;   /* 7816 Transmit Length Register,      0x1f */
+    uint8_t bdh;      /* Baud Rate Register High,            0x0 */
+    uint8_t bdl;      /* Baus Rate Register Low,             0x1 */
+    uint8_t c1;       /* Control Register 1,                 0x2 */
+    uint8_t c2;       /* Control Register 2,                 0x3 */
+    uint8_t s1;       /* Status Register 1,                  0x4 */
+    uint8_t s2;       /* Status Register 2,                  0x5 */
+    uint8_t c3;       /* Control Register 3,                 0x6 */
+    uint8_t d;        /* Data Register,                      0x7 */
+    uint8_t ma1;      /* Match Address Registers 1,          0x8 */
+    uint8_t ma2;      /* Match Address Registers 2,          0x9 */
+    uint8_t c4;       /* Control Register 4,                 0xa */
+    uint8_t c5;       /* Control Register 5,                 0xb */
+    uint8_t ed;       /* Extended Data Register,             0xc */
+    uint8_t modem;    /* Modem Register,                     0xd */
+    uint8_t ir;       /* Infrared Register,                  0xe */
+    uint8_t spare0;
+    uint8_t pfifo;    /* FIFO Parameters,                    0x10 */
+    uint8_t cfifo;    /* FIFO Control Register,              0x11 */
+    uint8_t sfifo;    /* FIFO Status Register,               0x12 */
+    uint8_t twfifo;   /* FIFO Transmit Watermark,            0x13 */
+    uint8_t tcfifo;   /* FIFO Transmit Count,                0x14 */
+    uint8_t rwfifo;   /* Receive Watermark,                  0x15 */
+    uint8_t rcfifo;   /* Receive Count,                      0x16 */
+    uint8_t spare1;
+    uint8_t c7816;    /* 7816 Control Register,              0x18 */
+    uint8_t ie7816;   /* 7816 Interrupt Enable Register,     0x19 */
+    uint8_t is7816;   /* 7816 Interrupt Status Register,     0x1a */
+    uint8_t wp7816tx; /* 7816 Wait Parameter Register T0/T1, 0x1b */
+    uint8_t wn7816;   /* 7816 Wait N Register,               0x1c */
+    uint8_t wf7816;   /* 7816 Wait FD Register,              0x1d */
+    uint8_t et7816;   /* 7816 Error Threshold Register,      0x1e */
+    uint8_t tl7816;   /* 7816 Transmit Length Register,      0x1f */
 } uartPort_t;
 
 #define UART0_BASE_ADDR 0x4006a000

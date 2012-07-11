@@ -2,10 +2,10 @@
 *
 * util.h
 *
-* $Id: $
-*
 *******************************************************************************/
-#ifndef INC_UTIL
-#define INC_UTIL
+#if !defined(UTIL_H)
+#define UTIL_H
+
 extern void delay(void);
+
 #endif

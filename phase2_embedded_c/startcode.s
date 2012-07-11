@@ -1,17 +1,25 @@
-/*
- * startcode.s
- *
- * Startcode for the Freescale Kinetis K60 / ARM Cortex-M4.
- * Includes CRT setup.
- *
- * Rob Laswick
- * June 5 2012
- */
-
+/*******************************************************************************
+*
+* startcode.s
+*
+* Startcode for the Freescale Kinetis K60 / ARM Cortex-M4.
+* Includes CRT setup.
+*
+* Rob Laswick
+* June 5 2012
+*
+*******************************************************************************/
     .syntax unified
     .thumb
 
     .extern _stack_start                      /* Defined in our linker script */
+    .extern _stack_end
+    .extern _data_start
+    .extern _data_end
+    .extern _bss_start
+    .extern _bss_end
+    .extern _heap_start
+    .extern _heap_end
 
     .weak main               /* User defined entry point (in a separate file) */
 

@@ -20,8 +20,42 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
-#define MAX_UARTS 5
 static uartIF_t *uartOwner[MAX_UARTS];
+
+static uartIF_t stdOutUartIF;
+
+/*******************************************************************************
+*
+* _write
+*
+* This routine retargets STDOUT to the UART configured by setStdout().
+*
+* RETURNS: Number of bytes written.
+*
+*******************************************************************************/
+int _write(int fd, char *ptr, int len)
+{
+    assert(stdOutUartIF.uart);           /* Ensure a UART has been designated */
+
+    int i;
+    for (i = 0; i < len; i++)
+        uartWrite(&stdOutUartIF, (uint8_t *) ptr++, 1);
+    return len;
+}
+
+/*******************************************************************************
+*
+* setStdout
+*
+* This routine sets the argument uart to be used as STDOUT.
+*
+* RETURNS: Nothing.
+*
+*******************************************************************************/
+void setStdout(uartIF_t *uartIF)
+{
+    memcpy(&stdOutUartIF, uartIF, sizeof(uartIF_t));
+}
 
 /*******************************************************************************
 *
@@ -60,7 +94,8 @@ static volatile uartPort_t *uartPortGet(uint32_t uart)
 * RETURNS: UART clock in Hz
 *
 *******************************************************************************/
-int32_t uartGetClock(uint32_t uart, int32_t systemClockHz, int32_t busClockHz)
+static int32_t uartGetClock(uint32_t uart, int32_t systemClockHz,
+                                                             int32_t busClockHz)
 {
     int32_t uartClockHz;
 
@@ -92,7 +127,7 @@ int32_t uartGetClock(uint32_t uart, int32_t systemClockHz, int32_t busClockHz)
 * RETURNS: !ERROR on successful reservation
 *
 *******************************************************************************/
-int32_t uartReserve(uartIF_t *uartIF)
+static int32_t uartReserve(uartIF_t *uartIF)
 {
     int32_t  retVal = ERROR;
     int32_t uartIdx;
@@ -130,7 +165,7 @@ int32_t uartReserve(uartIF_t *uartIF)
 *
 * uartFree
 *
-* This helper function releases ownership of a uart
+* This routine releases ownership of a uart.
 *
 * RETURNS: Nothing
 *
@@ -288,7 +323,8 @@ int32_t uartInit(uartIF_t *uartIF)
 *
 * uartWrite
 *
-*
+* This routine transmits the bytes in a variable length buffer out the
+* requested UART port.
 *
 * RETURNS: Number bytes written
 *

@@ -10,11 +10,15 @@ TARGET = spi_demo
 
 # List your asm files here (minus the .s):
 
-ASM_PIECES = startcode
+ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
 C_PIECES = hardware spi demoSpi gpio
+
+# Define Hardware Platform
+
+PLATFORM = FREESCALE_K60N512_TOWER_HW
 
 PATH :=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin:${PATH}
 CC = arm-none-eabi-gcc
@@ -29,7 +33,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -c -g -Wall -MD -O${OPT_LEVEL}
+C_FLAGS = -c -g -Wall -MD -O${OPT_LEVEL} -D${PLATFORM}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 

@@ -6,6 +6,8 @@
 * Canada Day 2012
 *
 *******************************************************************************/
+#include <stdio.h>
+
 #include "kinetis.h"
 
 #include "hardware.h"
@@ -37,6 +39,12 @@ int main(void)
 
     if  (uartInit(uartIF) != ERROR) {
         uartUp = TRUE;
+        setStdout(uartIF);
+
+        int i;
+        for (i = 0; i < 55; i++)
+            puts("");                                         /* Clear screen */
+        puts("\nUART Initialized...\n");
     }
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -48,6 +56,8 @@ int main(void)
         uint8_t countDown = '5';
         uint8_t cr        = '\n';
 
+        printf("Holy Crap this Worked!\n\n");
+
         /* uartPrint is used to send a null terminated string */
         uartPrint(uartIF, "The start of something good...\n");
         delay();
@@ -56,6 +66,8 @@ int main(void)
             /* uartWrite is used to spew aritray uint8_t's our your uart */
             uartWrite(uartIF, &cr, 1);
             uartWrite(uartIF, &countDown, 1);
+            // TODO varags not working yet
+            // printf("...%d\n", i);
             uartWrite(uartIF, &cr, 1);
             delay();
             countDown--;
