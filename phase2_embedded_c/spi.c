@@ -171,7 +171,7 @@ void spiWrite(spiIF_t *spi, void *data, unsigned len)
         pushr = (pushrMask | (uint32_t)(*dataPtr++));
 
         /* RANT START:
-         * I could not use the Transmit fifo flag (TFFF)! because
+         * I could not use the Transmit fifo full flag (TFFF)! because
          * it would appears that it is only set if the dma
          * controller is responsible for a write to the PUSHR.
          * IMO, this flag should be set ANYTIME the fifo is
