@@ -26,9 +26,8 @@
 
 /* System Clock Gate Control Registers */
 #define SIM_SCGC1 (*(volatile uint32_t *) 0x40048028)
-#define SIM_UART4_ENABLE  BIT_10
-
 #define SIM_SCGC4 (*(volatile uint32_t *) 0x40048034)
+#define SIM_UART4_ENABLE  BIT_10
 #define SIM_EWM_ENABLE    BIT_1
 #define SIM_CMT_ENABLE    BIT_2
 #define SIM_I2C0_ENABLE   BIT_6
@@ -41,7 +40,11 @@
 #define SIM_CMP_ENABLE    BIT_19
 #define SIM_VREF_ENABLE   BIT_20
 #define SIM_LLWU_ENABLE   BIT_28
-
+#define SIM_SCGC6 (*(volatile uint32_t *) 0x4004803C)
+#define SIM_SCGC6_SPI0_ENABLE  BIT_12
+#define SIM_SCGC6_SPI1_ENABLE  BIT_13
+#define SIM_SCGC3 (*(volatile uint32_t *) 0x40048030)
+#define SIM_SCGC3_SPI2_ENABLE  BIT_12
 #define SIM_SCGC5 (*(volatile uint32_t *) 0x40048038)
 #define SIM_PORTA_ENABLE BIT_9
 #define SIM_PORTB_ENABLE BIT_10
@@ -309,6 +312,205 @@ typedef struct {
 #define UART_C4_MATCH_ADDRESS_MODE_ENABLE_2 BIT_6
 #define UART_C4_MATCH_ADDRESS_MODE_ENABLE_1 BIT_7
 #define UART_C4_BRFA_MASK 0xf
+
+/*******************************************************************************
+* SPI
+*******************************************************************************/
+
+typedef enum {
+    SPI_MCR_MSTR      =    1 << 31, /* R/W - 0*/
+    SPI_MCR_CONT_SCKE =    1 << 30, /* R/W - 0*/
+    SPI_MCR_DCONF1    =    1 << 29, /* R/W - 0*/
+    SPI_MCR_DCONF0    =    1 << 28, /* R/W - 0*/
+    SPI_MCR_DCONF     =  0x3 << 28, /* R/W - 0*/
+    SPI_MCR_FRZ       =    1 << 27, /* R/W - 0*/
+    SPI_MCR_MTFE      =    1 << 26, /* R/W - 0*/
+    SPI_MCR_PCSSE     =    1 << 25, /* R/W - 0*/
+    SPI_MCR_ROOE      =    1 << 24, /* R/W - 0*/
+    SPI_MCR_PCSIS5    =    1 << 21, /* R/W - 0*/
+    SPI_MCR_PCSIS4    =    1 << 20, /* R/W - 0*/
+    SPI_MCR_PCSIS3    =    1 << 19, /* R/W - 0*/
+    SPI_MCR_PCSIS2    =    1 << 18, /* R/W - 0*/
+    SPI_MCR_PCSIS1    =    1 << 17, /* R/W - 0*/
+    SPI_MCR_PCSIS0    =    1 << 16, /* R/W - 0*/
+    SPI_MCR_PCSIS     = 0x3F << 16, /* R/W - 0*/
+    SPI_MCR_DOZE      =    1 << 15, /* R/W - 0*/
+    SPI_MCR_MDIS      =    1 << 14, /* R/W - 1*/
+    SPI_MCR_DIS_TXF   =    1 << 13, /* R/W - 0*/
+    SPI_MCR_DIS_RXF   =    1 << 12, /* R/W - 0*/
+    SPI_MCR_CLR_TXF   =    1 << 11, /*   W - 0*/
+    SPI_MCR_CLR_RXF   =    1 << 10, /*   W - 0*/
+    SPI_MCR_SMPL_PT1  =    1 << 9,  /* R/W - 0*/
+    SPI_MCR_SMPL_PT0  =    1 << 8,  /* R/W - 0*/
+    SPI_MCR_SMPL_PT   =  0x3 << 8,  /* R/W - 0*/
+    SPI_MCR_HALT      =    1 << 0,  /* R/W - 1*/
+} spiMcr_t;
+
+typedef enum {
+    SPI_CTAR_DBR      =    1 << 31, /* R/W - 0*/
+    SPI_CTAR_FMSZ3    =    1 << 30, /* R/W - 1*/
+    SPI_CTAR_FMSZ2    =    1 << 29, /* R/W - 1*/
+    SPI_CTAR_FMSZ1    =    1 << 28, /* R/W - 1*/
+    SPI_CTAR_FMSZ0    =    1 << 27, /* R/W - 1*/
+    SPI_CTAR_FMSZ     =  0xF << 27, /* R/W - 1*/
+    SPI_CTAR_CPOL     =    1 << 26, /* R/W - 0*/
+    SPI_CTAR_CPHA     =    1 << 25, /* R/W - 0*/
+    SPI_CTAR_LSBFE    =    1 << 24, /* R/W - 0*/
+    SPI_CTAR_PCSSCK1  =    1 << 23, /* R/W - 0*/
+    SPI_CTAR_PCSSCK0  =    1 << 22, /* R/W - 0*/
+    SPI_CTAR_PCSSCK   =  0x3 << 22, /* R/W - 0*/
+    SPI_CTAR_PASC1    =    1 << 21, /* R/W - 0*/
+    SPI_CTAR_PASC0    =    1 << 20, /* R/W - 0*/
+    SPI_CTAR_PASC     =  0x3 << 20, /* R/W - 0*/
+    SPI_CTAR_PDT1     =    1 << 19, /* R/W - 0*/
+    SPI_CTAR_PDT0     =    1 << 18, /* R/W - 0*/
+    SPI_CTAR_PDT      =  0x3 << 18, /* R/W - 0*/
+    SPI_CTAR_PBR1     =    1 << 17, /* R/W - 0*/
+    SPI_CTAR_PBR0     =    1 << 16, /* R/W - 0*/
+    SPI_CTAR_PBR      =  0x3 << 16, /* R/W - 0*/
+    SPI_CTAR_CSSCLK3  =    1 << 15, /* R/W - 0*/
+    SPI_CTAR_CSSCLK2  =    1 << 14, /* R/W - 0*/
+    SPI_CTAR_CSSCLK1  =    1 << 13, /* R/W - 0*/
+    SPI_CTAR_CSSCLK0  =    1 << 12, /* R/W - 0*/
+    SPI_CTAR_CSSCLK   =  0xF << 12, /* R/W - 0*/
+    SPI_CTAR_ASC3     =    1 << 11, /* R/W - 0*/
+    SPI_CTAR_ASC2     =    1 << 10, /* R/W - 0*/
+    SPI_CTAR_ASC1     =    1 << 9,  /* R/W - 0*/
+    SPI_CTAR_ASC0     =    1 << 8,  /* R/W - 0*/
+    SPI_CTAR_ASC      =  0xF << 8,  /* R/W - 0*/
+    SPI_CTAR_DT3      =    1 << 7 , /* R/W - 0*/
+    SPI_CTAR_DT2      =    1 << 6,  /* R/W - 0*/
+    SPI_CTAR_DT1      =    1 << 5,  /* R/W - 0*/
+    SPI_CTAR_DT0      =    1 << 4,  /* R/W - 0*/
+    SPI_CTAR_DT       =  0xF << 4,  /* R/W - 0*/
+    SPI_CTAR_BR3      =    1 << 3 , /* R/W - 0*/
+    SPI_CTAR_BR2      =    1 << 2,  /* R/W - 0*/
+    SPI_CTAR_BR1      =    1 << 1,  /* R/W - 0*/
+    SPI_CTAR_BR0      =    1 << 0,  /* R/W - 0*/
+    SPI_CTAR_BR       =  0xF << 0,  /* R/W - 0*/
+} spiCtar_t;
+
+typedef enum {
+    SPI_PUSHR_CONT     =    1 << 31, /* R/W - 0*/
+    SPI_PUSHR_CTAS2    =    1 << 30, /* R/W - 0*/
+    SPI_PUSHR_CTAS1    =    1 << 29, /* R/W - 0*/
+    SPI_PUSHR_CTAS0    =    1 << 28, /* R/W - 0*/
+    SPI_PUSHR_CTAS     =  0x7 << 28, /* R/W - 0*/
+    SPI_PUSHR_EOQ      =    1 << 27, /* R/W - 0*/
+    SPI_PUSHR_CTCNT    =    1 << 26, /* R/W - 0*/
+    SPI_PUSHR_PCS5     =    1 << 21, /* R/W - 0*/
+    SPI_PUSHR_PCS4     =    1 << 20, /* R/W - 0*/
+    SPI_PUSHR_PCS3     =    1 << 19, /* R/W - 0*/
+    SPI_PUSHR_PCS2     =    1 << 18, /* R/W - 0*/
+    SPI_PUSHR_PCS1     =    1 << 17, /* R/W - 0*/
+    SPI_PUSHR_PCS0     =    1 << 16, /* R/W - 0*/
+    SPI_PUSHR_PCS      = 0x3F << 16, /* R/W - 0*/
+} spiPushr_t;
+
+typedef enum {
+    SPI_RSER_TCF_RE   =    1 << 31, /* R/W - 0*/
+    SPI_RSER_EOQF_RE  =    1 << 28, /* R/W - 0*/
+    SPI_RSER_TFUF_RE  =    1 << 27, /* R/W - 0*/
+    SPI_RSER_TFFF_RE  =    1 << 25, /* R/W - 0*/
+    SPI_RSER_TFFF_DIRS=    1 << 24, /* R/W - 0*/
+    SPI_RSER_RFOF_RE  =    1 << 19, /* R/W - 0*/
+    SPI_RSER_RFDF_RE  =    1 << 17, /* R/W - 0*/
+    SPI_RSER_RFDF_DIRS=    1 << 16, /* R/W - 0*/
+} spiRser_t;
+
+typedef enum {
+    SPI_SR_TCF        =    1 << 31, /* R/W - 0*/
+    SPI_SR_TXRXS      =    1 << 30, /* R/W - 0*/
+    SPI_SR_EOQF       =    1 << 28, /* R/W - 0*/
+    SPI_SR_TFUF       =    1 << 27, /* R/W - 0*/
+    SPI_SR_TFFF       =    1 << 25, /* R/W - 0*/
+    SPI_SR_RFOF       =    1 << 19, /* R/W - 0*/
+    SPI_SR_RFDF       =    1 << 17, /* R/W - 0*/
+    SPI_SR_TXCTR3     =    1 << 15, /* R/W - 0*/
+    SPI_SR_TXCTR2     =    1 << 14, /* R/W - 0*/
+    SPI_SR_TXCTR1     =    1 << 13, /* R/W - 0*/
+    SPI_SR_TXCTR0     =    1 << 12, /* R/W - 0*/
+    SPI_SR_TXCTR      =  0xF << 12, /* R/W - 0*/
+    SPI_SR_TXNXTPTR3  =    1 << 11, /* R/W - 0*/
+    SPI_SR_TXNXTPTR2  =    1 << 10, /* R/W - 0*/
+    SPI_SR_TXNXTPTR1  =    1 << 9,  /* R/W - 0*/
+    SPI_SR_TXNXTPTR0  =    1 << 8,  /* R/W - 0*/
+    SPI_SR_TXNXTPTR   =  0xF << 8,  /* R/W - 0*/
+    SPI_SR_RXCTR3     =    1 << 7,  /* R/W - 0*/
+    SPI_SR_RXCTR2     =    1 << 6,  /* R/W - 0*/
+    SPI_SR_RXCTR1     =    1 << 5,  /* R/W - 0*/
+    SPI_SR_RXCTR0     =    1 << 4,  /* R/W - 0*/
+    SPI_SR_RXCTR      =  0xF << 4,  /* R/W - 0*/
+    SPI_SR_POPNXTPTR3 =    1 << 3,  /* R/W - 0*/
+    SPI_SR_POPNXTPTR2 =    1 << 2,  /* R/W - 0*/
+    SPI_SR_POPNXTPTR1 =    1 << 1,  /* R/W - 0*/
+    SPI_SR_POPNXTPTR0 =    1 << 0,  /* R/W - 0*/
+    SPI_SR_POPNXTPTR  =    1 << 0,  /* R/W - 0*/
+} spiSr_t;
+
+/* SPI0 */
+#define SPI0_BASE_ADDR 0x4002C000
+#define SPI0_MCR   (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x00))
+#define SPI0_TCR   (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x08))
+#define SPI0_CTAR0 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x0C))
+#define SPI0_CTAR1 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x10))
+#define SPI0_SR    (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x2C))
+#define SPI0_RSER  (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x30))
+#define SPI0_PUSHR (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x34))
+#define SPI0_POPR  (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x38))
+#define SPI0_TXFR0 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x3C))
+#define SPI0_TXFR1 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x40))
+#define SPI0_TXFR2 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x44))
+#define SPI0_TXFR3 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x48))
+#define SPI0_RXFR0 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x7C))
+#define SPI0_RXFR1 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x80))
+#define SPI0_RXFR2 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x84))
+#define SPI0_RXFR3 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x88))
+
+/* SPI1 */
+#define SPI1_BASE_ADDR 0x4002D000
+#define SPI1_MCR   (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x00))
+#define SPI1_TCR   (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x08))
+#define SPI1_CTAR0 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x0C))
+#define SPI1_CTAR1 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x10))
+#define SPI1_SR    (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x2C))
+#define SPI1_RSER  (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x30))
+#define SPI1_PUSHR (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x34))
+#define SPI1_POPR  (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x38))
+#define SPI1_TXFR0 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x3C))
+#define SPI1_TXFR1 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x40))
+#define SPI1_TXFR2 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x44))
+#define SPI1_TXFR3 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x48))
+#define SPI1_RXFR0 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x7C))
+#define SPI1_RXFR1 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x80))
+#define SPI1_RXFR2 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x84))
+#define SPI1_RXFR3 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x88))
+
+/* SPI2 */
+#define SPI2_BASE_ADDR 0x400AC000
+#define SPI2_MCR   (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x00))
+#define SPI2_TCR   (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x08))
+#define SPI2_CTAR0 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x0C))
+#define SPI2_CTAR1 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x10))
+#define SPI2_SR    (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x2C))
+#define SPI2_RSER  (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x30))
+#define SPI2_PUSHR (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x34))
+#define SPI2_POPR  (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x38))
+#define SPI2_TXFR0 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x3C))
+#define SPI2_TXFR1 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x40))
+#define SPI2_TXFR2 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x44))
+#define SPI2_TXFR3 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x48))
+#define SPI2_RXFR0 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x7C))
+#define SPI2_RXFR1 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x80))
+#define SPI2_RXFR2 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x84))
+#define SPI2_RXFR3 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x88))
+
+#define SPI_MCR(addr)    (*(volatile uint32_t *) (addr + 0x00))
+#define SPI_CTAR0(addr)  (*(volatile uint32_t *) (addr + 0x0C))
+#define SPI_CTAR1(addr)  (*(volatile uint32_t *) (addr + 0x10))
+#define SPI_SR(addr)     (*(volatile uint32_t *) (addr + 0x2C))
+#define SPI_RSER(addr)   (*(volatile uint32_t *) (addr + 0x30))
+#define SPI_PUSHR(addr)  (*(volatile uint32_t *) (addr + 0x34))
 
 #endif
 
