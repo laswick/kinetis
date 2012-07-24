@@ -7,6 +7,9 @@
 * 2012-06-25
 *******************************************************************************/
 
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include "kinetis.h"
 #include "hardware.h"
 #include "globalDefs.h"
@@ -207,4 +210,19 @@ void spiWriteRead(spiIF_t *spi, void *dataOut, unsigned lenOut,
 /*******************************************************************************/
 {
     /* To be done */
+}
+
+
+
+int spi_open_r (struct _reent *r, const char *path, int flags, int mode ) {
+    return 3;
+}
+int spi_close_r (struct _reent *r, int fd ) {
+    return 3;
+}
+long spi_write_r (struct _reent *r, int fd, const void *ptr, int len ){
+    return 3;
+}
+long spi_read_r (struct _reent *r, int fd, const void *ptr, int len ){
+    return 3;
 }

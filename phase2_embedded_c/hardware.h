@@ -3,6 +3,7 @@
 * hardware.h
 *
 *******************************************************************************/
+#include <stdlib.h>
 #include "globalDefs.h"
 
 /* ASSERT *********************************************************************/
@@ -167,7 +168,13 @@ void spiWrite(spiIF_t *spi, void *data, unsigned len);
 void spiRead(spiIF_t *spi, void *data, unsigned len);
 void spiWriteRead(spiIF_t *spi, void *dataOut, unsigned lenOut,
                                 void *dataIn,  unsigned lenIn   );
-/* EXAMPLE ********************************************************************/
+
+int  spi_open_r  (struct _reent *r, const char *path, int flags, int mode );
+int  spi_close_r (struct _reent *r, int fd );
+long spi_write_r (struct _reent *r, int fd, const void *ptr, int len );
+long spi_read_r  (struct _reent *r, int fd, const void *ptr, int len );
+
+/* EXAMPLE *******************************************************************/
 
 typedef struct {
 } featureConfig_t;                                        /* i.e. spiConfig_t */

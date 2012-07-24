@@ -14,6 +14,10 @@
 * cursor, current line, etc.
 *******************************************************************************/
 
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "kinetis.h"
 #include "hardware.h"
 #include "globalDefs.h"
@@ -106,6 +110,8 @@ int main(void)
     PORT_PCR(SPI0_SIN_PORT, SPI0_SIN_PIN) = SPI0_SIN_MUX;
     PORT_PCR(SPI0_SOUT_PORT, SPI0_SOUT_PIN) = SPI0_SOUT_MUX;
     PORT_PCR(SPI0_PCS0_PORT, SPI0_PCS0_PIN) = SPI0_PCS0_MUX;
+
+    open("spi", 0);
 
     /* Open & configure the spi, then write to the screen */
     spiOpen(&spi2);
