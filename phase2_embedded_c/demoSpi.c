@@ -34,10 +34,10 @@ char scrCmdDispMode40[] = {0x1B, '[','1','h' };
 char scrCmdGotoLine1[]  = {0x1B, '[','0',';','0','0','H' };
 char scrCmdGotoLine2[]  = {0x1B, '[','1',';','0','0','H' };
 char scrCmdScrollL1[]   = {0x1B, '[','0','1','@' };
+char scrCmdScrollR1[]   = {0x1B, '[','0','1','A' };
 
 /* Screwed up commands */
 char scrCmdDispEnBklghtOn[]  = {0x1B, '[','3','e' };
-char scrCmdScrollR1[]        = {0x1B, '[','0','1','A' };
 
 #define SPI2_SCK_PIN    12
 #define SPI2_SCK_PORT   PORTD

@@ -39,7 +39,7 @@ spi_t spiList[NUM_SPI_MODULES] = {
         .rser = 0,
         .pushr = 0,
         .addr = SPI0_BASE_ADDR,
-        .fd = 0
+        .fd = -1
     },
     [SPI_MODULE_1] = {
         .mcr = 0,
@@ -48,7 +48,7 @@ spi_t spiList[NUM_SPI_MODULES] = {
         .rser = 0,
         .pushr = 0,
         .addr = SPI1_BASE_ADDR,
-        .fd = 0
+        .fd = -1
     },
     [SPI_MODULE_2] = {
         .mcr = 0,
@@ -57,7 +57,7 @@ spi_t spiList[NUM_SPI_MODULES] = {
         .rser = 0,
         .pushr = 0,
         .addr = SPI2_BASE_ADDR,
-        .fd = 0
+        .fd = -1
     },
 };
 
@@ -76,26 +76,26 @@ static spi_t *spiModuleFromFd(int fd)
 static int spiOpen(spiModule_t mod, int fd)
 /*******************************************************************************/
 {
-    spi_t *spi = NULL;
+    spi_t *spi = spiModuleFromFd(fd);
 
+    if (spi) return -1; /* Device is already open */
+
+    /* Assign the file descriptor to the device */
     spiList[mod].fd = fd;
     spi = spiModuleFromFd(fd);
 
-    if (spi != NULL) {
-        /* Set Normal SPI defaults */
-        spi->mcr   = SPI_MCR_MSTR;
-        spi->ctar0 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
-                   | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
-                   | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
-        spi->ctar1 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
-                   | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
-                   | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
-        spi->rser  = 0;
-        spi->pushr = 0;
-    }
-    else {
-        return -1;
-    }
+    if (!spi) return -1; /* No device for given fd ? */
+
+    /* Set Normal SPI defaults */
+    spi->mcr   = SPI_MCR_MSTR;
+    spi->ctar0 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
+    spi->ctar1 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
+    spi->rser  = 0;
+    spi->pushr = 0;
 
     /* Write the Register values values */
     SPI_MCR  (spi->addr) = spi->mcr;
@@ -105,39 +105,18 @@ static int spiOpen(spiModule_t mod, int fd)
     return fd;
 }
 
-#if 0
 /*******************************************************************************/
-void spiClose(spi_t *spi)
-/*******************************************************************************/
-{
-    if (spi->module < NUM_SPI_MODULES) {
-        switch( spi->module ){
-            case SPI_MODULE_0:
-                SIM_SCGC6 &= ~(SIM_SCGC6_SPI0_ENABLE);
-            break;
-            case SPI_MODULE_1:
-                SIM_SCGC6 &= ~(SIM_SCGC6_SPI1_ENABLE);
-            break;
-            case SPI_MODULE_2:
-                SIM_SCGC3 &= ~(SIM_SCGC3_SPI2_ENABLE);
-            break;
-            default:
-                assert(0);
-            break;
-        }
-    }
-}
-#endif
-
-/*******************************************************************************/
-static unsigned spiWrite(spi_t *spi, const void *data, unsigned len)
+static unsigned spiWrite(int fd, const void *data, unsigned len)
 /*******************************************************************************/
 {
     unsigned i;
     uint8_t *dataPtr = (uint8_t *) data;
     uint32_t pushr = 0;
+    spi_t *spi = spiModuleFromFd(fd);
 
-   for(i = 0; i < len; i++) {
+    if (!spi) return 0; /* The fd is not associated with any device */
+
+    for(i = 0; i < len; i++) {
 
         pushr = (spi->pushr | (uint32_t)(*dataPtr++));
 
@@ -163,10 +142,9 @@ static unsigned spiWrite(spi_t *spi, const void *data, unsigned len)
         };
         SPI_PUSHR(spi->addr) = pushr;
     }
-   return len;
+    return len;
 }
 
-#if 0
 /*******************************************************************************/
 static void spiRead(spi_t *spi, void *data, unsigned len)
 /*******************************************************************************/
@@ -181,8 +159,6 @@ static void spiWriteRead(spi_t *spi, void *dataOut, unsigned lenOut,
 {
     /* To be done */
 }
-#endif
-
 
 /*******************************************************************************/
 int spi_open_r (void *reent, int fd, const char *file, int flags, int mode )
@@ -200,11 +176,21 @@ int spi_open_r (void *reent, int fd, const char *file, int flags, int mode )
         mod = SPI_MODULE_2;
     }
     else {
+        /* Device does not exist */
         ((struct _reent *)reent)->_errno = ENODEV;
         return -1;
     }
-    spiOpen(mod,fd);
-    return fd;
+
+    fd = spiOpen(mod,fd);
+
+    if (fd == -1) {
+        /* Device is already open */
+        ((struct _reent *)reent)->_errno = EPERM;
+        return -1;
+    }
+    else {
+        return fd;
+    }
 }
 
 /*******************************************************************************/
@@ -213,6 +199,8 @@ int spi_ioctl(int fd, int cmd,  int flags)
 /* Todo: return errors if flags or cmd is bad */
 {
     spi_t *spi = spiModuleFromFd(fd);
+
+    if (!spi) return FALSE; /* The fd is not associated with any device */
 
     switch (cmd) {
         case IO_IOCTL_SPI_SET_BAUD:
@@ -279,7 +267,7 @@ int spi_ioctl(int fd, int cmd,  int flags)
             assert(0);
         break;
     }
-    return 1;
+    return TRUE;
 }
 
 /*******************************************************************************/
@@ -287,14 +275,20 @@ int spi_close_r (void *reent, int fd )
 /*******************************************************************************/
 {
     spi_t *spi = spiModuleFromFd(fd);
-    spi->fd = 0;
-    return spi->fd;
+
+    if (spi) {
+        spi->fd = -1;
+        return TRUE;
+    }
+    else {
+        return FALSE;
+    }
 }
 /*******************************************************************************/
 long spi_write_r (void *reent, int fd, const void *buf, int len )
 /*******************************************************************************/
 {
-    return spiWrite( spiModuleFromFd(fd), buf, len);
+    return spiWrite( fd, buf, len);
 }
 /*******************************************************************************/
 long spi_read_r (void *reent, int fd, void *buf, int len )
