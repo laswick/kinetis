@@ -41,10 +41,6 @@ extern uint32_t gpioRead(uint32_t port, uint32_t pin);
 
 /* SPI  ***********************************************************************/
 
-typedef enum spiOpenFlags_e {
-    IO_OPEN_SPI,
-}spiOpenFlags_t;
-
 typedef enum spiIoctlCmds_e {
     IO_IOCTL_SPI_SET_BAUD,             /* Sets the BAUD rate */
     IO_IOCTL_SPI_SET_SCLK_MODE,        /* Sets clock polarity and sample mode. */
