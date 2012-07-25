@@ -14,114 +14,100 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
+typedef enum spiModule_e{
+    SPI_MODULE_0,
+    SPI_MODULE_1,
+    SPI_MODULE_2,
+    NUM_SPI_MODULES,
+} spiModule_t;
+
+typedef struct spi_s {
+    spiMcr_t      mcr;
+    spiCtar_t     ctar0;
+    spiCtar_t     ctar1;
+    spiRser_t     rser;
+    spiPushr_t    pushr;
+    unsigned      addr;
+    int           fd;
+} spi_t;
+
+spi_t spiList[NUM_SPI_MODULES] = {
+    [SPI_MODULE_0] = {
+        .mcr = 0,
+        .ctar0 = 0,
+        .ctar1 = 0,
+        .rser = 0,
+        .pushr = 0,
+        .addr = SPI0_BASE_ADDR,
+        .fd = 0
+    },
+    [SPI_MODULE_1] = {
+        .mcr = 0,
+        .ctar0 = 0,
+        .ctar1 = 0,
+        .rser = 0,
+        .pushr = 0,
+        .addr = SPI1_BASE_ADDR,
+        .fd = 0
+    },
+    [SPI_MODULE_2] = {
+        .mcr = 0,
+        .ctar0 = 0,
+        .ctar1 = 0,
+        .rser = 0,
+        .pushr = 0,
+        .addr = SPI2_BASE_ADDR,
+        .fd = 0
+    },
+};
+
 /*******************************************************************************/
-void spiOpen(spiIF_t *spi)
+static spi_t *spiModuleFromFd(int fd)
 /*******************************************************************************/
 {
-    uint32_t mcr = 0;
-    uint32_t ctar0 = 0;
-    uint32_t ctar1 = 0;
-    uint32_t rser = 0;
-
-    if (spi->ctrlType == SPI_CTRL_TYPE_NORMAL) {        /* SPI Normal Control*/
-
-        /* Set Normal SPI defaults */
-        ctar0 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
-              | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
-              | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
-        ctar1 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
-              | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
-              | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
-
-        /* SPI SCLK Mode */
-        if( spi->ctrl.nml.sclkMode < NUMSPI_SCLK_MODES ) {
-            ctar0 |= spi->ctrl.nml.sclkMode << 25;
-        } else {
-            assert(0);
-        }
-
-        /* SPI Baud Rate */
-        if( spi->ctrl.nml.baudRate < NUM_SPI_BAUDRATES ) {
-              ctar0 |= spi->ctrl.nml.baudRate;
-        } else {
-            assert(0);
-        }
-
-        /* SPI Misc Options */
-        if (spi->ctrl.nml.options & SPI_OPTS_MASTER) {
-          mcr |= SPI_MCR_MSTR;
-        }
-        if (spi->ctrl.nml.options & SPI_OPTS_LSB_FIRST) {
-          ctar0 |= SPI_CTAR_LSBFE;
-        }
-        if (spi->ctrl.nml.options & SPI_OPTS_CONT_SCK_EN) {
-          mcr |= SPI_MCR_CONT_SCKE;
-        }
-        if (spi->ctrl.nml.options & SPI_OPTS_TX_FIFO_DSBL) {
-          mcr |= SPI_MCR_DIS_TXF;
-        }
-        if (spi->ctrl.nml.options & SPI_OPTS_RX_FIFO_DSBL) {
-          mcr |= SPI_MCR_DIS_RXF;
-        }
-        if (spi->ctrl.nml.options & SPI_OPTS_RX_FIFO_OVR_EN) {
-          mcr |= SPI_MCR_ROOE;
-        }
-
-        /* SPI Chip select inactive state*/
-        if( spi->ctrl.nml.csInactState < 0x3F ) {
-            mcr |= spi->ctrl.nml.csInactState << 16;
-        } else {
-            assert(0);
-        }
-
-        /* SPI Frame Size */
-        if( spi->ctrl.nml.frameSize >= SPI_FMSZ_MIN
-            && spi->ctrl.nml.frameSize <= SPI_FMSZ_MAX ) {
-              ctar0 |= (spi->ctrl.nml.frameSize-1) << 27;
-        } else {
-            assert(0);
-        }
+    int i;
+    for (i =0; i < NUM_SPI_MODULES; i++) {
+        if (spiList[i].fd == fd) return &spiList[i];
     }
-    else {                                              /* RAW SPI control */
-        mcr   = spi->ctrl.raw.mcr;
-        ctar0 = spi->ctrl.raw.ctar0;
-        ctar1 = spi->ctrl.raw.ctar0;
-        rser  = spi->ctrl.raw.rser;
-    }
-
-    /* Ready to write config, wake up the asshole
-     * and tell him to respect our authority */
-    if( spi->module < NUM_SPI_MODULES) {
-        switch( spi->module ){
-            case SPI_MODULE_0:
-                SIM_SCGC6 |= SIM_SCGC6_SPI0_ENABLE;
-                spi->modAddr = SPI0_BASE_ADDR;
-            break;
-            case SPI_MODULE_1:
-                SIM_SCGC6 |= SIM_SCGC6_SPI1_ENABLE;
-                spi->modAddr = SPI1_BASE_ADDR;
-            break;
-            case SPI_MODULE_2:
-                SIM_SCGC3 |= SIM_SCGC3_SPI2_ENABLE;
-                spi->modAddr = SPI2_BASE_ADDR;
-            break;
-            default:
-                assert(0);
-            break;
-        }
-
-        /* Write the Register values values */
-        SPI_MCR(spi->modAddr)   = mcr;
-        SPI_CTAR0(spi->modAddr) = ctar0;
-        SPI_CTAR1(spi->modAddr) = ctar1;
-        SPI_RSER(spi->modAddr)  = rser;
-    } else {
-        assert(0);
-    }
+    return NULL;
 }
 
 /*******************************************************************************/
-void spiClose(spiIF_t *spi)
+static int spiOpen(spiModule_t mod, int fd)
+/*******************************************************************************/
+{
+    spi_t *spi = NULL;
+
+    spiList[mod].fd = fd;
+    spi = spiModuleFromFd(fd);
+
+    if (spi != NULL) {
+        /* Set Normal SPI defaults */
+        spi->mcr   = SPI_MCR_MSTR;
+        spi->ctar0 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+                   | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+                   | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
+        spi->ctar1 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+                   | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+                   | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
+        spi->rser  = 0;
+        spi->pushr = 0;
+    }
+    else {
+        return -1;
+    }
+
+    /* Write the Register values values */
+    SPI_MCR  (spi->addr) = spi->mcr;
+    SPI_CTAR0(spi->addr) = spi->ctar0;
+    SPI_CTAR1(spi->addr) = spi->ctar1;
+    SPI_RSER (spi->addr) = spi->rser;
+    return fd;
+}
+
+#if 0
+/*******************************************************************************/
+void spiClose(spi_t *spi)
 /*******************************************************************************/
 {
     if (spi->module < NUM_SPI_MODULES) {
@@ -141,37 +127,19 @@ void spiClose(spiIF_t *spi)
         }
     }
 }
+#endif
+
 /*******************************************************************************/
-void spiWrite(spiIF_t *spi, void *data, unsigned len)
+static unsigned spiWrite(spi_t *spi, const void *data, unsigned len)
 /*******************************************************************************/
 {
     unsigned i;
-    uint16_t *dataPtr = (uint16_t *) data;
+    uint8_t *dataPtr = (uint8_t *) data;
     uint32_t pushr = 0;
-    uint32_t pushrMask = 0;
-
-    /* TODO Remove magic numbers */
-
-    if (spi->ctrlType == SPI_CTRL_TYPE_NORMAL) {      /* Normal SPI control */
-
-        /* SPI Chip select is continuously asserted */
-        if (spi->ctrl.nml.options & SPI_OPTS_PCS_CONT) {
-            pushrMask |= SPI_PUSHR_CONT;
-        }
-        /* SPI Chip select to assert*/
-        if( spi->ctrl.nml.chipSelect < 0x3F ) {
-              pushrMask |= spi->ctrl.nml.chipSelect << 16;
-        } else {
-            assert(0);
-        }
-    }
-    else {                                               /* RAW SPI Control */
-        pushrMask = spi->ctrl.raw.pushr;
-    }
 
    for(i = 0; i < len; i++) {
 
-        pushr = (pushrMask | (uint32_t)(*dataPtr++));
+        pushr = (spi->pushr | (uint32_t)(*dataPtr++));
 
         /* RANT START:
          * I could not use the Transmit fifo full flag (TFFF)! because
@@ -188,41 +156,149 @@ void spiWrite(spiIF_t *spi, void *data, unsigned len)
          * currently in the fifo and comparing it against the
          * max. Small difference yes, but other way is less
          * cycles and more intuitive. */
-        while( ((SPI_SR(spi->modAddr) & SPI_SR_TXCTR)>>12) >=4 ) {
+        while( ((SPI_SR(spi->addr) & SPI_SR_TXCTR)>>12) >=4 ) {
             /* Add NOP here to prevent optimization from removing
              * this dead loop, if we ever turn it on */
             asm volatile("nop");
         };
-        SPI_PUSHR(spi->modAddr) = pushr;
+        SPI_PUSHR(spi->addr) = pushr;
     }
+   return len;
 }
 
+#if 0
 /*******************************************************************************/
-void spiRead(spiIF_t *spi, void *data, unsigned len)
-/*******************************************************************************/
-{
-    /* To be done */
-}
-
-/*******************************************************************************/
-void spiWriteRead(spiIF_t *spi, void *dataOut, unsigned lenOut,
-                                void *dataIn,  unsigned lenIn   )
+static void spiRead(spi_t *spi, void *data, unsigned len)
 /*******************************************************************************/
 {
     /* To be done */
 }
 
+/*******************************************************************************/
+static void spiWriteRead(spi_t *spi, void *dataOut, unsigned lenOut,
+                                     void *dataIn,  unsigned lenIn)
+/*******************************************************************************/
+{
+    /* To be done */
+}
+#endif
 
 
-int spi_open_r (struct _reent *r, const char *path, int flags, int mode ) {
-    return 3;
+/*******************************************************************************/
+int spi_open_r (void *reent, int fd, const char *file, int flags, int mode )
+/*******************************************************************************/
+{
+    spiModule_t mod;
+
+    if (strcmp(file, "spi0") == 0 ) {
+        mod = SPI_MODULE_0;
+    }
+    else if (strcmp(file, "spi1") == 0) {
+        mod = SPI_MODULE_1;
+    }
+    else if (strcmp(file, "spi2") == 0) {
+        mod = SPI_MODULE_2;
+    }
+    else {
+        ((struct _reent *)reent)->_errno = ENODEV;
+        return -1;
+    }
+    spiOpen(mod,fd);
+    return fd;
 }
-int spi_close_r (struct _reent *r, int fd ) {
-    return 3;
+
+/*******************************************************************************/
+int spi_ioctl(int fd, int cmd,  int flags)
+/*******************************************************************************/
+/* Todo: return errors if flags or cmd is bad */
+{
+    spi_t *spi = spiModuleFromFd(fd);
+
+    switch (cmd) {
+        case IO_IOCTL_SPI_SET_BAUD:
+            if (flags < NUM_SPI_BAUDRATES) {
+                spi->ctar0 &= ~(SPI_CTAR_BR);
+                spi->ctar0 |= flags;
+                SPI_CTAR0(spi->addr) = spi->ctar0;
+            }
+        break;
+        case IO_IOCTL_SPI_SET_SCLK_MODE:
+            if (flags < NUMSPI_SCLK_MODES) {
+                spi->ctar0 &= ~(SPI_CTAR_CPHA | SPI_CTAR_CPOL);
+                spi->ctar0 |= flags << 25;
+                SPI_CTAR0(spi->addr) = spi->ctar0;
+            }
+        break;
+        case IO_IOCTL_SPI_SET_FMSZ:
+            if (flags >= SPI_FMSZ_MIN && flags <= SPI_FMSZ_MAX) {
+                spi->ctar0 &= ~(SPI_CTAR_FMSZ);
+                spi->ctar0 |= (flags-1) << 27;
+                SPI_CTAR0(spi->addr) = spi->ctar0;
+            }
+        break;
+        case IO_IOCTL_SPI_SET_OPTS:
+            if (flags & SPI_OPTS_MASTER) {
+                spi->mcr |= SPI_MCR_MSTR;
+                SPI_MCR(spi->addr) = spi->mcr;
+            }
+            if (flags & SPI_OPTS_LSB_FIRST) {
+                spi->ctar0 |= SPI_CTAR_LSBFE;
+                SPI_CTAR0(spi->addr) = spi->ctar0;
+            }
+            if (flags & SPI_OPTS_CONT_SCK_EN) {
+                spi->mcr |= SPI_MCR_CONT_SCKE;
+                SPI_MCR(spi->addr) = spi->mcr;
+            }
+            if (flags & SPI_OPTS_TX_FIFO_DSBL) {
+                spi->mcr |= SPI_MCR_DIS_TXF;
+                SPI_MCR(spi->addr) = spi->mcr;
+            }
+            if (flags & SPI_OPTS_RX_FIFO_DSBL) {
+                spi->mcr |= SPI_MCR_DIS_RXF;
+                SPI_MCR(spi->addr) = spi->mcr;
+            }
+            if (flags & SPI_OPTS_RX_FIFO_OVR_EN) {
+                spi->mcr |= SPI_MCR_ROOE;
+                SPI_MCR(spi->addr) = spi->mcr;
+            }
+        break;
+        case IO_IOCTL_SPI_SET_CS:
+            if( flags < 0x3F ) {
+                spi->pushr &= ~(0x3F << 16);
+                spi->pushr |= flags << 16;
+            }
+        break;
+        case IO_IOCTL_SPI_SET_CS_INACT_STATE:
+            if( flags < 0x3F ) {
+                spi->mcr &= ~(0x3F << 16);
+                spi->mcr |= flags << 16;
+                SPI_MCR(spi->addr) = spi->mcr;
+            }
+        break;
+        default:
+            assert(0);
+        break;
+    }
+    return 1;
 }
-long spi_write_r (struct _reent *r, int fd, const void *ptr, int len ){
-    return 3;
+
+/*******************************************************************************/
+int spi_close_r (void *reent, int fd )
+/*******************************************************************************/
+{
+    spi_t *spi = spiModuleFromFd(fd);
+    spi->fd = 0;
+    return spi->fd;
 }
-long spi_read_r (struct _reent *r, int fd, const void *ptr, int len ){
-    return 3;
+/*******************************************************************************/
+long spi_write_r (void *reent, int fd, const void *buf, int len )
+/*******************************************************************************/
+{
+    return spiWrite( spiModuleFromFd(fd), buf, len);
+}
+/*******************************************************************************/
+long spi_read_r (void *reent, int fd, void *buf, int len )
+/*******************************************************************************/
+{
+    return -1;
 }

@@ -15,6 +15,8 @@
 *******************************************************************************/
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -22,38 +24,20 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
-/* Example using normal control, much easier to understand */
-spiIF_t spi2 = {
-    .ctrlType              = SPI_CTRL_TYPE_NORMAL,
-    .module                = SPI_MODULE_2,
-    .ctrl.nml.sclkMode     = SPI_SCLK_MODE_0,
-    .ctrl.nml.baudRate     = SPI_BAUDRATE_CLKDIV_256,
-    .ctrl.nml.options      = SPI_OPTS_MASTER,
-    .ctrl.nml.chipSelect   = SPI_CS_0,
-    .ctrl.nml.csInactState = SPI_CS_0_INACT_HIGH,
-    .ctrl.nml.frameSize    = 8,
-};
+char shaun[] = { 'S','h','a','u','n' };
 
-/* Example using raw control */
-spiIF_t spi0 = {
-    .ctrlType        = SPI_CTRL_TYPE_RAW,
-    .module          = SPI_MODULE_0,
-    .ctrl.raw.mcr    = SPI_MCR_MSTR | SPI_MCR_PCSIS0,
-    .ctrl.raw.ctar0  = SPI_CTAR_FMSZ | SPI_CTAR_CPOL | SPI_CTAR_CSSCLK
-                     | SPI_CTAR_ASC  | SPI_CTAR_DT   | SPI_CTAR_BR3,
-    .ctrl.raw.ctar1  = 0,
-    .ctrl.raw.rser   = 0,
-    .ctrl.raw.pushr  = SPI_PUSHR_PCS0,
-};
+/* Working Commands */
+char scrCmdClear[]      = {0x1B, '[','0','j' };
+char scrCmdReset[]      = {0x1B, '[','0','*' };
+char scrCmdDispMode16[] = {0x1B, '[','0','h' };
+char scrCmdDispMode40[] = {0x1B, '[','1','h' };
+char scrCmdGotoLine1[]  = {0x1B, '[','0',';','0','0','H' };
+char scrCmdGotoLine2[]  = {0x1B, '[','1',';','0','0','H' };
+char scrCmdScrollL1[]   = {0x1B, '[','0','1','@' };
 
-uint16_t shaun[] = { 'S','h','a','u','n' };
-
-uint16_t scrCmdClear[] = {0x1B, '[','0','j',0 };
-uint16_t scrCmdReset[] = {0x1B, '[','0','*',0 };
-uint16_t scrCmdGotoLine2[] = {0x1B, '[','1',';','0','H' };
-uint16_t scrCmdBacklightOn[] = {0x1B, '[','3','e',0 };
-uint16_t scrCmdWrap16[] = {0x1B, '[','0','h',0 };
-uint16_t scrCmdScrollR1[] = {0x1B, '[','1','A',0 };
+/* Screwed up commands */
+char scrCmdDispEnBklghtOn[]  = {0x1B, '[','3','e' };
+char scrCmdScrollR1[]        = {0x1B, '[','0','1','A' };
 
 #define SPI2_SCK_PIN    12
 #define SPI2_SCK_PORT   PORTD
@@ -96,6 +80,9 @@ static void delay(void)
 
 int main(void)
 {
+    int fd;
+    int i;
+
     /* Configure the gpio's*/
     SIM_SCGC5 |= (SIM_PORTD_ENABLE|SIM_PORTA_ENABLE); /* Gotta satisfy the bastard */
 
@@ -105,39 +92,73 @@ int main(void)
     PORT_PCR(SPI2_SOUT_PORT, SPI2_SOUT_PIN) = SPI2_SOUT_MUX;
     PORT_PCR(SPI2_PCS0_PORT, SPI2_PCS0_PIN) = SPI2_PCS0_MUX;
 
-    /* Configure Pins SPI 2 */
+    /* Configure Pins SPI 1 */
     PORT_PCR(SPI0_SCK_PORT, SPI0_SCK_PIN) = SPI0_SCK_MUX;
     PORT_PCR(SPI0_SIN_PORT, SPI0_SIN_PIN) = SPI0_SIN_MUX;
     PORT_PCR(SPI0_SOUT_PORT, SPI0_SOUT_PIN) = SPI0_SOUT_MUX;
     PORT_PCR(SPI0_PCS0_PORT, SPI0_PCS0_PIN) = SPI0_PCS0_MUX;
 
-    open("spi", 0);
+    /* Power the SPI Module */
+    /* SIM_SCGC6 |= SIM_SCGC6_SPI0_ENABLE; */
+    /* SIM_SCGC6 |= SIM_SCGC6_SPI1_ENABLE; */
+    SIM_SCGC3 |= SIM_SCGC3_SPI2_ENABLE;
 
-    /* Open & configure the spi, then write to the screen */
-    spiOpen(&spi2);
-    spiOpen(&spi0);
+    fd = open("spi2", 0, 0);
 
-    spiWrite(&spi2, scrCmdReset, sizeof(scrCmdReset)/2);
-    spiWrite(&spi2, scrCmdClear, sizeof(scrCmdClear)/2);
-/*    spiWrite(&spi, scrCmdBacklightOn, sizeof(scrCmdBacklightOn)/2); */
-/*    spiWrite(&spi, scrCmdWrap16, sizeof(scrCmdWrap16)/2); */
+    ioctl(fd, IO_IOCTL_SPI_SET_BAUD, SPI_BAUDRATE_CLKDIV_256);
+    ioctl(fd, IO_IOCTL_SPI_SET_SCLK_MODE, SPI_SCLK_MODE_0);
+    ioctl(fd, IO_IOCTL_SPI_SET_FMSZ, 8);
+    ioctl(fd, IO_IOCTL_SPI_SET_OPTS, SPI_OPTS_MASTER);
+    ioctl(fd, IO_IOCTL_SPI_SET_CS, SPI_CS_0);
+    ioctl(fd, IO_IOCTL_SPI_SET_CS_INACT_STATE, SPI_CS_0_INACT_HIGH);
+
+    write(fd, scrCmdReset, sizeof(scrCmdReset));
+    delay();/* Device needs an unknown amount of time to reset .. */
+    write(fd, scrCmdDispMode40, sizeof(scrCmdDispMode40));
     delay();
-    spiWrite(&spi2, shaun, sizeof(shaun)/2);
-    delay();
-    spiWrite(&spi2, scrCmdGotoLine2, sizeof(scrCmdGotoLine2)/2);
-    delay();
-    spiWrite(&spi2, shaun, sizeof(shaun)/2);
+    write(fd, scrCmdDispEnBklghtOn, sizeof(scrCmdDispEnBklghtOn));
     delay();
 
     for (;;) {
-        spiWrite(&spi2, scrCmdScrollR1, sizeof(scrCmdScrollR1)/2);
+        write(fd, scrCmdClear, sizeof(scrCmdClear));
         delay();
         delay();
         delay();
+        write(fd, scrCmdGotoLine1, sizeof(scrCmdGotoLine1));
+        write(fd, shaun, sizeof(shaun));
+        write(fd, " ", 1);
+        write(fd, shaun, sizeof(shaun));
+        write(fd, " ", 1);
+        write(fd, shaun, sizeof(shaun));
+        write(fd, " ", 1);
+        write(fd, shaun, sizeof(shaun));
+        write(fd, " ", 1);
+        write(fd, scrCmdGotoLine2, sizeof(scrCmdGotoLine2));
+        write(fd, shaun, sizeof(shaun));
+        write(fd, " ", 1);
+        write(fd, shaun, sizeof(shaun));
+        write(fd, " ", 1);
+        write(fd, shaun, sizeof(shaun));
+        write(fd, " ", 1);
+        write(fd, shaun, sizeof(shaun));
+        write(fd, " ", 1);
+        delay();
+        delay();
+        delay();
+
+        for( i = 0; i < 10;i++) {
+            write(fd, scrCmdScrollL1, sizeof(scrCmdScrollL1));
+            delay();
+            delay();
+        }
+        for( i = 0; i < 10;i++) {
+            write(fd, scrCmdScrollR1, sizeof(scrCmdScrollR1));
+            delay();
+            delay();
+        }
     }
 
     /* Should never happen */
-    spiClose(&spi0);
-    spiClose(&spi2);
+    close(fd);
     return 0;
 }

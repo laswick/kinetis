@@ -13,6 +13,7 @@
 #endif
 
 extern void assert_(const char *file, const int line);
+extern int ioctl (int fd, int cmd, int flags);
 
 #define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
 
@@ -40,16 +41,18 @@ extern uint32_t gpioRead(uint32_t port, uint32_t pin);
 
 /* SPI  ***********************************************************************/
 
-/*********** Control the SPI module in can be done in 2 ways. ****************
- * Normal Mode: Makes the interface simple and does not require the user
- *              to understand the register set for the SPI module. The
- *              disadvantage being that some of the more obscure features are
- *              not controllable.
- * Raw Mode: All the features are available to the user, in fact the user
- *           writes to a 'shadow' register of the SPI moudle. All features
- *           of the SPI module are available, however intimite knowledge of
- *           the SPI register set is required.
- *****************************************************************************/
+typedef enum spiOpenFlags_e {
+    IO_OPEN_SPI,
+}spiOpenFlags_t;
+
+typedef enum spiIoctlCmds_e {
+    IO_IOCTL_SPI_SET_BAUD,             /* Sets the BAUD rate */
+    IO_IOCTL_SPI_SET_SCLK_MODE,        /* Sets clock polarity and sample mode. */
+    IO_IOCTL_SPI_SET_FMSZ,             /* */
+    IO_IOCTL_SPI_SET_OPTS,             /* */
+    IO_IOCTL_SPI_SET_CS,               /* */
+    IO_IOCTL_SPI_SET_CS_INACT_STATE,   /* */
+}spiIoctlrCmds_t;
 
 /* Mode select for the spi module */
 typedef enum {
@@ -115,64 +118,11 @@ typedef enum {
 #define SPI_FMSZ_MAX 16
 #define SPI_FMSZ_MIN 3
 
-/* Select which SPI module to use */
-typedef enum {
-    SPI_MODULE_0,
-    SPI_MODULE_1,
-    SPI_MODULE_2,
-    NUM_SPI_MODULES
-} spiModule_t;
-
-/* Select the control mode */
-typedef enum {
-    SPI_CTRL_TYPE_NORMAL,
-    SPI_CTRL_TYPE_RAW,
-    NUM_SPI_CTRLS
-} spiCtrlType_t;
-
-/* RAW SPI Control */
-/* See kinetis.h for contants to use for this struct  */
-typedef struct spiRaw_s {
-    spiMcr_t   mcr;
-    spiCtar_t  ctar0;
-    spiCtar_t  ctar1;
-    spiRser_t  rser;
-    spiPushr_t pushr;
-} spiRaw_t;
-
-/* Normal SPI Control */
-typedef struct spiNml_s {
-    spiSclkMode_t       sclkMode;
-    spiBaudRate_t       baudRate;
-    spiOptions_t        options;
-    spiChipSelect_t     chipSelect;
-    spiCSInactState_t   csInactState;
-    unsigned            frameSize;   /* See SPI_FMSZ_MAX/MIN for limits */
-} spiNml_t;
-
-typedef struct spiIF_s {
-    spiCtrlType_t ctrlType;
-    spiModule_t   module;
-    unsigned      modAddr;
-
-    union {
-        spiRaw_t  raw;
-        spiNml_t  nml;
-    }ctrl;
-
-} spiIF_t;
-
-void spiOpen(spiIF_t *spi);
-void spiClose(spiIF_t *spi);
-void spiWrite(spiIF_t *spi, void *data, unsigned len);
-void spiRead(spiIF_t *spi, void *data, unsigned len);
-void spiWriteRead(spiIF_t *spi, void *dataOut, unsigned lenOut,
-                                void *dataIn,  unsigned lenIn   );
-
-int  spi_open_r  (struct _reent *r, const char *path, int flags, int mode );
-int  spi_close_r (struct _reent *r, int fd );
-long spi_write_r (struct _reent *r, int fd, const void *ptr, int len );
-long spi_read_r  (struct _reent *r, int fd, const void *ptr, int len );
+int  spi_open_r  ( void *reent, int fd, const char *file, int flags, int mode );
+int  spi_ioctl   (              int fd, int cmd,   int flags );
+int  spi_close_r ( void *reent, int fd );
+long spi_write_r ( void *reent, int fd, const void *buf, int len );
+long spi_read_r  ( void *reent, int fd,       void *buf, int len );
 
 /* EXAMPLE *******************************************************************/
 
