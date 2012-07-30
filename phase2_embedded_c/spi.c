@@ -33,34 +33,44 @@ typedef struct spi_s {
 
 spi_t spiList[NUM_SPI_MODULES] = {
     [SPI_MODULE_0] = {
-        .mcr = 0,
-        .ctar0 = 0,
-        .ctar1 = 0,
-        .rser = 0,
+        .mcr   = SPI_MCR_MSTR,
+        .ctar0 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2,
+        .ctar1 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2,
+        .rser  = 0,
         .pushr = 0,
-        .addr = SPI0_BASE_ADDR,
-        .fd = -1
+        .addr  = SPI0_BASE_ADDR,
     },
     [SPI_MODULE_1] = {
-        .mcr = 0,
-        .ctar0 = 0,
-        .ctar1 = 0,
-        .rser = 0,
+        .mcr   = SPI_MCR_MSTR,
+        .ctar0 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2,
+        .ctar1 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2,
+        .rser  = 0,
         .pushr = 0,
-        .addr = SPI1_BASE_ADDR,
-        .fd = -1
+        .addr  = SPI1_BASE_ADDR,
     },
     [SPI_MODULE_2] = {
-        .mcr = 0,
-        .ctar0 = 0,
-        .ctar1 = 0,
-        .rser = 0,
+        .mcr   = SPI_MCR_MSTR,
+        .ctar0 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2,
+        .ctar1 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
+               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
+               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2,
+        .rser  = 0,
         .pushr = 0,
-        .addr = SPI2_BASE_ADDR,
-        .fd = -1
+        .addr  = SPI2_BASE_ADDR,
     },
 };
 
+#if 0
 /*******************************************************************************/
 static spi_t *spiModuleFromFd(int fd)
 /*******************************************************************************/
@@ -71,50 +81,43 @@ static spi_t *spiModuleFromFd(int fd)
     }
     return NULL;
 }
+#endif
 
 /*******************************************************************************/
-static int spiOpen(spiModule_t mod, int fd)
+static int spiOpen(spiModule_t mod, devoptab_t *dot)
 /*******************************************************************************/
 {
-    spi_t *spi = spiModuleFromFd(fd);
+    spi_t *spi;
 
-    if (spi) return -1; /* Device is already open */
+    if (dot->priv) return FALSE; /* Device is already open */
 
-    /* Assign the file descriptor to the device */
-    spiList[mod].fd = fd;
-    spi = spiModuleFromFd(fd);
+    spi = (spi_t *) malloc(sizeof(spi_t));
 
-    if (!spi) return -1; /* No device for given fd ? */
+    if (!spi) return FALSE;
+    else dot->priv = spi;
 
-    /* Set Normal SPI defaults */
-    spi->mcr   = SPI_MCR_MSTR;
-    spi->ctar0 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
-               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
-               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
-    spi->ctar1 = SPI_CTAR_CSSCLK0 | SPI_CTAR_CSSCLK1  | SPI_CTAR_CSSCLK2
-               | SPI_CTAR_ASC0    | SPI_CTAR_ASC1     | SPI_CTAR_ASC2
-               | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2;
-    spi->rser  = 0;
-    spi->pushr = 0;
+    /* Set SPI defaults */
+    memcpy(spi, &spiList[mod], sizeof(spi_t));
 
     /* Write the Register values values */
     SPI_MCR  (spi->addr) = spi->mcr;
     SPI_CTAR0(spi->addr) = spi->ctar0;
     SPI_CTAR1(spi->addr) = spi->ctar1;
     SPI_RSER (spi->addr) = spi->rser;
-    return fd;
+    return TRUE;
 }
 
 /*******************************************************************************/
-static unsigned spiWrite(int fd, const void *data, unsigned len)
+static unsigned spiWrite(devoptab_t *dot, const void *data, unsigned len)
 /*******************************************************************************/
 {
     unsigned i;
     uint8_t *dataPtr = (uint8_t *) data;
     uint32_t pushr = 0;
-    spi_t *spi = spiModuleFromFd(fd);
+    spi_t *spi;
 
-    if (!spi) return 0; /* The fd is not associated with any device */
+    if (!dot || !dot->priv) return FALSE;
+    else spi = (spi_t *) dot->priv;
 
     for(i = 0; i < len; i++) {
 
@@ -161,44 +164,47 @@ static void spiWriteRead(spi_t *spi, void *dataOut, unsigned lenOut,
 }
 
 /*******************************************************************************/
-int spi_open_r (void *reent, int fd, const char *file, int flags, int mode )
+int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 /*******************************************************************************/
 {
     spiModule_t mod;
 
-    if (strcmp(file, "spi0") == 0 ) {
+    if (!dot || !dot->name) {
+        /* errno ? */
+        return FALSE;
+    }
+
+    if (strcmp(DEVOPTAB_SPI0_STR, dot->name) == 0 ) {
         mod = SPI_MODULE_0;
     }
-    else if (strcmp(file, "spi1") == 0) {
+    else if (strcmp(DEVOPTAB_SPI1_STR, dot->name) == 0) {
         mod = SPI_MODULE_1;
     }
-    else if (strcmp(file, "spi2") == 0) {
+    else if (strcmp(DEVOPTAB_SPI2_STR, dot->name) == 0) {
         mod = SPI_MODULE_2;
     }
     else {
         /* Device does not exist */
         ((struct _reent *)reent)->_errno = ENODEV;
-        return -1;
+        return FALSE;
     }
 
-    fd = spiOpen(mod,fd);
-
-    if (fd == -1) {
-        /* Device is already open */
+    if (spiOpen(mod,dot)) {
+        return TRUE;
+    } else {
+        /* Device is already open, is this an issue or not? Maybe after a malloc
+         * structures it wont matter */
         ((struct _reent *)reent)->_errno = EPERM;
-        return -1;
-    }
-    else {
-        return fd;
+        return FALSE;
     }
 }
 
 /*******************************************************************************/
-int spi_ioctl(int fd, int cmd,  int flags)
+int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
 /*******************************************************************************/
 /* Todo: return errors if flags or cmd is bad */
 {
-    spi_t *spi = spiModuleFromFd(fd);
+    spi_t *spi = dot->priv;
 
     if (!spi) return FALSE; /* The fd is not associated with any device */
 
@@ -271,13 +277,14 @@ int spi_ioctl(int fd, int cmd,  int flags)
 }
 
 /*******************************************************************************/
-int spi_close_r (void *reent, int fd )
+int spi_close_r (void *reent, devoptab_t *dot )
 /*******************************************************************************/
 {
-    spi_t *spi = spiModuleFromFd(fd);
+    spi_t *spi = dot->priv;
 
     if (spi) {
-        spi->fd = -1;
+        dot->priv = NULL;
+        free(spi);
         return TRUE;
     }
     else {
@@ -285,13 +292,14 @@ int spi_close_r (void *reent, int fd )
     }
 }
 /*******************************************************************************/
-long spi_write_r (void *reent, int fd, const void *buf, int len )
+long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
 /*******************************************************************************/
 {
-    return spiWrite( fd, buf, len);
+    /* Just put in the regular write function? */
+    return spiWrite(dot, buf, len);
 }
 /*******************************************************************************/
-long spi_read_r (void *reent, int fd, void *buf, int len )
+long spi_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 /*******************************************************************************/
 {
     return -1;

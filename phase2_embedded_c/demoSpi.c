@@ -86,13 +86,13 @@ int main(void)
     /* Configure the gpio's*/
     SIM_SCGC5 |= (SIM_PORTD_ENABLE|SIM_PORTA_ENABLE); /* Gotta satisfy the bastard */
 
-    /* Configure Pins for SPI 0 */
+    /* Configure Pins for SPI 2 */
     PORT_PCR(SPI2_SCK_PORT, SPI2_SCK_PIN) = SPI2_SCK_MUX;
     PORT_PCR(SPI2_SIN_PORT, SPI2_SIN_PIN) = SPI2_SIN_MUX;
     PORT_PCR(SPI2_SOUT_PORT, SPI2_SOUT_PIN) = SPI2_SOUT_MUX;
     PORT_PCR(SPI2_PCS0_PORT, SPI2_PCS0_PIN) = SPI2_PCS0_MUX;
 
-    /* Configure Pins SPI 1 */
+    /* Configure Pins SPI 0 */
     PORT_PCR(SPI0_SCK_PORT, SPI0_SCK_PIN) = SPI0_SCK_MUX;
     PORT_PCR(SPI0_SIN_PORT, SPI0_SIN_PIN) = SPI0_SIN_MUX;
     PORT_PCR(SPI0_SOUT_PORT, SPI0_SOUT_PIN) = SPI0_SOUT_MUX;
