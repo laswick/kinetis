@@ -558,7 +558,7 @@ c_runtime_setup:
 
     ldr r0, =_data_start
     ldr r1, =_data_end
-    ldr r2, =_text_end
+    ldr r2, =_data_load
 
 data_loop:
     cmp r0, r1
@@ -614,6 +614,20 @@ stack_loop:
     itt     lt
     strlt   r2, [r0], #4
     blt     stack_loop
+
+    /*
+     * Relocate the .ramcode section from FLASH to SRAM
+     */
+    ldr r0, =_ramcode_start
+    ldr r1, =_ramcode_end
+    ldr r2, =_ramcode_load
+
+ramcode_loop:
+    cmp r0, r1
+    ittt    lt
+    ldrlt   r3, [r2], #4
+    strlt   r3, [r0], #4
+    blt     ramcode_loop
 
 call_user_asm_code:
     bl main

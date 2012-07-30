@@ -1,3 +1,5 @@
+#ifndef __HARDWARE_H__
+#define __HARDWARE_H__
 /*******************************************************************************
 *
 * hardware.h
@@ -120,6 +122,14 @@ int  spi_close_r ( void *reent, int fd );
 long spi_write_r ( void *reent, int fd, const void *buf, int len );
 long spi_read_r  ( void *reent, int fd,       void *buf, int len );
 
+/* FLASH **********************************************************************/
+typedef struct {
+} flashConfig_t;
+
+extern int32_t flashInit(const flashConfig_t *cfg);
+extern int32_t flashEraseSector(uint32_t addr);
+extern int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords);
+
 /* EXAMPLE *******************************************************************/
 
 typedef struct {
@@ -183,30 +193,5 @@ extern void    setStdout(uartIF_t *uartIF);
 #else
 #error Undefined Hardware Platform
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif
 
