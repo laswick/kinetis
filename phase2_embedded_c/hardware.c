@@ -27,6 +27,7 @@
 void assert_(const char *file, const int line) { }
 
 /* POSIX Interface ************************************************************/
+/* http://neptune.billgatliff.com/newlib.html */
 
 /* Error Stuff */
 #define errno (*__errno())
@@ -37,24 +38,15 @@ int * __errno () {
     return &_impure_ptr->_errno;
 }
 
-typedef struct {
-    const char *name;
-    int  (*open_r  )( void *reent, int fd, const char *file, int flags, int mode );
-    int  (*ioctl)   (              int fd, int cmd,   int flags );
-    int  (*close_r )( void *reent, int fd );
-    long (*write_r )( void *reent, int fd, const void *buf, int len );
-    long (*read_r  )( void *reent, int fd,       void *buf, int len );
-} devoptab_t;
+devoptab_t devoptab_spi0   = { "spi0", spi_open_r,  spi_ioctl, spi_close_r,
+                                             spi_write_r, spi_read_r, NULL  };
+devoptab_t devoptab_spi1   = { "spi1", spi_open_r,  spi_ioctl, spi_close_r,
+                                             spi_write_r, spi_read_r, NULL  };
+devoptab_t devoptab_spi2   = { "spi2", spi_open_r,  spi_ioctl, spi_close_r,
+                                             spi_write_r, spi_read_r, NULL  };
+devoptab_t devoptab_uart1 = { "uart1", 0, 0, 0, 0, 0 };
 
-const devoptab_t devoptab_spi0   = { "spi0", spi_open_r,  spi_ioctl, spi_close_r,
-                                             spi_write_r, spi_read_r };
-const devoptab_t devoptab_spi1   = { "spi1", spi_open_r,  spi_ioctl, spi_close_r,
-                                             spi_write_r, spi_read_r };
-const devoptab_t devoptab_spi2   = { "spi2", spi_open_r,  spi_ioctl, spi_close_r,
-                                             spi_write_r, spi_read_r };
-const devoptab_t devoptab_uart1 = { "uart1", 0, 0, 0, 0 };
-
-const devoptab_t *devoptab_list[] = {
+devoptab_t *devoptab_list[] = {
     &devoptab_uart1, /* standard input */
     &devoptab_uart1, /* standard output */
     &devoptab_uart1, /* standard error */
@@ -82,7 +74,7 @@ int _open_r (struct _reent *ptr, const char *file, int flags, int mode )
      *     then invoke the device's open_r() method */
 
     if( fd != -1 ) {
-        fd = devoptab_list[fd]->open_r( ptr, fd, file, flags, mode );
+        devoptab_list[fd]->open_r( ptr, devoptab_list[fd], mode, flags );
     } else {
         /* it doesn't exist in the devoptab list! */
         ptr->_errno = ENODEV;
@@ -93,21 +85,21 @@ int _open_r (struct _reent *ptr, const char *file, int flags, int mode )
 
 int _close_r ( struct _reent *ptr, int fd )
 {
-    return devoptab_list[fd]->close_r( ptr, fd );
+    return devoptab_list[fd]->close_r(ptr, devoptab_list[fd]);
 }
 
 int ioctl (int fd, int cmd, int flags)
 {
-    return devoptab_list[fd]->ioctl(fd, cmd, flags);
+    return devoptab_list[fd]->ioctl(devoptab_list[fd], cmd, flags);
 }
 
 long _write_r (struct _reent *ptr, int fd, const void *buf, size_t cnt )
 {
-    return devoptab_list[fd]->write_r( ptr, fd, buf, cnt );
+    return devoptab_list[fd]->write_r(ptr, devoptab_list[fd], buf, cnt);
 }
 
 long _read_r (struct _reent *ptr, int fd, void *buf, size_t cnt )
 {
-    return devoptab_list[fd]->read_r( ptr, fd, buf, cnt );
+    return devoptab_list[fd]->read_r(ptr, devoptab_list[fd], buf, cnt);
 }
 

@@ -15,6 +15,16 @@
 extern void assert_(const char *file, const int line);
 extern int ioctl (int fd, int cmd, int flags);
 
+typedef struct devoptab_s {
+    const char *name;
+    int  (*open_r )( void *reent, struct devoptab_s *dot, int mode, int flags );
+    int  (*ioctl  )(              struct devoptab_s *dot, int cmd,  int flags );
+    int  (*close_r)( void *reent, struct devoptab_s *dot );
+    long (*write_r)( void *reent, struct devoptab_s *dot, const void *buf, int len );
+    long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf, int len );
+    void *priv;
+} devoptab_t;
+
 #define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
 
 /* GPIO ***********************************************************************/
@@ -114,11 +124,15 @@ typedef enum {
 #define SPI_FMSZ_MAX 16
 #define SPI_FMSZ_MIN 3
 
-int  spi_open_r  ( void *reent, int fd, const char *file, int flags, int mode );
-int  spi_ioctl   (              int fd, int cmd,   int flags );
-int  spi_close_r ( void *reent, int fd );
-long spi_write_r ( void *reent, int fd, const void *buf, int len );
-long spi_read_r  ( void *reent, int fd,       void *buf, int len );
+#define DEVOPTAB_SPI0_STR    "spi0"
+#define DEVOPTAB_SPI1_STR    "spi1"
+#define DEVOPTAB_SPI2_STR    "spi2"
+
+int  spi_open_r  ( void *reent, devoptab_t *dot,  int mode,  int flags );
+int  spi_ioctl   (              devoptab_t *dot,  int cmd,   int flags );
+int  spi_close_r ( void *reent, devoptab_t *dot );
+long spi_write_r ( void *reent, devoptab_t *dot, const void *buf, int len );
+long spi_read_r  ( void *reent, devoptab_t *dat,       void *buf, int len );
 
 /* EXAMPLE *******************************************************************/
 
