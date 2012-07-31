@@ -27,19 +27,31 @@ SECTIONS
         *(.default_handlers)
 
         *(.text*)
+        *(.rodata*)
     } > FLASH
 
     . = ALIGN(4);
     _text_end = .;
 
-    .data : AT (_text_end)
+    .data :
     {
         . = ALIGN(4);
+        _data_load  = LOADADDR(.data);
         _data_start = .;
         *(.data*)
         . = ALIGN(4);
         _data_end = .;
-    } > SRAM
+    }  > SRAM AT>FLASH
+
+    .ramcode :
+    {
+        . = ALIGN(4);
+        _ramcode_load = LOADADDR(.ramcode);
+        _ramcode_start = .;
+        *(.ramcode*)
+        . = ALIGN(4);
+        _ramcode_end = .;
+    } > SRAM AT>FLASH
 
     .bss :
     {

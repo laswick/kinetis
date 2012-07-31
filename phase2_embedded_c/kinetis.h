@@ -316,7 +316,6 @@ typedef struct {
 /*******************************************************************************
 * SPI
 *******************************************************************************/
-
 typedef enum {
     SPI_MCR_MSTR      =    1 << 31, /* R/W - 0*/
     SPI_MCR_CONT_SCKE =    1 << 30, /* R/W - 0*/
@@ -512,5 +511,75 @@ typedef enum {
 #define SPI_RSER(addr)   (*(volatile uint32_t *) (addr + 0x30))
 #define SPI_PUSHR(addr)  (*(volatile uint32_t *) (addr + 0x34))
 
+/******************************************************************************
+ * FTFL FLASH
+ *****************************************************************************/
+typedef enum {
+    FTFL_MGSTAT0    = BIT_0, /* R   - 0 */
+    FTFL_FPVIOL     = BIT_4, /* R/W - 0 */
+    FTFL_ACCERR     = BIT_5, /* R/W - 0 */
+    FTFL_RDCOLERR   = BIT_6, /* R/W - 0 */
+    FTFL_CCIF       = BIT_7, /* R/W - 0 */
+} ftflFSTAT_t;
+
+typedef enum {
+    FTFL_EEERDY     = BIT_0, /* R   - 0 */
+    FTFL_RAMRDY     = BIT_1, /* R   - 0 */
+    FTFL_PFLSH      = BIT_2, /* R   - 0 */
+    FTFL_SWAP       = BIT_3, /* R   - 0 */
+    FTFL_ERSSUSP    = BIT_4, /* R/W - 0 */
+    FTFL_ERSAREQ    = BIT_5, /* R   - 0 */
+    FTFL_RDCOLLIE   = BIT_6, /* R/W - 0 */
+    FTFL_CCIE       = BIT_7, /* R/W - 0 */
+} ftflFCNFG_t;
+
+typedef enum {
+    FTFL_SEC        = BIT_1 | BIT_0, /* R   - 0 */
+    FTFL_FSLACC     = BIT_3 | BIT_2, /* R   - 0 */
+    FTFL_MEEN       = BIT_5 | BIT_4, /* R   - 0 */
+    FTFL_KEYEN      = BIT_7 | BIT_6, /* R   - 0 */
+} ftflFSEC_t;
+
+typedef enum {
+    FTFL_CMD_READ_1S_BLOCK      = 0x00,
+    FTFL_CMD_READ_1S_SECT       = 0x01,
+    FTFL_CMD_PRGRM_CHECK        = 0x02,
+    FTFL_CMD_READ_RESOURCE      = 0x03,
+    FTFL_CMD_PRGRM_LONGWORD     = 0x06,
+    FTFL_CMD_ERASE_FLASH_BLOCK  = 0x08,
+    FTFL_CMD_ERASE_FLASH_SECT   = 0x09,
+    FTFL_CMD_PRGRM_SECT         = 0x0B,
+    FTFL_CMD_READ_1S_ALL_BLOCKS = 0x40,
+    FTFL_CMD_READ_ONCE          = 0x41,
+    FTFL_CMD_PRGRM_ONCE         = 0x43,
+    FTFL_CMD_ERASE_ALL_BLOCKS   = 0x44,
+    FTFL_CMD_VERIFY_BACKDOOR    = 0x45,
+    FTFL_CMD_PRGRM_PARTITION    = 0x80,
+    FTFL_CMD_SET_FLEXRAM_FN     = 0x81,
+} ftflFCMD_t;
+
+#define FTFL_FLASH_SECTOR_SIZE 0x800 /* Bytes */
+
+#define FTFL_BASE_ADDR 0x40020000
+#define FTFL_FSTAT  (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x0))
+#define FTFL_FCNFG  (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x1))
+#define FTFL_FSEC   (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x2))
+#define FTFL_FOPT   (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x3))
+#define FTFL_FCCOB3 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x4))
+#define FTFL_FCCOB2 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x5))
+#define FTFL_FCCOB1 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x6))
+#define FTFL_FCCOB0 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x7))
+#define FTFL_FCCOB7 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x8))
+#define FTFL_FCCOB6 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x9))
+#define FTFL_FCCOB5 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0xA))
+#define FTFL_FCCOB4 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0xB))
+#define FTFL_FCCOBB (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0xC))
+#define FTFL_FCCOBA (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0xD))
+#define FTFL_FCCOB9 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0xE))
+#define FTFL_FCCOB8 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0xF))
+#define FTFL_FPROT3 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x10))
+#define FTFL_FPROT2 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x11))
+#define FTFL_FPROT1 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x12))
+#define FTFL_FPROT0 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x13))
 #endif
 
