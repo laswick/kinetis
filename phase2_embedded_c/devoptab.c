@@ -61,7 +61,7 @@
         See the DEVOPTAB section in this file.
 
 
-    4) In your test application, you can now test if the POSIX sytem calls call
+    4) In your test application, now test if the POSIX sytem calls call
         your system call stubs in your driver.
 
         Ex.
@@ -84,7 +84,11 @@
                 close(fd);
             }
 
-    5) Now that the POSIX system call layer is working, you can now go about
+    5) Add this file to your makefile along with your driver and test app.
+        Load and run you test app putting breakpoints in your system call
+        stubs. If you hit the breakpoints you are golden.
+
+    6) Now that the POSIX system call layer is working, you can now go about
         your business of making your driver do something usefull.
 
         You should define your IO_IOCTL_XXX_XXX commands and any flags you use
