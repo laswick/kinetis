@@ -1,12 +1,10 @@
-/*******************************************************************************
-* spi.c
+/******************************************************************************
+* spi.c                                                                       *
+*******************************************************************************
 *
 * Low level driver for the Kinetis SPI module.
 *
-* Shaun Weise
-* 2012-06-25
-*******************************************************************************/
-
+******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -244,13 +242,20 @@ static unsigned spiWriteRead(spi_t *spi, spiWriteRead_t *wr)
     return lenIn;
 }
 
-/*******************************************************************************/
-/* POSIX FUNCTIONS
-/*******************************************************************************/
+/*=============================================================================*/
+/* POSIX FUNCTIONS                                                             */
+/*=============================================================================*/
 
 /*******************************************************************************/
-int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
+/* spi_open_r                                                                  */
 /*******************************************************************************/
+/* Jobs of the 'open' syscall:
+ *      Check device name
+ *      Create a device 'state' structure, hook it to the devoptab private ptr
+ *      Enable the SIM SCGC for the device
+ *      Initialize the device with a default configuration
+ ********************************************************************************/
+int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 {
     spiModule_t mod;
 
@@ -286,8 +291,20 @@ int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 }
 
 /*******************************************************************************/
-int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
+/* spi_ioctl_r                                                                 */
 /*******************************************************************************/
+/* Jobs of the 'ioctl' syscall:
+ *      Implement any device specific commands.
+ *          Commands are listed in hardware.h in the specific driver section
+ *          Commands are NOT standardized however:
+ *              See MQX's I/O drivers guide for commands that it supports
+ *              These can provide a guide of which commands to implement
+ *          Some common commands funtions:
+ *              Set baud rate
+ *              Set device registers to specific values
+ *              Configure I/O pins
+ *******************************************************************************/
+int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
 /* TODO: return errors if flags or cmd is bad */
 {
     spi_t *spi;
@@ -415,8 +432,13 @@ int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
 }
 
 /*******************************************************************************/
-int spi_close_r (void *reent, devoptab_t *dot )
+/* spi_close_r                                                                 */
 /*******************************************************************************/
+/* Jobs of the 'close' syscall:
+ *      Disable the SIM SCGC for the device
+ *      Free the device 'state' structure, unhook it to the devoptab private ptr
+ *******************************************************************************/
+int spi_close_r (void *reent, devoptab_t *dot )
 {
     spi_t *spi = dot->priv;
 
@@ -432,19 +454,31 @@ int spi_close_r (void *reent, devoptab_t *dot )
         return FALSE;
     }
 }
+
 /*******************************************************************************/
+/* spi_write_r                                                                 */
+/*******************************************************************************/
+/* Jobs of the 'write' syscall:
+ *      Write data to the device.
+ *      Return the number of bytes written
+ *******************************************************************************/
 long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
-/*******************************************************************************/
 {
     /* You could just put your write function here, but I want switch between
-     * polled & interupt functions here */
+     * polled & interupt functions here at a later point.*/
     return spiWrite(dot, buf, len);
 }
+
 /*******************************************************************************/
+/* spi_read_r                                                                  */
+/*******************************************************************************/
+/* Jobs of the 'read' syscall:
+ *      Read data from the device
+ *      Return the number of bytes read
+ *******************************************************************************/
 long spi_read_r (void *reent, devoptab_t *dot, void *buf, int len )
-/*******************************************************************************/
 {
     /* You could just put your read function here, but I want switch between
-     * polled & interupt functions here */
+     * polled & interupt functions here at a later point.*/
     return spiRead(dot, buf, len);
 }

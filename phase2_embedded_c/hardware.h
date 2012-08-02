@@ -15,6 +15,11 @@
 #endif
 
 extern void assert_(const char *file, const int line);
+
+#define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
+
+/* POSIX Interface ***********************************************************/
+
 extern int ioctl (int fd, int cmd, int flags);
 
 typedef struct devoptab_s {
@@ -22,12 +27,12 @@ typedef struct devoptab_s {
     int  (*open_r )( void *reent, struct devoptab_s *dot, int mode, int flags );
     int  (*ioctl  )(              struct devoptab_s *dot, int cmd,  int flags );
     int  (*close_r)( void *reent, struct devoptab_s *dot );
-    long (*write_r)( void *reent, struct devoptab_s *dot, const void *buf, int len );
-    long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf, int len );
+    long (*write_r)( void *reent, struct devoptab_s *dot, const void *buf,
+                                                                      int len );
+    long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf,
+                                                                      int len );
     void *priv;
 } devoptab_t;
-
-#define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
 
 /* GPIO ***********************************************************************/
 
@@ -53,6 +58,7 @@ extern uint32_t gpioRead(uint32_t port, uint32_t pin);
 
 /* SPI  ***********************************************************************/
 
+/* IO_IOCTL_ commands */
 enum {
     IO_IOCTL_SPI_SET_PORT_PCRS,        /* Selects the SPI in the PORT MUXs */
     IO_IOCTL_SPI_SET_BAUD,             /* Sets the BAUD rate */
@@ -63,7 +69,7 @@ enum {
     IO_IOCTL_SPI_SET_CS_INACT_STATE,   /* */
     IO_IOCTL_SPI_FLUSH_RX_FIFO,        /* */
     IO_IOCTL_SPI_WRITE_READ,           /* */
-    MAX_IO_IOCTRL_SPI_CMDS
+    MAX_IO_IOCTRL_SPI_CMDS             /* Name of this enum is pending... */
 };
 
 /* Mode select for the spi module */
