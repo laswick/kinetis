@@ -53,22 +53,26 @@ extern uint32_t gpioRead(uint32_t port, uint32_t pin);
 
 /* SPI  ***********************************************************************/
 
-typedef enum spiIoctlCmds_e {
+enum {
+    IO_IOCTL_SPI_SET_PORT_PCRS,        /* Selects the SPI in the PORT MUXs */
     IO_IOCTL_SPI_SET_BAUD,             /* Sets the BAUD rate */
     IO_IOCTL_SPI_SET_SCLK_MODE,        /* Sets clock polarity and sample mode. */
     IO_IOCTL_SPI_SET_FMSZ,             /* */
     IO_IOCTL_SPI_SET_OPTS,             /* */
     IO_IOCTL_SPI_SET_CS,               /* */
     IO_IOCTL_SPI_SET_CS_INACT_STATE,   /* */
-}spiIoctlrCmds_t;
+    IO_IOCTL_SPI_FLUSH_RX_FIFO,        /* */
+    IO_IOCTL_SPI_WRITE_READ,           /* */
+    MAX_IO_IOCTRL_SPI_CMDS
+};
 
 /* Mode select for the spi module */
-typedef enum {
+typedef enum spiSclkMode_e {
     SPI_SCLK_MODE_0 = 0, /* CPOL = 0, CPHA = 0, ***DEFAULT*** */
     SPI_SCLK_MODE_1,     /* CPOL = 0, CPHA = 1                */
     SPI_SCLK_MODE_2,     /* CPOL = 1, CPHA = 0                */
     SPI_SCLK_MODE_3,     /* CPOL = 1, CPHA = 1                */
-    NUMSPI_SCLK_MODES
+    MAX_SPI_SCLK_MODES
 } spiSclkMode_t;
 
 /* Mask for all the spi module options */
@@ -122,6 +126,12 @@ typedef enum {
     SPI_BAUDRATE_CLKDIV_65536,
     NUM_SPI_BAUDRATES,
 } spiBaudRate_t;
+
+typedef struct spiWriteRead_s {
+    uint8_t * out;
+    uint8_t * in;
+    unsigned len;
+} spiWriteRead_t;
 
 #define SPI_FMSZ_MAX 16
 #define SPI_FMSZ_MIN 3

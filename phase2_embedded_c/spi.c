@@ -14,6 +14,39 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
+/* TODO: Clean these up later */
+#define SPI2_SCK_PIN    12
+#define SPI2_SCK_PORT   PORTD
+#define SPI2_SCK_MUX    PORT_MUX_ALT2
+
+#define SPI2_SIN_PIN    14
+#define SPI2_SIN_PORT   PORTD
+#define SPI2_SIN_MUX    PORT_MUX_ALT2
+
+#define SPI2_SOUT_PIN   13
+#define SPI2_SOUT_PORT  PORTD
+#define SPI2_SOUT_MUX   PORT_MUX_ALT2
+
+#define SPI2_PCS0_PIN   11
+#define SPI2_PCS0_PORT  PORTD
+#define SPI2_PCS0_MUX   PORT_MUX_ALT2
+
+#define SPI0_SCK_PIN    15
+#define SPI0_SCK_PORT   PORTA
+#define SPI0_SCK_MUX    PORT_MUX_ALT2
+
+#define SPI0_SIN_PIN    17
+#define SPI0_SIN_PORT   PORTA
+#define SPI0_SIN_MUX    PORT_MUX_ALT2
+
+#define SPI0_SOUT_PIN   16
+#define SPI0_SOUT_PORT  PORTA
+#define SPI0_SOUT_MUX   PORT_MUX_ALT2
+
+#define SPI0_PCS0_PIN   14
+#define SPI0_PCS0_PORT  PORTA
+#define SPI0_PCS0_MUX   PORT_MUX_ALT2
+
 typedef enum spiModule_e{
     SPI_MODULE_0,
     SPI_MODULE_1,
@@ -28,7 +61,9 @@ typedef struct spi_s {
     spiRser_t     rser;
     spiPushr_t    pushr;
     unsigned      addr;
-    int           fd;
+    unsigned      sim;
+    volatile uint32_t * simScgcPtr;
+    unsigned            simScgcEnBit;
 } spi_t;
 
 spi_t spiList[NUM_SPI_MODULES] = {
@@ -42,7 +77,8 @@ spi_t spiList[NUM_SPI_MODULES] = {
                | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2,
         .rser  = 0,
         .pushr = 0,
-        .addr  = SPI0_BASE_ADDR,
+        .simScgcPtr = SIM_SCGC6_PTR,
+        .simScgcEnBit = SIM_SCGC6_SPI0_ENABLE,
     },
     [SPI_MODULE_1] = {
         .mcr   = SPI_MCR_MSTR,
@@ -55,6 +91,8 @@ spi_t spiList[NUM_SPI_MODULES] = {
         .rser  = 0,
         .pushr = 0,
         .addr  = SPI1_BASE_ADDR,
+        .simScgcPtr = SIM_SCGC6_PTR,
+        .simScgcEnBit = SIM_SCGC6_SPI1_ENABLE,
     },
     [SPI_MODULE_2] = {
         .mcr   = SPI_MCR_MSTR,
@@ -67,21 +105,10 @@ spi_t spiList[NUM_SPI_MODULES] = {
         .rser  = 0,
         .pushr = 0,
         .addr  = SPI2_BASE_ADDR,
+        .simScgcPtr = SIM_SCGC3_PTR,
+        .simScgcEnBit = SIM_SCGC3_SPI2_ENABLE,
     },
 };
-
-#if 0
-/*******************************************************************************/
-static spi_t *spiModuleFromFd(int fd)
-/*******************************************************************************/
-{
-    int i;
-    for (i =0; i < NUM_SPI_MODULES; i++) {
-        if (spiList[i].fd == fd) return &spiList[i];
-    }
-    return NULL;
-}
-#endif
 
 /*******************************************************************************/
 static int spiOpen(spiModule_t mod, devoptab_t *dot)
@@ -91,15 +118,19 @@ static int spiOpen(spiModule_t mod, devoptab_t *dot)
 
     if (dot->priv) return FALSE; /* Device is already open */
 
+    /* Create 'private' spi structure and point devoptab's
+     * private pointer to it */
     spi = (spi_t *) malloc(sizeof(spi_t));
-
     if (!spi) return FALSE;
     else dot->priv = spi;
 
-    /* Set SPI defaults */
+    /* Load init & default info into private spi structure */
     memcpy(spi, &spiList[mod], sizeof(spi_t));
 
-    /* Write the Register values values */
+    /* Enable the SIMSCGC for the spi module being used*/
+    *spi->simScgcPtr |= spi->simScgcEnBit;
+
+    /* Write configuration register values  */
     SPI_MCR  (spi->addr) = spi->mcr;
     SPI_CTAR0(spi->addr) = spi->ctar0;
     SPI_CTAR1(spi->addr) = spi->ctar1;
@@ -123,7 +154,9 @@ static unsigned spiWrite(devoptab_t *dot, const void *data, unsigned len)
 
         pushr = (spi->pushr | (uint32_t)(*dataPtr++));
 
-        /* RANT START:
+        /* Write to the TX FIFO if there is room */
+
+        /* WTF!
          * I could not use the Transmit fifo full flag (TFFF)! because
          * it would appears that it is only set if the dma
          * controller is responsible for a write to the PUSHR.
@@ -142,26 +175,78 @@ static unsigned spiWrite(devoptab_t *dot, const void *data, unsigned len)
             /* Add NOP here to prevent optimization from removing
              * this dead loop, if we ever turn it on */
             asm volatile("nop");
-        };
+        }
         SPI_PUSHR(spi->addr) = pushr;
+    }
+    /* Wait for transfer to finish */
+    while( ((SPI_SR(spi->addr) & SPI_SR_TXCTR)>>12) !=0 ){
+            asm volatile("nop");
     }
     return len;
 }
 
 /*******************************************************************************/
-static void spiRead(spi_t *spi, void *data, unsigned len)
+static unsigned spiRead(devoptab_t *dot, void *data, unsigned len)
 /*******************************************************************************/
 {
-    /* To be done */
+    unsigned i;
+    uint8_t *dataPtr = (uint8_t *) data;
+    spi_t *spi;
+
+    if (!dot || !dot->priv) return FALSE;
+    else spi = (spi_t *) dot->priv;
+
+    for(i = 0; i < len; i++) {
+
+        /* Wait for the RXFIFO not to be empty */
+
+        /* WTF!
+         * The RXDF is NEVER cleared! Even when explicitly clearing it
+         * like it says to in the documentation it remains 1 when the
+         * FIFO is CLEARLY empty, RXCTR = 0, POPNXTPTR = 0 ! Again I
+         * am forced to read the number of entrys in the fifo and wait
+         * for it to become non-zero. */
+        while ( ((SPI_SR(spi->addr) & SPI_SR_RXCTR)>>4) == 0) {
+            asm volatile("nop");
+        }
+
+        /* Take a entry of the RX FIFO */
+        *dataPtr++ = (uint8_t) SPI_POPR(spi->addr);
+    }
+    return len;
 }
 
 /*******************************************************************************/
-static void spiWriteRead(spi_t *spi, void *dataOut, unsigned lenOut,
-                                     void *dataIn,  unsigned lenIn)
+static unsigned spiWriteRead(spi_t *spi, spiWriteRead_t *wr)
 /*******************************************************************************/
 {
-    /* To be done */
+    unsigned lenIn = 0;
+    unsigned lenOut = 0;
+    uint8_t *outPtr = wr->out;
+    uint8_t *inPtr = wr->in;
+
+    while( lenIn < wr->len) {
+
+        /* Write to the TX FIFO if there is room */
+        if( ((SPI_SR(spi->addr) & SPI_SR_TXCTR)>>12) < 4 ) {
+            if (lenOut < wr->len) {
+                SPI_PUSHR(spi->addr) = (spi->pushr | (uint32_t)(*outPtr++));
+                lenOut++;
+            }
+        }
+
+        /* Read from RX FIFO if there is anything*/
+        if ( ((SPI_SR(spi->addr) & SPI_SR_RXCTR)>>4) != 0) {
+            *inPtr++ = (uint8_t)SPI_POPR(spi->addr);
+            lenIn++;
+        }
+    }
+    return lenIn;
 }
+
+/*******************************************************************************/
+/* POSIX FUNCTIONS
+/*******************************************************************************/
 
 /*******************************************************************************/
 int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
@@ -174,6 +259,7 @@ int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
         return FALSE;
     }
 
+    /* Determine the module instance */
     if (strcmp(DEVOPTAB_SPI0_STR, dot->name) == 0 ) {
         mod = SPI_MODULE_0;
     }
@@ -189,11 +275,11 @@ int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
         return FALSE;
     }
 
+    /* Try to open if not already open */
     if (spiOpen(mod,dot)) {
         return TRUE;
     } else {
-        /* Device is already open, is this an issue or not? Maybe after a malloc
-         * structures it wont matter */
+        /* Device is already open, is this an issue or not? */
         ((struct _reent *)reent)->_errno = EPERM;
         return FALSE;
     }
@@ -202,76 +288,128 @@ int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 /*******************************************************************************/
 int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
 /*******************************************************************************/
-/* Todo: return errors if flags or cmd is bad */
+/* TODO: return errors if flags or cmd is bad */
 {
-    spi_t *spi = dot->priv;
+    spi_t *spi;
 
-    if (!spi) return FALSE; /* The fd is not associated with any device */
+    if (!dot || !dot->priv) return FALSE;
+    else spi = (spi_t *) dot->priv;
 
     switch (cmd) {
-        case IO_IOCTL_SPI_SET_BAUD:
-            if (flags < NUM_SPI_BAUDRATES) {
-                spi->ctar0 &= ~(SPI_CTAR_BR);
-                spi->ctar0 |= flags;
-                SPI_CTAR0(spi->addr) = spi->ctar0;
-            }
+    case IO_IOCTL_SPI_SET_PORT_PCRS:
+        switch (spi->addr) {
+        case SPI0_BASE_ADDR:
+            SIM_SCGC5 |= SIM_PORTA_ENABLE;
+            PORT_PCR(SPI0_SCK_PORT, SPI0_SCK_PIN) = SPI0_SCK_MUX;
+            PORT_PCR(SPI0_SIN_PORT, SPI0_SIN_PIN) = SPI0_SIN_MUX;
+            PORT_PCR(SPI0_SOUT_PORT, SPI0_SOUT_PIN) = SPI0_SOUT_MUX;
+            PORT_PCR(SPI0_PCS0_PORT, SPI0_PCS0_PIN) = SPI0_PCS0_MUX;
         break;
-        case IO_IOCTL_SPI_SET_SCLK_MODE:
-            if (flags < NUMSPI_SCLK_MODES) {
-                spi->ctar0 &= ~(SPI_CTAR_CPHA | SPI_CTAR_CPOL);
-                spi->ctar0 |= flags << 25;
-                SPI_CTAR0(spi->addr) = spi->ctar0;
-            }
+        case SPI1_BASE_ADDR:
+#if 0
+            PORT_PCR(SPI1_SCK_PORT, SPI1_SCK_PIN) = SPI1_SCK_MUX;
+            PORT_PCR(SPI1_SIN_PORT, SPI1_SIN_PIN) = SPI1_SIN_MUX;
+            PORT_PCR(SPI1_SOUT_PORT, SPI1_SOUT_PIN) = SPI1_SOUT_MUX;
+            PORT_PCR(SPI1_PCS0_PORT, SPI1_PCS0_PIN) = SPI1_PCS0_MUX;
+#endif
         break;
-        case IO_IOCTL_SPI_SET_FMSZ:
-            if (flags >= SPI_FMSZ_MIN && flags <= SPI_FMSZ_MAX) {
-                spi->ctar0 &= ~(SPI_CTAR_FMSZ);
-                spi->ctar0 |= (flags-1) << 27;
-                SPI_CTAR0(spi->addr) = spi->ctar0;
-            }
-        break;
-        case IO_IOCTL_SPI_SET_OPTS:
-            if (flags & SPI_OPTS_MASTER) {
-                spi->mcr |= SPI_MCR_MSTR;
-                SPI_MCR(spi->addr) = spi->mcr;
-            }
-            if (flags & SPI_OPTS_LSB_FIRST) {
-                spi->ctar0 |= SPI_CTAR_LSBFE;
-                SPI_CTAR0(spi->addr) = spi->ctar0;
-            }
-            if (flags & SPI_OPTS_CONT_SCK_EN) {
-                spi->mcr |= SPI_MCR_CONT_SCKE;
-                SPI_MCR(spi->addr) = spi->mcr;
-            }
-            if (flags & SPI_OPTS_TX_FIFO_DSBL) {
-                spi->mcr |= SPI_MCR_DIS_TXF;
-                SPI_MCR(spi->addr) = spi->mcr;
-            }
-            if (flags & SPI_OPTS_RX_FIFO_DSBL) {
-                spi->mcr |= SPI_MCR_DIS_RXF;
-                SPI_MCR(spi->addr) = spi->mcr;
-            }
-            if (flags & SPI_OPTS_RX_FIFO_OVR_EN) {
-                spi->mcr |= SPI_MCR_ROOE;
-                SPI_MCR(spi->addr) = spi->mcr;
-            }
-        break;
-        case IO_IOCTL_SPI_SET_CS:
-            if( flags < 0x3F ) {
-                spi->pushr &= ~(0x3F << 16);
-                spi->pushr |= flags << 16;
-            }
-        break;
-        case IO_IOCTL_SPI_SET_CS_INACT_STATE:
-            if( flags < 0x3F ) {
-                spi->mcr &= ~(0x3F << 16);
-                spi->mcr |= flags << 16;
-                SPI_MCR(spi->addr) = spi->mcr;
-            }
+        case SPI2_BASE_ADDR:
+            SIM_SCGC5 |= SIM_PORTD_ENABLE;
+            PORT_PCR(SPI2_SCK_PORT, SPI2_SCK_PIN) = SPI2_SCK_MUX;
+            PORT_PCR(SPI2_SIN_PORT, SPI2_SIN_PIN) = SPI2_SIN_MUX;
+            PORT_PCR(SPI2_SOUT_PORT, SPI2_SOUT_PIN) = SPI2_SOUT_MUX;
+            PORT_PCR(SPI2_PCS0_PORT, SPI2_PCS0_PIN) = SPI2_PCS0_MUX;
         break;
         default:
             assert(0);
+            return FALSE;
         break;
+        }
+    break;
+    case IO_IOCTL_SPI_SET_BAUD:
+        if (flags < NUM_SPI_BAUDRATES) {
+            spi->ctar0 &= ~(SPI_CTAR_BR);
+            spi->ctar0 |= flags;
+            SPI_CTAR0(spi->addr) = spi->ctar0;
+        }
+    break;
+    case IO_IOCTL_SPI_SET_SCLK_MODE:
+        if (flags < MAX_SPI_SCLK_MODES) {
+            spi->ctar0 &= ~(SPI_CTAR_CPHA | SPI_CTAR_CPOL);
+            spi->ctar0 |= flags << 25;
+            SPI_CTAR0(spi->addr) = spi->ctar0;
+        }
+    break;
+    case IO_IOCTL_SPI_SET_FMSZ:
+        if (flags >= SPI_FMSZ_MIN && flags <= SPI_FMSZ_MAX) {
+            spi->ctar0 &= ~(SPI_CTAR_FMSZ);
+            spi->ctar0 |= (flags-1) << 27;
+            SPI_CTAR0(spi->addr) = spi->ctar0;
+        }
+    break;
+    case IO_IOCTL_SPI_SET_OPTS:
+        if (flags & SPI_OPTS_MASTER) {
+            spi->mcr |= SPI_MCR_MSTR;
+            SPI_MCR(spi->addr) = spi->mcr;
+        }
+        if (flags & SPI_OPTS_LSB_FIRST) {
+            spi->ctar0 |= SPI_CTAR_LSBFE;
+            SPI_CTAR0(spi->addr) = spi->ctar0;
+        }
+        if (flags & SPI_OPTS_CONT_SCK_EN) {
+            spi->mcr |= SPI_MCR_CONT_SCKE;
+            SPI_MCR(spi->addr) = spi->mcr;
+        }
+        if (flags & SPI_OPTS_TX_FIFO_DSBL) {
+            spi->mcr |= SPI_MCR_DIS_TXF;
+            SPI_MCR(spi->addr) = spi->mcr;
+        }
+        if (flags & SPI_OPTS_RX_FIFO_DSBL) {
+            spi->mcr |= SPI_MCR_DIS_RXF;
+            SPI_MCR(spi->addr) = spi->mcr;
+        }
+        if (flags & SPI_OPTS_RX_FIFO_OVR_EN) {
+            spi->mcr |= SPI_MCR_ROOE;
+            SPI_MCR(spi->addr) = spi->mcr;
+        }
+    break;
+    case IO_IOCTL_SPI_SET_CS:
+        if( flags < 0x3F ) {
+            spi->pushr &= ~(0x3F << 16);
+            spi->pushr |= flags << 16;
+        }
+    break;
+    case IO_IOCTL_SPI_SET_CS_INACT_STATE:
+        if( flags < 0x3F ) {
+            spi->mcr &= ~(0x3F << 16);
+            spi->mcr |= flags << 16;
+            SPI_MCR(spi->addr) = spi->mcr;
+        }
+    break;
+    case IO_IOCTL_SPI_FLUSH_RX_FIFO:
+        spi->mcr = SPI_MCR_CLR_RXF | SPI_MCR(spi->addr);
+        SPI_MCR(spi->addr) = spi->mcr;
+        spi->mcr &= ~(SPI_MCR_CLR_RXF);
+        /* WTF!
+         * Writing a 1 to CLR_RXF in the MCR does not
+         * clear the RX Counter in the SR! Documentation Fail!
+         * This means i have to flush the fifo manually by
+         * poping the RX FIFO till empty. */
+        while ( ((SPI_SR(spi->addr) & SPI_SR_RXCTR)>>4) != 0) {
+            SPI_POPR(spi->addr); /* Ridiculus */
+        }
+    break;
+    case IO_IOCTL_SPI_WRITE_READ:
+        if (!flags) {
+            assert(0);
+            return FALSE;
+        }
+        return spiWriteRead(spi,(spiWriteRead_t *)flags);
+    break;
+    default:
+        assert(0);
+        return FALSE;
+    break;
     }
     return TRUE;
 }
@@ -283,6 +421,9 @@ int spi_close_r (void *reent, devoptab_t *dot )
     spi_t *spi = dot->priv;
 
     if (spi) {
+        /* Disable the SIMSCGC for the spi module being used*/
+        *spi->simScgcPtr |= spi->simScgcEnBit;
+        /* Unhook the private spi structure and free it */
         dot->priv = NULL;
         free(spi);
         return TRUE;
@@ -295,12 +436,15 @@ int spi_close_r (void *reent, devoptab_t *dot )
 long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
 /*******************************************************************************/
 {
-    /* Just put in the regular write function? */
+    /* You could just put your write function here, but I want switch between
+     * polled & interupt functions here */
     return spiWrite(dot, buf, len);
 }
 /*******************************************************************************/
 long spi_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 /*******************************************************************************/
 {
-    return -1;
+    /* You could just put your read function here, but I want switch between
+     * polled & interupt functions here */
+    return spiRead(dot, buf, len);
 }

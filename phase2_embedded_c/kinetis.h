@@ -40,12 +40,18 @@
 #define SIM_CMP_ENABLE    BIT_19
 #define SIM_VREF_ENABLE   BIT_20
 #define SIM_LLWU_ENABLE   BIT_28
-#define SIM_SCGC6 (*(volatile uint32_t *) 0x4004803C)
+#define SIM_SCGC6_ADDR  0x4004803C
+#define SIM_SCGC6_PTR (volatile uint32_t *) SIM_SCGC6_ADDR
+#define SIM_SCGC6 (*(volatile uint32_t *) SIM_SCGC6_ADDR)
 #define SIM_SCGC6_SPI0_ENABLE  BIT_12
 #define SIM_SCGC6_SPI1_ENABLE  BIT_13
-#define SIM_SCGC3 (*(volatile uint32_t *) 0x40048030)
+#define SIM_SCGC3_ADDR  0x40048030
+#define SIM_SCGC3_PTR (volatile uint32_t *) SIM_SCGC3_ADDR
+#define SIM_SCGC3 (*(volatile uint32_t *) SIM_SCGC3_ADDR)
 #define SIM_SCGC3_SPI2_ENABLE  BIT_12
-#define SIM_SCGC5 (*(volatile uint32_t *) 0x40048038)
+#define SIM_SCGC5_ADDR  0x40048038
+#define SIM_SCGC5_PTR (volatile uint32_t) * SIM_SCGC5_ADDR
+#define SIM_SCGC5 (*(volatile uint32_t *) SIM_SCGC5_ADDR)
 #define SIM_PORTA_ENABLE BIT_9
 #define SIM_PORTB_ENABLE BIT_10
 #define SIM_PORTC_ENABLE BIT_11
@@ -510,6 +516,7 @@ typedef enum {
 #define SPI_SR(addr)     (*(volatile uint32_t *) (addr + 0x2C))
 #define SPI_RSER(addr)   (*(volatile uint32_t *) (addr + 0x30))
 #define SPI_PUSHR(addr)  (*(volatile uint32_t *) (addr + 0x34))
+#define SPI_POPR(addr)   (*(volatile uint32_t *) (addr + 0x38))
 
 /******************************************************************************
  * FTFL FLASH

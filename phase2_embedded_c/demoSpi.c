@@ -39,38 +39,6 @@ char scrCmdScrollR1[]   = {0x1B, '[','0','1','A' };
 /* Screwed up commands */
 char scrCmdDispEnBklghtOn[]  = {0x1B, '[','3','e' };
 
-#define SPI2_SCK_PIN    12
-#define SPI2_SCK_PORT   PORTD
-#define SPI2_SCK_MUX    PORT_MUX_ALT2
-
-#define SPI2_SIN_PIN    14
-#define SPI2_SIN_PORT   PORTD
-#define SPI2_SIN_MUX    PORT_MUX_ALT2
-
-#define SPI2_SOUT_PIN   13
-#define SPI2_SOUT_PORT  PORTD
-#define SPI2_SOUT_MUX   PORT_MUX_ALT2
-
-#define SPI2_PCS0_PIN   11
-#define SPI2_PCS0_PORT  PORTD
-#define SPI2_PCS0_MUX   PORT_MUX_ALT2
-
-#define SPI0_SCK_PIN    15
-#define SPI0_SCK_PORT   PORTA
-#define SPI0_SCK_MUX    PORT_MUX_ALT2
-
-#define SPI0_SIN_PIN    17
-#define SPI0_SIN_PORT   PORTA
-#define SPI0_SIN_MUX    PORT_MUX_ALT2
-
-#define SPI0_SOUT_PIN   16
-#define SPI0_SOUT_PORT  PORTA
-#define SPI0_SOUT_MUX   PORT_MUX_ALT2
-
-#define SPI0_PCS0_PIN   14
-#define SPI0_PCS0_PORT  PORTA
-#define SPI0_PCS0_MUX   PORT_MUX_ALT2
-
 static void delay(void)
 {
     volatile uint32_t time = 0x0003ffff;
@@ -82,29 +50,14 @@ int main(void)
 {
     int fd;
     int i;
+    char str[10];
+    spiWriteRead_t wr;
 
-    /* Configure the gpio's*/
-    SIM_SCGC5 |= (SIM_PORTD_ENABLE|SIM_PORTA_ENABLE); /* Gotta satisfy the bastard */
-
-    /* Configure Pins for SPI 2 */
-    PORT_PCR(SPI2_SCK_PORT, SPI2_SCK_PIN) = SPI2_SCK_MUX;
-    PORT_PCR(SPI2_SIN_PORT, SPI2_SIN_PIN) = SPI2_SIN_MUX;
-    PORT_PCR(SPI2_SOUT_PORT, SPI2_SOUT_PIN) = SPI2_SOUT_MUX;
-    PORT_PCR(SPI2_PCS0_PORT, SPI2_PCS0_PIN) = SPI2_PCS0_MUX;
-
-    /* Configure Pins SPI 0 */
-    PORT_PCR(SPI0_SCK_PORT, SPI0_SCK_PIN) = SPI0_SCK_MUX;
-    PORT_PCR(SPI0_SIN_PORT, SPI0_SIN_PIN) = SPI0_SIN_MUX;
-    PORT_PCR(SPI0_SOUT_PORT, SPI0_SOUT_PIN) = SPI0_SOUT_MUX;
-    PORT_PCR(SPI0_PCS0_PORT, SPI0_PCS0_PIN) = SPI0_PCS0_MUX;
-
-    /* Power the SPI Module */
-    /* SIM_SCGC6 |= SIM_SCGC6_SPI0_ENABLE; */
-    /* SIM_SCGC6 |= SIM_SCGC6_SPI1_ENABLE; */
-    SIM_SCGC3 |= SIM_SCGC3_SPI2_ENABLE;
-
+    /* Open */
     fd = open("spi2", 0, 0);
 
+    /* Configure using IOCTL */
+    ioctl(fd, IO_IOCTL_SPI_SET_PORT_PCRS, 0);
     ioctl(fd, IO_IOCTL_SPI_SET_BAUD, SPI_BAUDRATE_CLKDIV_256);
     ioctl(fd, IO_IOCTL_SPI_SET_SCLK_MODE, SPI_SCLK_MODE_0);
     ioctl(fd, IO_IOCTL_SPI_SET_FMSZ, 8);
@@ -112,13 +65,35 @@ int main(void)
     ioctl(fd, IO_IOCTL_SPI_SET_CS, SPI_CS_0);
     ioctl(fd, IO_IOCTL_SPI_SET_CS_INACT_STATE, SPI_CS_0_INACT_HIGH);
 
+    /* Generic write usage */
     write(fd, scrCmdReset, sizeof(scrCmdReset));
     delay();/* Device needs an unknown amount of time to reset .. */
     write(fd, scrCmdDispMode40, sizeof(scrCmdDispMode40));
     delay();
     write(fd, scrCmdDispEnBklghtOn, sizeof(scrCmdDispEnBklghtOn));
     delay();
+    write(fd, scrCmdClear, sizeof(scrCmdClear));
+    delay();
+    ioctl(fd, IO_IOCTL_SPI_FLUSH_RX_FIFO, 0);
+    delay();
 
+    /* Synchronus write while read */
+    wr.out = (uint8_t *) shaun;
+    wr.in  = (uint8_t *) str;
+    wr.len = sizeof(shaun);
+    ioctl(fd, IO_IOCTL_SPI_WRITE_READ, (int) &wr);
+    str[sizeof(shaun)] = '\0';
+    if ( strcmp(shaun,str) != 0 ) {
+          strcpy(shaun, "ERROR");
+    }
+
+    /* Pretty stuff...*/
+    write(fd, scrCmdReset, sizeof(scrCmdReset));
+    delay();/* Device needs an unknown amount of time to reset .. */
+    write(fd, scrCmdDispMode40, sizeof(scrCmdDispMode40));
+    delay();
+    write(fd, scrCmdDispEnBklghtOn, sizeof(scrCmdDispEnBklghtOn));
+    delay();
     for (;;) {
         write(fd, scrCmdClear, sizeof(scrCmdClear));
         delay();
@@ -145,7 +120,6 @@ int main(void)
         delay();
         delay();
         delay();
-
         for( i = 0; i < 10;i++) {
             write(fd, scrCmdScrollL1, sizeof(scrCmdScrollL1));
             delay();
