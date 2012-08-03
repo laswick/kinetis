@@ -387,3 +387,35 @@ int32_t uartPrint(uartIF_t *uartIF, char *string)
 {
     return uartWrite(uartIF, (uint8_t *) string, strlen(string));
 }
+
+/*******************************************************************************
+*
+* uartRead
+*
+* This routine receives the requested number of bytes from a uart port
+*
+* RETURNS: Number bytes received
+*
+*******************************************************************************/
+int32_t uartRead(uartIF_t *uartIF, uint8_t *buffer, int32_t len)
+{
+    volatile uartPort_t *uartPort = uartPortGet(uartIF->uart);
+    int i;
+    uint8_t *dataPtr = buffer;
+
+    if (uartPort) {
+        for (i = 0; i < len; i++) {
+            int readyRetry = 100;
+
+            while (!(uartPort->s1 & UART_S1_RX_DATA_FULL) && --readyRetry)
+                ;
+
+            if (readyRetry)
+                *dataPtr++ = uartPort->d;
+            else
+                break;
+        }
+    }
+
+    return dataPtr - buffer;
+}
