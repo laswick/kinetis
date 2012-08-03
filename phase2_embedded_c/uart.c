@@ -77,6 +77,7 @@ static volatile uartPort_t *uartPortGet(uint32_t uart)
     case UART2: addr = UART2_BASE_ADDR; break;
     case UART3: addr = UART3_BASE_ADDR; break;
     case UART4: addr = UART4_BASE_ADDR; break;
+    case UART5: addr = UART5_BASE_ADDR; break;
     default:
         assert(0);
         return 0;
@@ -107,6 +108,7 @@ static int32_t uartGetClock(uint32_t uart, int32_t systemClockHz,
     case UART2:
     case UART3:
     case UART4:
+    case UART5:
         uartClockHz = busClockHz;
         break;
     default:
@@ -147,6 +149,9 @@ static int32_t uartReserve(uartIF_t *uartIF)
         break;
     case UART4:
         uartIdx = 4;
+        break;
+    case UART5:
+        uartIdx = 5;
         break;
     default:
         assert(0);
@@ -189,6 +194,9 @@ void uartFree(uartIF_t *uartIF)
         break;
     case UART4:
         uartIdx = 4;
+        break;
+    case UART5:
+        uartIdx = 5;
         break;
     default:
         assert(0);
@@ -238,6 +246,13 @@ int32_t uartInit(uartIF_t *uartIF)
         txPortCtrlBits = PORT_MUX_ALT3; /* UART is ALT3 on these pins */
         rxPortCtrlBits = PORT_MUX_ALT3;
         break;
+    case UART5:
+        port  = UART5_PORT;
+        txPin = UART5_TX_PIN;
+        rxPin = UART5_RX_PIN;
+        txPortCtrlBits = PORT_MUX_ALT3; /* UART is ALT3 on these pins */
+        rxPortCtrlBits = PORT_MUX_ALT3;
+        break;
     case UART0:
     case UART1:
     case UART2:
@@ -273,12 +288,14 @@ int32_t uartInit(uartIF_t *uartIF)
     case UART2: SIM_SCGC4 |= SIM_UART2_ENABLE; break;
     case UART3: SIM_SCGC4 |= SIM_UART3_ENABLE; break;
     case UART4: SIM_SCGC1 |= SIM_UART4_ENABLE; break;
+    case UART5: SIM_SCGC1 |= SIM_UART5_ENABLE; break;
     default:
         assert(0);
     }
 
     /*
      * Enabel UART Pins
+     * TODO: J-Mac why the same code twice?
      */
 
     switch (uartIF->uart) {
@@ -287,6 +304,7 @@ int32_t uartInit(uartIF_t *uartIF)
     case UART2: SIM_SCGC4 |= SIM_UART2_ENABLE; break;
     case UART3: SIM_SCGC4 |= SIM_UART3_ENABLE; break;
     case UART4: SIM_SCGC1 |= SIM_UART4_ENABLE; break;
+    case UART5: SIM_SCGC1 |= SIM_UART5_ENABLE; break;
     default:
         assert(0);
     }
@@ -340,7 +358,7 @@ int32_t uartWrite(uartIF_t *uartIF, uint8_t *buffer, int32_t len)
         for (i = 0; i < len; i++) {
             int readyRetry = 100;
             /* Wait for space in the FIFO */
-            while(!(uartPort->s1 & UART_S1_TX_DATA_LOW) && readyRetry--);
+            while(!(uartPort->s1 & UART_S1_TX_DATA_LOW) && --readyRetry);
 
             if (readyRetry) {
                 /* Send the character */

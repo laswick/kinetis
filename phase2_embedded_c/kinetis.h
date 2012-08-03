@@ -27,6 +27,7 @@
 /* System Clock Gate Control Registers */
 #define SIM_SCGC1 (*(volatile uint32_t *) 0x40048028)
 #define SIM_SCGC4 (*(volatile uint32_t *) 0x40048034)
+#define SIM_UART5_ENABLE  BIT_11
 #define SIM_UART4_ENABLE  BIT_10
 #define SIM_EWM_ENABLE    BIT_1
 #define SIM_CMT_ENABLE    BIT_2
@@ -256,13 +257,15 @@ typedef struct {
 #define UART1_BASE_ADDR 0x4006b000
 #define UART2_BASE_ADDR 0x4006c000
 #define UART3_BASE_ADDR 0x4006d000
-#define UART4_BASE_ADDR 0x4006e000
+#define UART4_BASE_ADDR 0x400ea000
+#define UART5_BASE_ADDR 0x400eb000 /* MK60DN512ZVMD10 */
 
 #define UART0 UART0_BASE_ADDR
 #define UART1 UART1_BASE_ADDR
 #define UART2 UART2_BASE_ADDR
 #define UART3 UART3_BASE_ADDR
 #define UART4 UART4_BASE_ADDR
+#define UART5 UART5_BASE_ADDR
 
 /* BDH */
 #define UART_BDH_RX_ACTIVE_INT_ENABLE BIT_6

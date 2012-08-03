@@ -192,7 +192,11 @@ extern int32_t featureRead(uint8_t *buffer, int32_t len);
 
 /* UART ***********************************************************************/
 
-#define MAX_UARTS     5
+#define MAX_UARTS     6
+
+#define UART5_PORT    PORTE
+#define UART5_RX_PIN  9
+#define UART5_TX_PIN  8
 
 #define UART4_PORT    PORTE
 #define UART4_RX_PIN  25
