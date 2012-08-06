@@ -168,7 +168,7 @@ int32_t xmodemRecv(uint8_t *outBuffer, uint32_t numBytes)
 
     flushBuffer();
 
-    uartPtr->timeout = 1000;
+//  uartPtr->timeout = 1000;
     uartWrite(uartPtr, &cmd, 1);
 
     done  = FALSE;
@@ -237,7 +237,7 @@ int32_t xmodemRecv(uint8_t *outBuffer, uint32_t numBytes)
     if (returnVal == 0) {
         /* Send ACK to end transfer */
         cmd = ACK;
-        uartPtr->timeout = 1000;
+//      uartPtr->timeout = 1000;
         uartWrite(uartPtr, &cmd, 1);
         xmodem.state = STATE_WAITING;
     }
