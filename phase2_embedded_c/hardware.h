@@ -18,6 +18,10 @@ extern void assert_(const char *file, const int line);
 
 #define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
 
+#define swap32(x) \
+    asm volatile ("rev %[out], %[in]" : [out] "=r" (x) : [in] "r" (x))
+
+
 /* POSIX Interface ***********************************************************/
 
 extern int ioctl (int fd, int cmd, int flags);
@@ -157,7 +161,7 @@ typedef struct {
 } flashConfig_t;
 
 extern int32_t flashInit(const flashConfig_t *cfg);
-extern int32_t flashEraseSector(uint32_t addr);
+extern int32_t flashErase(uint32_t addr, uint32_t numBytes);
 extern int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords);
 
 /* EXAMPLE *******************************************************************/
@@ -189,6 +193,10 @@ extern int32_t featureRead(uint8_t *buffer, int32_t len);
 
 #define N_LED_BLUE_PORT   PORTA
 #define N_LED_BLUE_PIN    10
+
+/* SWITCHES *******************************************************************/
+#define N_SWITCH_1_PORT  PORTA
+#define N_SWITCH_1_PIN   19
 
 /* UART ***********************************************************************/
 

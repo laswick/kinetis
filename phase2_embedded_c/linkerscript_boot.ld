@@ -9,7 +9,7 @@
 
 MEMORY
 {
-    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 512K
+    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 16K
     SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
 
@@ -62,6 +62,7 @@ SECTIONS
         _ramcode_end = .;
     } > SRAM AT>FLASH
 
+
     .bss :
     {
         . = ALIGN(4);
@@ -83,5 +84,6 @@ SECTIONS
     _heap_end = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM) - STACK_SIZE, 8);
     _stack_start = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM), 8);
     _stack_end = _stack_start - STACK_SIZE;
+    _app_code_start = ORIGIN(FLASH) + LENGTH(FLASH);
 }
 

@@ -200,6 +200,7 @@ void uartFree(uartIF_t *uartIF)
         break;
     default:
         assert(0);
+        return;
     }
     uartOwner[uartIdx] = 0;
 }
@@ -328,6 +329,12 @@ int32_t uartInit(uartIF_t *uartIF)
         baudFineAdjust = 2 * uartClockHz / uartIF->baud  - sbr * 32;
         uartPort->c4 = baudFineAdjust & UART_C4_BRFA_MASK;
 
+        /* Setup RX FIFO */
+        uartPort->pfifo  = UART_PFIFO_RXFIFOSIZE_16;
+        uartPort->cfifo |= UART_CFIFO_RXFLUSH;
+        uartPort->pfifo |= UART_PFIFO_RXFE;
+        uartPort->rwfifo = 1; /* FIFO is 16 datawords. Trigger buffer full
+                                 flag when at least one byte is in the FIFO */
 
         uartPort->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE;
 
@@ -405,7 +412,7 @@ int32_t uartRead(uartIF_t *uartIF, uint8_t *buffer, int32_t len)
 
     if (uartPort) {
         for (i = 0; i < len; i++) {
-            int readyRetry = 100;
+            int readyRetry = 1000;
 
             while (!(uartPort->s1 & UART_S1_RX_DATA_FULL) && --readyRetry)
                 ;

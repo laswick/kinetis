@@ -9,6 +9,12 @@
 #include "globalDefs.h"
 
 /*******************************************************************************
+* ARM NVIC
+*******************************************************************************/
+#define NVIC_VTOR (*(volatile uint32_t *) 0xE000ED08)    /* Vector Offset Reg */
+#define NVIC_VTOR_SET(x) { NVIC_VTOR = ((x) & 0x1FFFFF80); }
+
+/*******************************************************************************
 * SIM
 *******************************************************************************/
 #define SIM_SDID (*(volatile uint32_t *) 0x40048024)
@@ -321,6 +327,39 @@ typedef struct {
 #define UART_C4_MATCH_ADDRESS_MODE_ENABLE_2 BIT_6
 #define UART_C4_MATCH_ADDRESS_MODE_ENABLE_1 BIT_7
 #define UART_C4_BRFA_MASK 0xf
+
+/* PFIFO */
+#define UART_PFIFO_TXFE               BIT_7
+#define UART_PFIFO_TXFIFOSIZE_SHIFT   4
+#define UART_PFIFO_TXFIFOSIZE_1       (0x0 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_4       (0x1 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_8       (0x2 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_16      (0x3 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_32      (0x4 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_64      (0x5 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_128     (0x6 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+
+#define UART_PFIFO_RXFE               BIT_3
+#define UART_PFIFO_RXFIFOSIZE_SHIFT   0
+#define UART_PFIFO_RXFIFOSIZE_1       (0x0 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_4       (0x1 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_8       (0x2 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_16      (0x3 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_32      (0x4 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_64      (0x5 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_128     (0x6 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+
+/* CFIFO */
+#define UART_CFIFO_TXFLUSH     BIT_7
+#define UART_CFIFO_RXFLUSH     BIT_6
+#define UART_CFIFO_TXOFE       BIT_1
+#define UART_CFIFO_RXOFE       BIT_0
+
+/* SFIFO */
+#define UART_SFIFO_TXEMPT   BIT_7
+#define UART_SFIFO_RXEMPT   BIT_6
+#define UART_SFIFO_TXOF     BIT_1
+#define UART_SFIFO_RXOF     BIT_0
 
 /*******************************************************************************
 * SPI
