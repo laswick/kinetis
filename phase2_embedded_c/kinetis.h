@@ -52,6 +52,7 @@
 #define SIM_SCGC6 (*(volatile uint32_t *) SIM_SCGC6_ADDR)
 #define SIM_SCGC6_SPI0_ENABLE  BIT_12
 #define SIM_SCGC6_SPI1_ENABLE  BIT_13
+#define SIM_SCGC6_CRC_ENABLE   BIT_18
 #define SIM_SCGC3_ADDR  0x40048030
 #define SIM_SCGC3_PTR (volatile uint32_t *) SIM_SCGC3_ADDR
 #define SIM_SCGC3 (*(volatile uint32_t *) SIM_SCGC3_ADDR)
@@ -630,5 +631,32 @@ typedef enum {
 #define FTFL_FPROT2 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x11))
 #define FTFL_FPROT1 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x12))
 #define FTFL_FPROT0 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x13))
-#endif
 
+/*******************************************************************************
+* CRC
+*******************************************************************************/
+typedef enum {
+    CRC_CTRL_TOT1     =    1 << 31, /* R/W - 0*/
+    CRC_CTRL_TOT0     =    1 << 30, /* R/W - 0*/
+    CRC_CTRL_TOT      =  0x3 << 30, /* R/W - 0*/
+    CRC_CTRL_TOTR1    =    1 << 29, /* R/W - 0*/
+    CRC_CTRL_TOTR0    =    1 << 28, /* R/W - 0*/
+    CRC_CTRL_TOTR     =  0x3 << 28, /* R/W - 0*/
+    CRC_CTRL_FXOR     =    1 << 26, /* R/W - 0*/
+    CRC_CTRL_WAS      =    1 << 25, /* R/W - 0*/
+    CRC_CTRL_TCRC     =    1 << 24, /* R/W - 0*/
+} crcCtrl_t;
+
+#define CRC_CRC_ADDR     0x40032000
+#define CRC_CRC_PTR      (volatile uint32_t *) CRC_CRC_ADDR
+#define CRC_CRC          (*(volatile uint32_t *) CRC_CRC_ADDR)
+#define CRC_GPOLY_ADDR   0x40032004
+#define CRC_GPOLY32_PTR  (volatile uint32_t *) CRC_GPOLY_ADDR
+#define CRC_GPOLY32      (*(volatile uint32_t *) CRC_GPOLY_ADDR)
+#define CRC_GPOLY16_PTR  (volatile uint16_t *) CRC_GPOLY_ADDR
+#define CRC_GPOLY16      (*(volatile uint16_t *) CRC_GPOLY_ADDR)
+#define CRC_CTRL_ADDR    0x40032008
+#define CRC_CTRL_PTR     (volatile uint32_t *) CRC_CTRL_ADDR
+#define CRC_CTRL         (*(volatile uint32_t *) CRC_CTRL_ADDR)
+
+#endif
