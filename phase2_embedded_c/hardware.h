@@ -218,6 +218,19 @@ extern int32_t uartWrite(uartIF_t *cfg, uint8_t *buffer, int32_t len);
 extern int32_t uartRead(uartIF_t *cfg, uint8_t *buffer, int32_t len);
 extern void    setStdout(uartIF_t *uartIF);
 
+#define DEVOPTAB_UART0_STR    "uart0"
+#define DEVOPTAB_UART1_STR    "uart1"
+#define DEVOPTAB_UART2_STR    "uart2"
+#define DEVOPTAB_UART3_STR    "uart3"
+#define DEVOPTAB_UART4_STR    "uart4"
+
+int  uart_open_r  ( void *reent, devoptab_t *dot,  int mode,  int flags );
+int  uart_ioctl   ( void *reent, devoptab_t *dot,  int cmd,   int flags );
+int  uart_close_r ( void *reent, devoptab_t *dot );
+long uart_write_r ( void *reent, devoptab_t *dot, const void *buf, int len );
+long uart_read_r  ( void *reent, devoptab_t *dat,       void *buf, int len );
+
+
 /******************************************************************************/
 
 #else

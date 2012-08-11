@@ -57,6 +57,144 @@ void setStdout(uartIF_t *uartIF)
     memcpy(&stdOutUartIF, uartIF, sizeof(uartIF_t));
 }
 
+
+
+/*=============================================================================*/
+/* POSIX FUNCTIONS                                                             */
+/*=============================================================================*/
+typedef enum uartModule_e{
+    UART_MODULE_0,
+    UART_MODULE_1,
+    UART_MODULE_2,
+    UART_MODULE_3,
+    UART_MODULE_4,
+    NUM_UART_MODULES,
+} uartModule_t;
+
+/*******************************************************************************/
+/* uart_open_r                                                                  */
+/*******************************************************************************/
+/* Jobs of the 'open' syscall:
+ *      Check device name
+ *      Create a device 'state' structure, hook it to the devoptab private ptr
+ *      Enable the SIM SCGC for the device
+ *      Initialize the device with a default configuration
+ ********************************************************************************/
+int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
+{
+    uartModule_t mod;
+
+    if (!dot || !dot->name) {
+        /* errno ? */
+        return FALSE;
+    }
+
+    /* Determine the module instance */
+    if (strcmp(DEVOPTAB_UART0_STR, dot->name) == 0 ) {
+        mod = UART_MODULE_0;
+    }
+    else if (strcmp(DEVOPTAB_UART1_STR, dot->name) == 0) {
+        mod = UART_MODULE_1;
+    }
+    else if (strcmp(DEVOPTAB_UART2_STR, dot->name) == 0) {
+        mod = UART_MODULE_2;
+    }
+    else if (strcmp(DEVOPTAB_UART3_STR, dot->name) == 0) {
+        mod = UART_MODULE_3;
+    }
+    else if (strcmp(DEVOPTAB_UART4_STR, dot->name) == 0) {
+        mod = UART_MODULE_4;
+    }
+    else {
+        /* Device does not exist */
+        ((struct _reent *)reent)->_errno = ENODEV;
+        return FALSE;
+    }
+
+    /* Try to open if not already open */
+    if (uartOpen(mod,dot)) {
+        return TRUE;
+    } else {
+        /* Device is already open, is this an issue or not? */
+        ((struct _reent *)reent)->_errno = EPERM;
+        return FALSE;
+    }
+}
+
+/*******************************************************************************/
+/* uart_ioctl_r                                                                 */
+/*******************************************************************************/
+/* Jobs of the 'ioctl' syscall:
+ *      Implement any device specific commands.
+ *          Commands are listed in hardware.h in the specific driver section
+ *          Commands are NOT standardized however:
+ *              See MQX's I/O drivers guide for commands that it supports
+ *              These can provide a guide of which commands to implement
+ *          Some common commands funtions:
+ *              Set baud rate
+ *              Set device registers to specific values
+ *              Configure I/O pins
+ *******************************************************************************/
+int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
+/* TODO: return errors if flags or cmd is bad */
+{
+    return TRUE;
+}
+
+/*******************************************************************************/
+/* uart_close_r                                                                 */
+/*******************************************************************************/
+/* Jobs of the 'close' syscall:
+ *      Disable the SIM SCGC for the device
+ *      Free the device 'state' structure, unhook it to the devoptab private ptr
+ *******************************************************************************/
+int uart_close_r (void *reent, devoptab_t *dot )
+{
+    uart_t *uart = dot->priv;
+
+    if (uart) {
+        /* Disable the SIMSCGC for the uart module being used*/
+        *uart->simScgcPtr |= uart->simScgcEnBit;
+        /* Unhook the private uart structure and free it */
+        dot->priv = NULL;
+        free(uart);
+        return TRUE;
+    }
+    else {
+        return FALSE;
+    }
+}
+
+/*******************************************************************************/
+/* uart_write_r                                                                 */
+/*******************************************************************************/
+/* Jobs of the 'write' syscall:
+ *      Write data to the device.
+ *      Return the number of bytes written
+ *******************************************************************************/
+long uart_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
+{
+    /* You could just put your write function here, but I want switch between
+     * polled & interupt functions here at a later point.*/
+    return uartWrite(dot, buf, len);
+}
+
+/*******************************************************************************/
+/* uart_read_r                                                                  */
+/*******************************************************************************/
+/* Jobs of the 'read' syscall:
+ *      Read data from the device
+ *      Return the number of bytes read
+ *******************************************************************************/
+long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
+{
+    /* You could just put your read function here, but I want switch between
+     * polled & interupt functions here at a later point.*/
+    return uartRead(dot, buf, len);
+}
+
+
+
 /*******************************************************************************
 *
 * uartGet
