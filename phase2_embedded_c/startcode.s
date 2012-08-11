@@ -629,6 +629,23 @@ ramcode_loop:
     strlt   r3, [r0], #4
     blt     ramcode_loop
 
+    /*
+     * Relocate vector table to SRAM
+     */
+     ldr r0, =_vector_ram_start
+     ldr r1, =_vector_ram_end
+     ldr r2, =_vector_rom
+vector_loop:
+    cmp r0, r1
+    ittt    lt
+    ldrlt   r3, [r2], #4
+    strlt   r3, [r0], #4
+    blt     vector_loop
+
+    ldr r1,=0xe000ed08
+    ldr r0,=_vector_ram_start
+    str r0,[r1]
+
 call_user_asm_code:
     bl main
 

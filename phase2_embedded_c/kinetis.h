@@ -9,6 +9,12 @@
 #include "globalDefs.h"
 
 /*******************************************************************************
+* ARM NVIC
+*******************************************************************************/
+#define NVIC_VTOR (*(volatile uint32_t *) 0xE000ED08)    /* Vector Offset Reg */
+#define NVIC_VTOR_SET(x) { NVIC_VTOR = ((x) & 0x1FFFFF80); }
+
+/*******************************************************************************
 * SIM
 *******************************************************************************/
 #define SIM_SDID (*(volatile uint32_t *) 0x40048024)
@@ -27,6 +33,7 @@
 /* System Clock Gate Control Registers */
 #define SIM_SCGC1 (*(volatile uint32_t *) 0x40048028)
 #define SIM_SCGC4 (*(volatile uint32_t *) 0x40048034)
+#define SIM_UART5_ENABLE  BIT_11
 #define SIM_UART4_ENABLE  BIT_10
 #define SIM_EWM_ENABLE    BIT_1
 #define SIM_CMT_ENABLE    BIT_2
@@ -45,6 +52,7 @@
 #define SIM_SCGC6 (*(volatile uint32_t *) SIM_SCGC6_ADDR)
 #define SIM_SCGC6_SPI0_ENABLE  BIT_12
 #define SIM_SCGC6_SPI1_ENABLE  BIT_13
+#define SIM_SCGC6_CRC_ENABLE   BIT_18
 #define SIM_SCGC3_ADDR  0x40048030
 #define SIM_SCGC3_PTR (volatile uint32_t *) SIM_SCGC3_ADDR
 #define SIM_SCGC3 (*(volatile uint32_t *) SIM_SCGC3_ADDR)
@@ -256,13 +264,15 @@ typedef struct {
 #define UART1_BASE_ADDR 0x4006b000
 #define UART2_BASE_ADDR 0x4006c000
 #define UART3_BASE_ADDR 0x4006d000
-#define UART4_BASE_ADDR 0x4006e000
+#define UART4_BASE_ADDR 0x400ea000
+#define UART5_BASE_ADDR 0x400eb000 /* MK60DN512ZVMD10 */
 
 #define UART0 UART0_BASE_ADDR
 #define UART1 UART1_BASE_ADDR
 #define UART2 UART2_BASE_ADDR
 #define UART3 UART3_BASE_ADDR
 #define UART4 UART4_BASE_ADDR
+#define UART5 UART5_BASE_ADDR
 
 /* BDH */
 #define UART_BDH_RX_ACTIVE_INT_ENABLE BIT_6
@@ -318,6 +328,39 @@ typedef struct {
 #define UART_C4_MATCH_ADDRESS_MODE_ENABLE_2 BIT_6
 #define UART_C4_MATCH_ADDRESS_MODE_ENABLE_1 BIT_7
 #define UART_C4_BRFA_MASK 0xf
+
+/* PFIFO */
+#define UART_PFIFO_TXFE               BIT_7
+#define UART_PFIFO_TXFIFOSIZE_SHIFT   4
+#define UART_PFIFO_TXFIFOSIZE_1       (0x0 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_4       (0x1 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_8       (0x2 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_16      (0x3 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_32      (0x4 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_64      (0x5 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+#define UART_PFIFO_TXFIFOSIZE_128     (0x6 << UART_PFIFO_TXFIFOSIZE_SHIFT)
+
+#define UART_PFIFO_RXFE               BIT_3
+#define UART_PFIFO_RXFIFOSIZE_SHIFT   0
+#define UART_PFIFO_RXFIFOSIZE_1       (0x0 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_4       (0x1 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_8       (0x2 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_16      (0x3 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_32      (0x4 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_64      (0x5 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+#define UART_PFIFO_RXFIFOSIZE_128     (0x6 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+
+/* CFIFO */
+#define UART_CFIFO_TXFLUSH     BIT_7
+#define UART_CFIFO_RXFLUSH     BIT_6
+#define UART_CFIFO_TXOFE       BIT_1
+#define UART_CFIFO_RXOFE       BIT_0
+
+/* SFIFO */
+#define UART_SFIFO_TXEMPT   BIT_7
+#define UART_SFIFO_RXEMPT   BIT_6
+#define UART_SFIFO_TXOF     BIT_1
+#define UART_SFIFO_RXOF     BIT_0
 
 /*******************************************************************************
 * SPI
@@ -588,5 +631,32 @@ typedef enum {
 #define FTFL_FPROT2 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x11))
 #define FTFL_FPROT1 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x12))
 #define FTFL_FPROT0 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x13))
-#endif
 
+/*******************************************************************************
+* CRC
+*******************************************************************************/
+typedef enum {
+    CRC_CTRL_TOT1     =    1 << 31, /* R/W - 0*/
+    CRC_CTRL_TOT0     =    1 << 30, /* R/W - 0*/
+    CRC_CTRL_TOT      =  0x3 << 30, /* R/W - 0*/
+    CRC_CTRL_TOTR1    =    1 << 29, /* R/W - 0*/
+    CRC_CTRL_TOTR0    =    1 << 28, /* R/W - 0*/
+    CRC_CTRL_TOTR     =  0x3 << 28, /* R/W - 0*/
+    CRC_CTRL_FXOR     =    1 << 26, /* R/W - 0*/
+    CRC_CTRL_WAS      =    1 << 25, /* R/W - 0*/
+    CRC_CTRL_TCRC     =    1 << 24, /* R/W - 0*/
+} crcCtrl_t;
+
+#define CRC_CRC_ADDR     0x40032000
+#define CRC_CRC_PTR      (volatile uint32_t *) CRC_CRC_ADDR
+#define CRC_CRC          (*(volatile uint32_t *) CRC_CRC_ADDR)
+#define CRC_GPOLY_ADDR   0x40032004
+#define CRC_GPOLY32_PTR  (volatile uint32_t *) CRC_GPOLY_ADDR
+#define CRC_GPOLY32      (*(volatile uint32_t *) CRC_GPOLY_ADDR)
+#define CRC_GPOLY16_PTR  (volatile uint16_t *) CRC_GPOLY_ADDR
+#define CRC_GPOLY16      (*(volatile uint16_t *) CRC_GPOLY_ADDR)
+#define CRC_CTRL_ADDR    0x40032008
+#define CRC_CTRL_PTR     (volatile uint32_t *) CRC_CTRL_ADDR
+#define CRC_CTRL         (*(volatile uint32_t *) CRC_CTRL_ADDR)
+
+#endif

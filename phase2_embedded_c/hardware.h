@@ -18,6 +18,10 @@ extern void assert_(const char *file, const int line);
 
 #define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
 
+#define swap32(x) \
+    asm volatile ("rev %[out], %[in]" : [out] "=r" (x) : [in] "r" (x))
+
+
 /* POSIX Interface ***********************************************************/
 
 extern int ioctl (int fd, int cmd, int flags);
@@ -157,8 +161,67 @@ typedef struct {
 } flashConfig_t;
 
 extern int32_t flashInit(const flashConfig_t *cfg);
-extern int32_t flashEraseSector(uint32_t addr);
+extern int32_t flashErase(uint32_t addr, uint32_t numBytes);
 extern int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords);
+
+/* CRC  ***********************************************************************/
+
+/* IO_IOCTL_ commands */
+enum {
+    IO_IOCTL_CRC_SET_TOT,         /* Set Type of Transpose */
+    IO_IOCTL_CRC_GET_TOT,         /* Get Type of Transpose */
+    IO_IOCTL_CRC_SET_TOTR,        /* Set Type of Transpose for Read */
+    IO_IOCTL_CRC_GET_TOTR,        /* Get Type of Transpose for Read */
+    IO_IOCTL_CRC_SET_FXOR,        /* Set Compliment Read mode (XOR'd CRC) */
+    IO_IOCTL_CRC_GET_FXOR,        /* Get Compliment Read mode (XOR'd CRC) */
+    IO_IOCTL_CRC_SET_SEED,        /* Set the CRC Seed */
+    IO_IOCTL_CRC_GET_SEED,        /* Get the CRC Seed */
+    IO_IOCTL_CRC_SET_POLY,        /* Set the CRC Polynomial */
+    IO_IOCTL_CRC_GET_POLY,        /* Get the CRC Polynomial */
+    IO_IOCTL_CRC_SET_WIDTH,       /* Set the CRC Protocol Width */
+    IO_IOCTL_CRC_GET_WIDTH,       /* Get the CRC Protocol Width */
+    MAX_IO_IOCTRL_CRC_CMDS
+};
+
+/* TOT - CRC Type of Transposition */
+typedef enum {
+    CRC_TOT_NONE           = 0, /* No transposition */
+    CRC_TOT_BITS           = 1, /* Only Bits in bytes are transposed */
+    CRC_TOT_BITS_AND_BYTES = 2, /* Bits in bytes and bytes are transposed */
+    CRC_TOT_ONLY_BYTES     = 3, /* Only Bytes are transposed */
+    MAX_CRC_TOT,
+} crcTot_t;
+
+/* TOTR - CRC Type of Transposition for Read*/
+typedef enum {
+    CRC_TOTR_NONE           = 0, /* No transposition */
+    CRC_TOTR_BITS           = 1, /* Only Bits in bytes are transposed */
+    CRC_TOTR_BITS_AND_BYTES = 2, /* Bits in bytes and bytes are transposed */
+    CRC_TOTR_ONLY_BYTES     = 3, /* Only Bytes are transposed */
+    MAX_CRC_TOTR,
+} crcTotr_t;
+
+/* FXOR - Compliment Read (XOR) of CRC Data Register*/
+typedef enum {
+    CRC_FXOR_DISABLE = 0, /* Final checksum will not be XOR'd */
+    CRC_FXOR_ENABLE  = 1, /* Final checksum XOR'd with all 1's mask */
+    MAX_CRC_FXOR
+} crcFxor_t;
+
+/* WIDTH - CRC Protocol Width*/
+typedef enum {
+    CRC_WIDTH_16      = 0, /* 16-bit CRC Checksum */
+    CRC_WIDTH_32      = 1, /* 32-bit CRC Checksum */
+    MAX_CRC_WIDTH
+} crcWidth_t;
+
+#define DEVOPTAB_CRC_STR    "crc"
+
+int  crc_open_r  ( void *reent, devoptab_t *dot,  int mode,  int flags );
+int  crc_ioctl   (              devoptab_t *dot,  int cmd,   int flags );
+int  crc_close_r ( void *reent, devoptab_t *dot );
+long crc_write_r ( void *reent, devoptab_t *dot, const void *buf, int len );
+long crc_read_r  ( void *reent, devoptab_t *dat,       void *buf, int len );
 
 /* EXAMPLE *******************************************************************/
 
@@ -190,9 +253,17 @@ extern int32_t featureRead(uint8_t *buffer, int32_t len);
 #define N_LED_BLUE_PORT   PORTA
 #define N_LED_BLUE_PIN    10
 
+/* SWITCHES *******************************************************************/
+#define N_SWITCH_1_PORT  PORTA
+#define N_SWITCH_1_PIN   19
+
 /* UART ***********************************************************************/
 
-#define MAX_UARTS     5
+#define MAX_UARTS     6
+
+#define UART5_PORT    PORTE
+#define UART5_RX_PIN  9
+#define UART5_TX_PIN  8
 
 #define UART4_PORT    PORTE
 #define UART4_RX_PIN  25

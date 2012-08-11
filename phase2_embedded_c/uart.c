@@ -215,6 +215,7 @@ static volatile uartPort_t *uartPortGet(uint32_t uart)
     case UART2: addr = UART2_BASE_ADDR; break;
     case UART3: addr = UART3_BASE_ADDR; break;
     case UART4: addr = UART4_BASE_ADDR; break;
+    case UART5: addr = UART5_BASE_ADDR; break;
     default:
         assert(0);
         return 0;
@@ -245,6 +246,7 @@ static int32_t uartGetClock(uint32_t uart, int32_t systemClockHz,
     case UART2:
     case UART3:
     case UART4:
+    case UART5:
         uartClockHz = busClockHz;
         break;
     default:
@@ -285,6 +287,9 @@ static int32_t uartReserve(uartIF_t *uartIF)
         break;
     case UART4:
         uartIdx = 4;
+        break;
+    case UART5:
+        uartIdx = 5;
         break;
     default:
         assert(0);
@@ -328,8 +333,12 @@ void uartFree(uartIF_t *uartIF)
     case UART4:
         uartIdx = 4;
         break;
+    case UART5:
+        uartIdx = 5;
+        break;
     default:
         assert(0);
+        return;
     }
     uartOwner[uartIdx] = 0;
 }
@@ -376,6 +385,13 @@ int32_t uartInit(uartIF_t *uartIF)
         txPortCtrlBits = PORT_MUX_ALT3; /* UART is ALT3 on these pins */
         rxPortCtrlBits = PORT_MUX_ALT3;
         break;
+    case UART5:
+        port  = UART5_PORT;
+        txPin = UART5_TX_PIN;
+        rxPin = UART5_RX_PIN;
+        txPortCtrlBits = PORT_MUX_ALT3; /* UART is ALT3 on these pins */
+        rxPortCtrlBits = PORT_MUX_ALT3;
+        break;
     case UART0:
     case UART1:
     case UART2:
@@ -411,12 +427,14 @@ int32_t uartInit(uartIF_t *uartIF)
     case UART2: SIM_SCGC4 |= SIM_UART2_ENABLE; break;
     case UART3: SIM_SCGC4 |= SIM_UART3_ENABLE; break;
     case UART4: SIM_SCGC1 |= SIM_UART4_ENABLE; break;
+    case UART5: SIM_SCGC1 |= SIM_UART5_ENABLE; break;
     default:
         assert(0);
     }
 
     /*
      * Enabel UART Pins
+     * TODO: J-Mac why the same code twice?
      */
 
     switch (uartIF->uart) {
@@ -425,6 +443,7 @@ int32_t uartInit(uartIF_t *uartIF)
     case UART2: SIM_SCGC4 |= SIM_UART2_ENABLE; break;
     case UART3: SIM_SCGC4 |= SIM_UART3_ENABLE; break;
     case UART4: SIM_SCGC1 |= SIM_UART4_ENABLE; break;
+    case UART5: SIM_SCGC1 |= SIM_UART5_ENABLE; break;
     default:
         assert(0);
     }
@@ -448,6 +467,12 @@ int32_t uartInit(uartIF_t *uartIF)
         baudFineAdjust = 2 * uartClockHz / uartIF->baud  - sbr * 32;
         uartPort->c4 = baudFineAdjust & UART_C4_BRFA_MASK;
 
+        /* Setup RX FIFO */
+        uartPort->pfifo  = UART_PFIFO_RXFIFOSIZE_16;
+        uartPort->cfifo |= UART_CFIFO_RXFLUSH;
+        uartPort->pfifo |= UART_PFIFO_RXFE;
+        uartPort->rwfifo = 1; /* FIFO is 16 datawords. Trigger buffer full
+                                 flag when at least one byte is in the FIFO */
 
         uartPort->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE;
 
@@ -478,7 +503,7 @@ int32_t uartWrite(uartIF_t *uartIF, uint8_t *buffer, int32_t len)
         for (i = 0; i < len; i++) {
             int readyRetry = 100;
             /* Wait for space in the FIFO */
-            while(!(uartPort->s1 & UART_S1_TX_DATA_LOW) && readyRetry--);
+            while(!(uartPort->s1 & UART_S1_TX_DATA_LOW) && --readyRetry);
 
             if (readyRetry) {
                 /* Send the character */
@@ -506,4 +531,36 @@ int32_t uartWrite(uartIF_t *uartIF, uint8_t *buffer, int32_t len)
 int32_t uartPrint(uartIF_t *uartIF, char *string)
 {
     return uartWrite(uartIF, (uint8_t *) string, strlen(string));
+}
+
+/*******************************************************************************
+*
+* uartRead
+*
+* This routine receives the requested number of bytes from a uart port
+*
+* RETURNS: Number bytes received
+*
+*******************************************************************************/
+int32_t uartRead(uartIF_t *uartIF, uint8_t *buffer, int32_t len)
+{
+    volatile uartPort_t *uartPort = uartPortGet(uartIF->uart);
+    int i;
+    uint8_t *dataPtr = buffer;
+
+    if (uartPort) {
+        for (i = 0; i < len; i++) {
+            int readyRetry = 1000;
+
+            while (!(uartPort->s1 & UART_S1_RX_DATA_FULL) && --readyRetry)
+                ;
+
+            if (readyRetry)
+                *dataPtr++ = uartPort->d;
+            else
+                break;
+        }
+    }
+
+    return dataPtr - buffer;
 }

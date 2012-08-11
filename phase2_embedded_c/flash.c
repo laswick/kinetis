@@ -25,29 +25,42 @@ static int32_t checkErrors(void)
     }
 }
 
-static __RAMCODE__ int32_t safeFlashEraseSector(uint32_t addr)
+static __RAMCODE__ int32_t safeFlashErase(uint32_t addr, uint32_t numBytes)
 {
+    int numSectors;
+    int i;
+
     /* Must be phrase aligned */
     if ((addr & 0x7))
         return ERROR;
 
-    /* Wait until hardware is idle */
-    while (!(FTFL_FSTAT & FTFL_CCIF))
-        ;
+    assert((numBytes % FTFL_FLASH_SECTOR_SIZE) == 0);
+    numSectors = numBytes / FTFL_FLASH_SECTOR_SIZE;
 
-    FTFL_FCCOB0 = FTFL_CMD_ERASE_FLASH_SECT;
-    FTFL_FCCOB1 = (uint8_t)(addr >> 16);
-    FTFL_FCCOB2 = (uint8_t)(addr >>  8);
-    FTFL_FCCOB3 = (uint8_t)(addr);
+    for (i = 0; i < numSectors; i++) {
+        /* Wait until hardware is idle */
+        while (!(FTFL_FSTAT & FTFL_CCIF))
+            ;
 
-    /* Execute command */
-    FTFL_FSTAT |= FTFL_CCIF;
+        FTFL_FCCOB0 = FTFL_CMD_ERASE_FLASH_SECT;
+        FTFL_FCCOB1 = (uint8_t)(addr >> 16);
+        FTFL_FCCOB2 = (uint8_t)(addr >>  8);
+        FTFL_FCCOB3 = (uint8_t)(addr);
 
-    /* Wait until hardware is idle */
-    while (!(FTFL_FSTAT & FTFL_CCIF))
-        ;
+        /* Execute command */
+        FTFL_FSTAT |= FTFL_CCIF;
 
-    return checkErrors();
+        /* Wait until hardware is idle */
+        while (!(FTFL_FSTAT & FTFL_CCIF))
+            ;
+
+        addr += FTFL_FLASH_SECTOR_SIZE;
+
+        if (checkErrors() == ERROR)
+            return ERROR;
+    }
+
+    return OK;
 }
 
 static __RAMCODE__ int32_t safeFlashWrite(uint32_t addr, uint32_t *dataPtr,
@@ -99,9 +112,9 @@ int32_t flashInit(const flashConfig_t *cfg)
     return checkErrors();
 }
 
-int32_t flashEraseSector(uint32_t addr)
+int32_t flashErase(uint32_t addr, uint32_t numBytes)
 {
-    return safeFlashEraseSector(addr);
+    return safeFlashErase(addr, numBytes);
 }
 
 int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords)

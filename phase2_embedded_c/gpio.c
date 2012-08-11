@@ -188,6 +188,7 @@ uint32_t gpioPortRead(uint32_t port)
 *******************************************************************************/
 uint32_t gpioRead(uint32_t port, uint32_t pin)
 {
-    return 0;
+    volatile gpioPort_t *gpioPort = gpioPortGet(port);
+    return ((gpioPort->pdir & (1 << pin)) ? TRUE : FALSE);
 }
 

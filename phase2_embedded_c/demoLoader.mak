@@ -6,26 +6,28 @@
 
 # Name of project/output file:
 
-TARGET = spi_demo
+TARGET = loader_demo
 
 # List your asm files here (minus the .s):
 
-ASM_PIECES = startcode libc_stubs
+ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware spi demoSpi gpio devoptab crc
+C_PIECES = hardware gpio demoGpio
 
 # Define Hardware Platform
 
 PLATFORM = FREESCALE_K60N512_TOWER_HW
 
 PATH :=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin:${PATH}
+#PATH :=/opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/bin:${PATH}
 CC = arm-none-eabi-gcc
 AS = arm-none-eabi-as
 LD = arm-none-eabi-ld
 GDB = arm-none-eabi-gdb
 OBJDUMP = arm-none-eabi-objdump
+OBJCOPY = arm-none-eabi-objcopy
 
 ASM_FLAGS = -g
 ASM_FILES = ${ASM_PIECES:%=%.s}
@@ -33,24 +35,26 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -c -g -Wall -MD -O${OPT_LEVEL} -D${PLATFORM}
+C_FLAGS = -Wall -c -g -O${OPT_LEVEL} -D${PLATFORM}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
 O_FILES = ${ASM_O_FILES} ${C_O_FILES}
 
-CPU_FLAGS = -mcpu=cortex-m4 -mthumb -mthumb-interwork -mlittle-endian
+CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
-LD_SCRIPT = linkerscript.ld
+LD_SCRIPT = linkerscript_app.ld
 
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
+#LIBPATH = /opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/arm-none-eabi/lib/thumb2
 
 LIBS  = ${LIBPATH}/libc.a
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
+	@${OBJCOPY} -Osrec ${TARGET}.axf ${TARGET}.hex
 	@ln -fs ${TARGET}.out.s out.s
 	@ln -fs ${TARGET}.axf out.axf
 	@echo
@@ -76,6 +80,7 @@ clean:
 	@echo
 	rm -f *.o
 	rm -f ${TARGET}.axf
+	rm -f ${TARGET}.hex
 	rm -f ${TARGET}.out.s
 	rm -f out.axf
 	rm -f out.s

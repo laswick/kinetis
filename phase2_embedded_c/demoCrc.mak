@@ -6,7 +6,7 @@
 
 # Name of project/output file:
 
-TARGET = spi_demo
+TARGET = crc_demo
 
 # List your asm files here (minus the .s):
 
@@ -14,7 +14,7 @@ ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware spi demoSpi gpio devoptab crc
+C_PIECES = hardware crc demoCrc gpio spi devoptab
 
 # Define Hardware Platform
 

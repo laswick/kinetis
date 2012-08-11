@@ -125,9 +125,9 @@ devoptab_t devoptab_spi1   = { "spi1", spi_open_r,  spi_ioctl, spi_close_r,
                                              spi_write_r, spi_read_r, NULL  };
 devoptab_t devoptab_spi2   = { "spi2", spi_open_r,  spi_ioctl, spi_close_r,
                                              spi_write_r, spi_read_r, NULL  };
-
-devoptab_t devoptab_uart0 = { "uart0", 0, 0, 0, 0, 0 };
-devoptab_t devoptab_uart1 = { "uart1", 0, 0, 0, 0, 0 };
+devoptab_t devoptab_crc    = { "crc",  crc_open_r,  crc_ioctl, crc_close_r,
+                                             crc_write_r, crc_read_r, NULL  };
+devoptab_t devoptab_uart1  = { "uart1", 0, 0, 0, 0, 0 };
 devoptab_t devoptab_uart2 = { "uart2", 0, 0, 0, 0, 0 };
 devoptab_t devoptab_uart3 = { "uart3", 0, 0, 0, 0, 0 };
 devoptab_t devoptab_uart4 = { "uart4", 0, 0, 0, 0, 0 };
@@ -147,6 +147,7 @@ devoptab_t *devoptab_list[] = {
     &devoptab_spi0,
     &devoptab_spi1,
     &devoptab_spi2,
+    &devoptab_crc,
     0                /* terminates the list */
 };
 

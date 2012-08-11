@@ -9,7 +9,7 @@
 
 MEMORY
 {
-    FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 512K
+    FLASH (rx) : ORIGIN = 0x00004000, LENGTH = 496K
     SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
 
@@ -22,7 +22,7 @@ SECTIONS
         _vector_rom = .;
         *(.vector_table)
 
-        . = 0x00000400;
+        . = _vector_rom + 0x400;
         *(.kinetis_flash_config_field)
 
         *(.default_handlers)
@@ -61,6 +61,7 @@ SECTIONS
         . = ALIGN(4);
         _ramcode_end = .;
     } > SRAM AT>FLASH
+
 
     .bss :
     {
