@@ -262,17 +262,27 @@ extern int32_t featureRead(uint8_t *buffer, int32_t len);
 #define MAX_UARTS     6
 
 #define UART5_PORT    PORTE
+#define UART5_PORT_ENABLE SIM_PORTE_ENABLE
 #define UART5_RX_PIN  9
 #define UART5_TX_PIN  8
+#define UART5_RX_MUX  PORT_MUX_ALT3
+#define UART5_TX_MUX  PORT_MUX_ALT3
 
 #define UART4_PORT    PORTE
+#define UART4_PORT_ENABLE SIM_PORTE_ENABLE
 #define UART4_RX_PIN  25
 #define UART4_TX_PIN  24
+#define UART4_RX_MUX  PORT_MUX_ALT3
+#define UART4_TX_MUX  PORT_MUX_ALT3
 
 #define UART3_PORT    PORTC
+#define UART3_PORT_ENABLE SIM_PORTC_ENABLE
 #define UART3_RX_PIN  16
 #define UART3_TX_PIN  17
+#define UART3_RX_MUX  PORT_MUX_ALT3
+#define UART3_TX_MUX  PORT_MUX_ALT3
 
+#if !defined(UART_POSIX)
 typedef struct {
     uint32_t uart;
     int32_t  systemClockHz;
@@ -288,6 +298,7 @@ extern int32_t uartPrint(uartIF_t *cfg, char *string);
 extern int32_t uartWrite(uartIF_t *cfg, uint8_t *buffer, int32_t len);
 extern int32_t uartRead(uartIF_t *cfg, uint8_t *buffer, int32_t len);
 extern void    setStdout(uartIF_t *uartIF);
+#endif
 
 #define DEVOPTAB_UART0_STR    "uart0"
 #define DEVOPTAB_UART1_STR    "uart1"
@@ -297,7 +308,7 @@ extern void    setStdout(uartIF_t *uartIF);
 #define DEVOPTAB_UART5_STR    "uart5"
 
 int  uart_open_r  ( void *reent, devoptab_t *dot,  int mode,  int flags );
-int  uart_ioctl   ( void *reent, devoptab_t *dot,  int cmd,   int flags );
+int  uart_ioctl   (              devoptab_t *dot,  int cmd,   int flags );
 int  uart_close_r ( void *reent, devoptab_t *dot );
 long uart_write_r ( void *reent, devoptab_t *dot, const void *buf, int len );
 long uart_read_r  ( void *reent, devoptab_t *dat,       void *buf, int len );
