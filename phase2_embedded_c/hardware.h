@@ -294,6 +294,7 @@ extern void    setStdout(uartIF_t *uartIF);
 #define DEVOPTAB_UART2_STR    "uart2"
 #define DEVOPTAB_UART3_STR    "uart3"
 #define DEVOPTAB_UART4_STR    "uart4"
+#define DEVOPTAB_UART5_STR    "uart5"
 
 int  uart_open_r  ( void *reent, devoptab_t *dot,  int mode,  int flags );
 int  uart_ioctl   ( void *reent, devoptab_t *dot,  int cmd,   int flags );

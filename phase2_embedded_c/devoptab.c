@@ -110,8 +110,8 @@
 /* Error Stuff, WIP */
 #define errno (*__errno())
 extern int *__errno ( void );
-//static struct _reent impure_data = { 0, 0, "", 0, "C" };
-//struct _reent * _impure_ptr = &impure_data;
+static struct _reent impure_data = { 0, 0, "", 0, "C" };
+struct _reent * _impure_ptr = &impure_data;
 int * __errno () {
     return &_impure_ptr->_errno;
 }
@@ -127,10 +127,11 @@ devoptab_t devoptab_spi2   = { "spi2", spi_open_r,  spi_ioctl, spi_close_r,
                                              spi_write_r, spi_read_r, NULL  };
 devoptab_t devoptab_crc    = { "crc",  crc_open_r,  crc_ioctl, crc_close_r,
                                              crc_write_r, crc_read_r, NULL  };
-devoptab_t devoptab_uart1  = { "uart1", 0, 0, 0, 0, 0 };
+devoptab_t devoptab_uart1 = { "uart1", 0, 0, 0, 0, 0 };
 devoptab_t devoptab_uart2 = { "uart2", 0, 0, 0, 0, 0 };
 devoptab_t devoptab_uart3 = { "uart3", 0, 0, 0, 0, 0 };
 devoptab_t devoptab_uart4 = { "uart4", 0, 0, 0, 0, 0 };
+devoptab_t devoptab_uart5 = { "uart5", 0, 0, 0, 0, 0 };
 
 /*******************************************************************************/
 /* DEVOPTAB Section */
@@ -144,6 +145,7 @@ devoptab_t *devoptab_list[] = {
     &devoptab_uart2,
     &devoptab_uart3,
     &devoptab_uart4,
+    &devoptab_uart5,
     &devoptab_spi0,
     &devoptab_spi1,
     &devoptab_spi2,

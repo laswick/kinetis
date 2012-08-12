@@ -68,6 +68,7 @@ typedef enum uartModule_e{
     UART_MODULE_2,
     UART_MODULE_3,
     UART_MODULE_4,
+    UART_MODULE_5,
     NUM_UART_MODULES,
 } uartModule_t;
 
@@ -105,9 +106,16 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
     else if (strcmp(DEVOPTAB_UART4_STR, dot->name) == 0) {
         mod = UART_MODULE_4;
     }
+    else if (strcmp(DEVOPTAB_UART5_STR, dot->name) == 0) {
+        mod = UART_MODULE_5;
+    }
+
     else {
         /* Device does not exist */
+#if 0
+        /* TODO doesn't compile.  Shaun WTF on _reent? */
         ((struct _reent *)reent)->_errno = ENODEV;
+#endif
         return FALSE;
     }
 
@@ -430,23 +438,8 @@ int32_t uartInit(uartIF_t *uartIF)
     case UART5: SIM_SCGC1 |= SIM_UART5_ENABLE; break;
     default:
         assert(0);
-    }
+   }
 
-    /*
-     * Enabel UART Pins
-     * TODO: J-Mac why the same code twice?
-     */
-
-    switch (uartIF->uart) {
-    case UART0: SIM_SCGC4 |= SIM_UART0_ENABLE; break;
-    case UART1: SIM_SCGC4 |= SIM_UART1_ENABLE; break;
-    case UART2: SIM_SCGC4 |= SIM_UART2_ENABLE; break;
-    case UART3: SIM_SCGC4 |= SIM_UART3_ENABLE; break;
-    case UART4: SIM_SCGC1 |= SIM_UART4_ENABLE; break;
-    case UART5: SIM_SCGC1 |= SIM_UART5_ENABLE; break;
-    default:
-        assert(0);
-    }
 
     volatile uartPort_t *uartPort = uartPortGet(uartIF->uart);
 
@@ -564,3 +557,40 @@ int32_t uartRead(uartIF_t *uartIF, uint8_t *buffer, int32_t len)
 
     return dataPtr - buffer;
 }
+
+#if 0
+
+#define  _isr_uart3_status_sources isr_uart3_status_sources
+/******************************************************************************
+* isr_uart3_status_sources(void)
+*
+* Status ISR definition.
+*
+******************************************************************************/
+extern void isr_uart3_status_sources(void)
+
+{
+    static volatile int32_t count;
+
+    count++;
+   #define VECTORNUM                     (*(volatile uint8_t*)(0xE000ED04))
+
+   return;
+}
+
+
+/******************************************************************************
+* _isr_uart3_error_sources
+*
+* Error ISR definition.
+*
+******************************************************************************/
+extern void _isr_uart3_error_sources(void)
+
+{
+   #define VECTORNUM                     (*(volatile uint8_t*)(0xE000ED04))
+
+   return;
+}
+
+#endif
