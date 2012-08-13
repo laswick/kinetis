@@ -21,6 +21,7 @@ extern void assert_(const char *file, const int line);
 #define swap32(x) \
     asm volatile ("rev %[out], %[in]" : [out] "=r" (x) : [in] "r" (x))
 
+#define __RAMCODE__ __attribute__ ((long_call, section(".ramcode")))
 
 /* POSIX Interface ***********************************************************/
 
@@ -37,6 +38,11 @@ typedef struct devoptab_s {
                                                                       int len );
     void *priv;
 } devoptab_t;
+
+/* INTERRUPTS *****************************************************************/
+#define hwInterruptsEnable()  asm volatile ("cpsie i")
+#define hwInterruptsDisable() asm volatile ("cpsid i")
+extern void hwInstallISRHandler(uint32_t isr, void *isrHandler);
 
 /* GPIO ***********************************************************************/
 
@@ -222,6 +228,35 @@ int  crc_ioctl   (              devoptab_t *dot,  int cmd,   int flags );
 int  crc_close_r ( void *reent, devoptab_t *dot );
 long crc_write_r ( void *reent, devoptab_t *dot, const void *buf, int len );
 long crc_read_r  ( void *reent, devoptab_t *dat,       void *buf, int len );
+
+/* MPU ***********************************************************************/
+enum {
+    MPU_ATTR_READ    = BIT_0,
+    MPU_ATTR_WRITE   = BIT_1,
+    MPU_ATTR_EXECUTE = BIT_2,
+};
+
+#define MPU_REGION0_ID 0xDEAFC0DE
+typedef struct {
+    uint32_t addr;
+    uint32_t master;
+    uint32_t errorAttr;
+    bool32_t writeError;
+    bool32_t readError;
+} mpuFaultDesc_t;
+
+typedef struct {
+    bool32_t enable;
+    uint32_t startAddr; /* Must be  32bit aligned */
+    uint32_t endAddr;   /* Must be (32bit aligned - 1) i.e 0x001f */
+    uint8_t  attr[MAX_CROSSBAR_MASTERS];
+    void (*notifyFn)(const mpuFaultDesc_t *);
+} mpuRegion_t;
+
+extern int32_t  mpuEnable(bool32_t enable);
+extern int32_t  mpuAddRegion(const mpuRegion_t *regionPtr);
+extern int32_t  mpuModifyRegion(int32_t regionId, const mpuRegion_t *regionPtr);
+extern bool32_t mpuCheckFaults(void);
 
 /* EXAMPLE *******************************************************************/
 

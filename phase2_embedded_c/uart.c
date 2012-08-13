@@ -363,7 +363,7 @@ int32_t uartWrite(uartIF_t *uartIF, uint8_t *buffer, int32_t len)
     if (uartPort) {
 
         for (i = 0; i < len; i++) {
-            int readyRetry = 100;
+            int readyRetry = 1000;
             /* Wait for space in the FIFO */
             while(!(uartPort->s1 & UART_S1_TX_DATA_LOW) && --readyRetry);
 

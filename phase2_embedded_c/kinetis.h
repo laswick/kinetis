@@ -11,8 +11,223 @@
 /*******************************************************************************
 * ARM NVIC
 *******************************************************************************/
+enum {
+    _INIT_STACK_POINTER         = 0,
+    ISR_RESET                   = 1,
+    ISR_NMI                     = 2,
+    ISR_HARD_FAULT              = 3,
+    ISR_MEMORY_MANAGMENT_FAULT  = 4,
+    ISR_BUS_FAULT               = 5,
+    ISR_USAGE_FAULT             = 6,
+    ISR_RESERVED_7              = 7,
+    ISR_RESERVED_8              = 8,
+    ISR_RESERVED_9              = 9,
+    ISR_RESERVED_10             = 10,
+    ISR_SVC                     = 11,
+    ISR_DEBUG_MONITOR           = 12,
+    ISR_RESERVED_13             = 13,
+    ISR_PEND_SV                 = 14,
+    ISR_SYSTICK                 = 15,
+
+                            /* Vendor Specific (Freescale) Defined Exceptions */
+    ISR_DMA0                    = 16,
+    ISR_DMA1                    = 17,
+    ISR_DMA2                    = 18,
+    ISR_DMA3                    = 19,
+    ISR_DMA4                    = 20,
+    ISR_DMA5                    = 21,
+    ISR_DMA6                    = 22,
+    ISR_DMA7                    = 23,
+    ISR_DMA8                    = 24,
+    ISR_DMA9                    = 25,
+    ISR_DMA10                   = 26,
+    ISR_DMA11                   = 27,
+    ISR_DMA12                   = 28,
+    ISR_DMA13                   = 29,
+    ISR_DMA14                   = 30,
+    ISR_DMA15                   = 31,
+    ISR_DMA_ERROR               = 32,
+    ISR_MCM                     = 33,
+    ISR_FLASH_CMD_COMPLETE      = 34,
+    ISR_FLASH_READ_COLLISION    = 35,
+    ISR_MODE_CONTROLLER         = 36,
+    ISR_LOW_LEAKAGE_WAKEUP      = 37,
+    ISR_WATCHDOG                = 38,
+    ISR_RANDOM_NUMBER_GENERATOR = 39,
+    ISR_I2C0                    = 40,
+    ISR_I2C1                    = 41,
+    ISR_SPI0                    = 42,
+    ISR_SPI1                    = 43,
+    ISR_SPI2                    = 44,
+    ISR_CAN0_ORED_MSG_BUFFER    = 45,
+    ISR_CAN0_BUFFER_OFF         = 46,
+    ISR_CAN0_ERROR              = 47,
+    ISR_CAN0_TX_WARNING         = 48,
+    ISR_CAN0_RX_WARNING         = 49,
+    ISR_CAN0_WAKE_UP            = 50,
+    ISR_CAN0_IMEU               = 51,
+    ISR_CAN0_LOST_RX            = 52,
+    ISR_CAN1_ORED_MSG_BUFFER    = 53,
+    ISR_CAN1_BUFFER_OFF         = 54,
+    ISR_CAN1_ERROR              = 55,
+    ISR_CAN1_TX_WARNING         = 56,
+    ISR_CAN1_RX_WARNING         = 57,
+    ISR_CAN1_WAKE_UP            = 58,
+    ISR_CAN1_IMEU               = 59,
+    ISR_CAN1_LOST_RX            = 60,
+    ISR_UART0_STATUS_SOURCES    = 61,
+    ISR_UART0_ERROR_SOURCES     = 62,
+    ISR_UART1_STATUS_SOURCES    = 63,
+    ISR_UART1_ERROR_SOURCES     = 64,
+    ISR_UART2_STATUS_SOURCES    = 65,
+    ISR_UART2_ERROR_SOURCES     = 66,
+    ISR_UART3_STATUS_SOURCES    = 67,
+    ISR_UART3_ERROR_SOURCES     = 68,
+    ISR_UART4_STATUS_SOURCES    = 69,
+    ISR_UART4_ERROR_SOURCES     = 70,
+    ISR_UART5_STATUS_SOURCES    = 71,
+    ISR_UART5_ERROR_SOURCES     = 72,
+    ISR_ADC0                    = 73,
+    ISR_ADC1                    = 74,
+    ISR_CMP0                    = 75,
+    ISR_CMP1                    = 76,
+    ISR_CMP2                    = 77,
+    ISR_FTM0                    = 78,
+    ISR_FTM1                    = 79,
+    ISR_FTM2                    = 80,
+    ISR_CMT                     = 81,
+    ISR_RTC                     = 82,
+    ISR_RESERVED_83             = 83,
+    ISR_PIT0                    = 84,
+    ISR_PIT1                    = 85,
+    ISR_PIT2                    = 86,
+    ISR_PIT3                    = 87,
+    ISR_PDB                     = 88,
+    ISR_USB_OTG                 = 89,
+    ISR_USB_CHARGER_DETECT      = 90,
+    ISR_ETHERNET_MAC_1588_TIMER = 91,
+    ISR_ETHERNET_MAC_TX         = 92,
+    ISR_ETHERNET_MAC_RX         = 93,
+    ISR_ETHERNET_MAC_ERROR      = 94,
+    ISR_I2S                     = 95,
+    ISR_SDHC                    = 96,
+    ISR_DAC0                    = 97,
+    ISR_DAC1                    = 98,
+    ISR_TSI                     = 99,
+    ISR_MCG                     = 100,
+    ISR_LOW_POWER_TIMER         = 101,
+    ISR_RESERVED_102            = 102,
+    ISR_GPIO_A                  = 103,
+    ISR_GPIO_B                  = 104,
+    ISR_GPIO_C                  = 105,
+    ISR_GPIO_D                  = 106,
+    ISR_GPIO_E                  = 107,
+    ISR_RESERVED_108            = 108,
+    ISR_RESERVED_109            = 109,
+    ISR_SOFTWARE                = 110,
+
+    MAX_ISR,
+};
+
 #define NVIC_VTOR (*(volatile uint32_t *) 0xE000ED08)    /* Vector Offset Reg */
 #define NVIC_VTOR_SET(x) { NVIC_VTOR = ((x) & 0x1FFFFF80); }
+
+#define NVIC_ICTR   (*(volatile uint32_t *) 0xE000E004)
+
+#define NVIC_ISER_BASE_ADDR  0xE000E100
+#define NVIC_ISER0  (*(volatile uint32_t *) (NVIC_ISER_BASE_ADDR + 0x00))
+#define NVIC_ISER1  (*(volatile uint32_t *) (NVIC_ISER_BASE_ADDR + 0x04))
+#define NVIC_ISER2  (*(volatile uint32_t *) (NVIC_ISER_BASE_ADDR + 0x08))
+#define NVIC_ISER3  (*(volatile uint32_t *) (NVIC_ISER_BASE_ADDR + 0x0C))
+#define NVIC_ISER4  (*(volatile uint32_t *) (NVIC_ISER_BASE_ADDR + 0x10))
+#define NVIC_ISER5  (*(volatile uint32_t *) (NVIC_ISER_BASE_ADDR + 0x14))
+#define NVIC_ISER6  (*(volatile uint32_t *) (NVIC_ISER_BASE_ADDR + 0x18))
+#define NVIC_ISER7  (*(volatile uint32_t *) (NVIC_ISER_BASE_ADDR + 0x1C))
+
+#define NVIC_ICER_BASE_ADDR  0xE000E180
+#define NVIC_ICER0  (*(volatile uint32_t *) (NVIC_ICER_BASE_ADDR + 0x00))
+#define NVIC_ICER1  (*(volatile uint32_t *) (NVIC_ICER_BASE_ADDR + 0x04))
+#define NVIC_ICER2  (*(volatile uint32_t *) (NVIC_ICER_BASE_ADDR + 0x08))
+#define NVIC_ICER3  (*(volatile uint32_t *) (NVIC_ICER_BASE_ADDR + 0x0C))
+#define NVIC_ICER4  (*(volatile uint32_t *) (NVIC_ICER_BASE_ADDR + 0x10))
+#define NVIC_ICER5  (*(volatile uint32_t *) (NVIC_ICER_BASE_ADDR + 0x14))
+#define NVIC_ICER6  (*(volatile uint32_t *) (NVIC_ICER_BASE_ADDR + 0x18))
+#define NVIC_ICER7  (*(volatile uint32_t *) (NVIC_ICER_BASE_ADDR + 0x1C))
+
+#define NVIC_ISPR_BASE_ADDR  0xE000E200
+#define NVIC_ISPR0  (*(volatile uint32_t *) (NVIC_ISPR_BASE_ADDR + 0x00))
+#define NVIC_ISPR1  (*(volatile uint32_t *) (NVIC_ISPR_BASE_ADDR + 0x04))
+#define NVIC_ISPR2  (*(volatile uint32_t *) (NVIC_ISPR_BASE_ADDR + 0x08))
+#define NVIC_ISPR3  (*(volatile uint32_t *) (NVIC_ISPR_BASE_ADDR + 0x0C))
+#define NVIC_ISPR4  (*(volatile uint32_t *) (NVIC_ISPR_BASE_ADDR + 0x10))
+#define NVIC_ISPR5  (*(volatile uint32_t *) (NVIC_ISPR_BASE_ADDR + 0x14))
+#define NVIC_ISPR6  (*(volatile uint32_t *) (NVIC_ISPR_BASE_ADDR + 0x18))
+#define NVIC_ISPR7  (*(volatile uint32_t *) (NVIC_ISPR_BASE_ADDR + 0x1C))
+
+#define NVIC_ICPR_BASE_ADDR  0xE000E280
+#define NVIC_ICPR0  (*(volatile uint32_t *) (NVIC_ICPR_BASE_ADDR + 0x00))
+#define NVIC_ICPR1  (*(volatile uint32_t *) (NVIC_ICPR_BASE_ADDR + 0x04))
+#define NVIC_ICPR2  (*(volatile uint32_t *) (NVIC_ICPR_BASE_ADDR + 0x08))
+#define NVIC_ICPR3  (*(volatile uint32_t *) (NVIC_ICPR_BASE_ADDR + 0x0C))
+#define NVIC_ICPR4  (*(volatile uint32_t *) (NVIC_ICPR_BASE_ADDR + 0x10))
+#define NVIC_ICPR5  (*(volatile uint32_t *) (NVIC_ICPR_BASE_ADDR + 0x14))
+#define NVIC_ICPR6  (*(volatile uint32_t *) (NVIC_ICPR_BASE_ADDR + 0x18))
+#define NVIC_ICPR7  (*(volatile uint32_t *) (NVIC_ICPR_BASE_ADDR + 0x1C))
+
+#define NVIC_IABR_BASE_ADDR  0xE000E300
+#define NVIC_IABR0  (*(volatile uint32_t *) (NVIC_IABR_BASE_ADDR + 0x00))
+#define NVIC_IABR1  (*(volatile uint32_t *) (NVIC_IABR_BASE_ADDR + 0x04))
+#define NVIC_IABR2  (*(volatile uint32_t *) (NVIC_IABR_BASE_ADDR + 0x08))
+#define NVIC_IABR3  (*(volatile uint32_t *) (NVIC_IABR_BASE_ADDR + 0x0C))
+#define NVIC_IABR4  (*(volatile uint32_t *) (NVIC_IABR_BASE_ADDR + 0x10))
+#define NVIC_IABR5  (*(volatile uint32_t *) (NVIC_IABR_BASE_ADDR + 0x14))
+#define NVIC_IABR6  (*(volatile uint32_t *) (NVIC_IABR_BASE_ADDR + 0x18))
+#define NVIC_IABR7  (*(volatile uint32_t *) (NVIC_IABR_BASE_ADDR + 0x1C))
+
+/*******************************************************************************
+* ARM SYSTEM CONTROL BLOCK
+*******************************************************************************/
+enum {
+    ARM_SHCSR_USGFAULTENA    = BIT_18,
+    ARM_SHCSR_BUSFAULTENA    = BIT_17,
+    ARM_SHCSR_MEMFAULTENA    = BIT_16,
+    ARM_SHCSR_SVCALLPENDED   = BIT_15,
+    ARM_SHCSR_BUSFAULTPENDED = BIT_14,
+    ARM_SHCSR_MEMFAULTPENDED = BIT_13,
+    ARM_SHCSR_USGFAULTPENDED = BIT_12,
+    ARM_SHCSR_SYSTICKACT     = BIT_11,
+    ARM_SHCSR_PENDSVACT      = BIT_10,
+    ARM_SHCSR_MONITORACT     = BIT_8,
+    ARM_SHCSR_SVCALLACT      = BIT_7,
+    ARM_SHCSR_USGFAULTACT    = BIT_3,
+    ARM_SHCSR_BUSFAULTACT    = BIT_1,
+    ARM_SHCSR_MEMFAULTACT    = BIT_0,
+};
+#define ARM_SHCSR (*(volatile uint32_t *) (0xE000ED24))
+
+/*******************************************************************************
+* CROSSBAR
+*******************************************************************************/
+enum {
+    CROSSBAR_MASTER_CODE_BUS,
+    CROSSBAR_MASTER_SYS_BUS,
+    CROSSBAR_MASTER_DMA,
+    CROSSBAR_MASTER_ETH,
+    CROSSBAR_MASTER_USB,
+    CROSSBAR_MASTER_SDHC,
+
+    MAX_CROSSBAR_MASTERS,
+};
+
+enum {
+    CROSSBAR_SLAVE_FLASH,
+    CROSSBAR_SLAVE_SRAM,
+    CROSSBAR_SLAVE_PERIPH0,
+    CROSSBAR_SLAVE_PERIPH1_GPIO,
+    CROSSBAR_SLAVE_FLEXBUS,
+
+    MAX_CROSSBAR_SLAVES,
+};
 
 /*******************************************************************************
 * SIM
@@ -632,6 +847,18 @@ typedef enum {
 #define FTFL_FPROT1 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x12))
 #define FTFL_FPROT0 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x13))
 
+/* Flash Memory Controller */
+enum {
+    FMC_CINV_WAY = BIT_20 | BIT_21 | BIT_22 | BIT_23, /* W - 0 */
+    FMC_S_B_INV  = BIT_19,                            /* W - 0 */
+} fmcPFBCR_t;
+
+#define FMC_BASE_ADDR 0x4001F000
+#define FMC_PFAPR   (*(volatile uint32_t *) (FMC_BASE_ADDR + 0x0))
+#define FMC_PFB0CR  (*(volatile uint32_t *) (FMC_BASE_ADDR + 0x4))
+#define FMC_PFB1CR  (*(volatile uint32_t *) (FMC_BASE_ADDR + 0x8))
+
+
 /*******************************************************************************
 * CRC
 *******************************************************************************/
@@ -659,4 +886,104 @@ typedef enum {
 #define CRC_CTRL_PTR     (volatile uint32_t *) CRC_CTRL_ADDR
 #define CRC_CTRL         (*(volatile uint32_t *) CRC_CTRL_ADDR)
 
+/*******************************************************************************
+* MPU
+*******************************************************************************/
+
+enum {
+    MPU_VLD     = BIT_0,                             /* R/W - 1 */
+    MPU_NGRD    = BIT_8  | BIT_9  | BIT_10 | BIT_11, /* R   - 1 */
+    MPU_NSP     = BIT_12 | BIT_13 | BIT_14 | BIT_15, /* R   - 5 */
+    MPU_HRL     = BIT_16 | BIT_17 | BIT_18 | BIT_19, /* R   - 1 */
+    MPU_SPERR4  = BIT_27,                            /* R   - 0 */
+    MPU_SPERR3  = BIT_28,                            /* R   - 0 */
+    MPU_SPERR2  = BIT_29,                            /* R   - 0 */
+    MPU_SPERR1  = BIT_30,                            /* R   - 0 */
+    MPU_SPERR0  = BIT_31,                            /* R   - 0 */
+} mpuCESR_t;
+
+#define MPU_EDR_ERW_SHIFT   0
+#define MPU_EDR_ERW_MASK    0x1
+#define MPU_EDR_EATTR_SHIFT 1
+#define MPU_EDR_EATTR_MASK  0x7
+#define MPU_EDR_EMN_SHIFT   4
+#define MPU_EDR_EMN_MASK    0xF
+#define MPU_EDR_EACD_SHIFT  16
+#define MPU_EDR_EACD_MASK   0xFFFF
+
+enum {
+    MPU_SV_ACCESS_RWX,
+    MPU_SV_ACCESS_RX,
+    MPU_SV_ACESSS_RW,
+    MPU_SV_ACCESS_USER,
+};
+#define MPU_RGD_M0SM_SHIFT 3
+#define MPU_RGD_M1SM_SHIFT 9
+#define MPU_RGD_M2SM_SHIFT 15
+#define MPU_RGD_M3SM_SHIFT 21
+
+enum {
+    MPU_USR_ACCESS_X = BIT_0,
+    MPU_USR_ACCESS_W = BIT_1,
+    MPU_USR_ACCESS_R = BIT_2,
+};
+#define MPU_RGD_M0UM_SHIFT  0
+#define MPU_RGD_M1UM_SHIFT  6
+#define MPU_RGD_M2UM_SHIFT  12
+#define MPU_RGD_M3UM_SHIFT  18
+#define MPU_RGD_M4UM_SHIFT (24 - 1) /* No eXecute access */
+#define MPU_RGD_M5UM_SHIFT (26 - 1) /* No eXecute access */
+#define MPU_RGD_M6UM_SHIFT (28 - 1) /* No eXecute access */
+#define MPU_RGD_M7UM_SHIFT (30 - 1) /* No eXecute access */
+
+#define MPU_RGD_VALID        BIT_0
+#define MPU_RGD_ADDRESS_MASK 0xFFFFFFE0
+typedef struct {
+    uint32_t word0;
+    uint32_t word1;
+    uint32_t word2;
+    uint32_t word3;
+} mpuRGD_t;
+#define MAX_MPU_REGIONS 12
+
+#define MPU_BASE_ADDR 0x4000D000
+#define MPU_CESR      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x00))
+
+#define MPU_EAR0      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x10))
+#define MPU_EDR0      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x14))
+#define MPU_EAR1      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x18))
+#define MPU_EDR1      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x1C))
+#define MPU_EAR2      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x20))
+#define MPU_EDR2      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x24))
+#define MPU_EAR3      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x28))
+#define MPU_EDR3      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x2C))
+#define MPU_EAR4      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x30))
+#define MPU_EDR4      (*(volatile uint32_t *) (MPU_BASE_ADDR + 0x34))
+
+#define MPU_RGD0_BASE_ADDR  (MPU_BASE_ADDR + 0x400)
+#define MPU_RGD1_BASE_ADDR  (MPU_BASE_ADDR + 0x410)
+#define MPU_RGD2_BASE_ADDR  (MPU_BASE_ADDR + 0x420)
+#define MPU_RGD3_BASE_ADDR  (MPU_BASE_ADDR + 0x430)
+#define MPU_RGD4_BASE_ADDR  (MPU_BASE_ADDR + 0x440)
+#define MPU_RGD5_BASE_ADDR  (MPU_BASE_ADDR + 0x450)
+#define MPU_RGD6_BASE_ADDR  (MPU_BASE_ADDR + 0x460)
+#define MPU_RGD7_BASE_ADDR  (MPU_BASE_ADDR + 0x470)
+#define MPU_RGD8_BASE_ADDR  (MPU_BASE_ADDR + 0x480)
+#define MPU_RGD9_BASE_ADDR  (MPU_BASE_ADDR + 0x490)
+#define MPU_RGD10_BASE_ADDR (MPU_BASE_ADDR + 0x4A0)
+#define MPU_RGD11_BASE_ADDR (MPU_BASE_ADDR + 0x4B0)
+
+#define MPU_RGDAAC_BASE_ADDR (MPU_BASE_ADDR + 0x800)
+#define MPU_RGDAAC0  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x00))
+#define MPU_RGDAAC1  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x04))
+#define MPU_RGDAAC2  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x08))
+#define MPU_RGDAAC3  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x0C))
+#define MPU_RGDAAC4  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x10))
+#define MPU_RGDAAC5  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x14))
+#define MPU_RGDAAC6  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x18))
+#define MPU_RGDAAC7  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x1C))
+#define MPU_RGDAAC8  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x20))
+#define MPU_RGDAAC9  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x24))
+#define MPU_RGDAAC10 (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x28))
+#define MPU_RGDAAC11 (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x2C))
 #endif

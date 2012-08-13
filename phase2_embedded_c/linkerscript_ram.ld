@@ -1,7 +1,8 @@
 /*
- * linkerscript.ld
+ * linkerscript_ram.ld
  *
  * Linker script for the Freescaled Kinetis K60 / ARM Cortex-M4.
+ * Executes code out of SRAM_L. Bootloader required to launch image
  *
  * Rob Laswick
  * May 15 2012
@@ -9,16 +10,15 @@
 
 MEMORY
 {
-    FLASH (rx) : ORIGIN = 0x00004000, LENGTH = 496K
-    SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
+    FLASH  (rx) : ORIGIN = 0x00004000, LENGTH = 496K
+    SRAM_L(rwx) : ORIGIN = 0x1FFF0000, LENGTH = 64K
+    SRAM  (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
 
 SECTIONS
 {
-    .text :
+    .entry :
     {
-        . = ALIGN(4);
-        _text_start = .;
         _vector_rom = .;
         *(.vector_table)
 
@@ -26,13 +26,29 @@ SECTIONS
         *(.kinetis_flash_config_field)
 
         *(.default_handlers)
-
-        *(.text*)
-        *(.rodata*)
     } > FLASH
 
-    . = ALIGN(4);
-    _text_end = .;
+    .text :
+    {
+        . = ALIGN(4);
+        _text_load = LOADADDR(.text);
+        _text_start = .;
+        *(.text*)
+        *(.rodata*)
+        . = ALIGN(4);
+        _text_end = .;
+    } >SRAM_L AT>FLASH
+
+    .ramcode :
+    {
+        . = ALIGN(4);
+        _ramcode_load = LOADADDR(.ramcode);
+        _ramcode_start = .;
+        *(.ramcode*)
+        . = ALIGN(4);
+        _ramcode_end = .;
+    } > SRAM_L AT>FLASH
+
 
     .ramvect :
     {
@@ -51,17 +67,6 @@ SECTIONS
         . = ALIGN(4);
         _data_end = .;
     }  > SRAM AT>FLASH
-
-    .ramcode :
-    {
-        . = ALIGN(4);
-        _ramcode_load = LOADADDR(.ramcode);
-        _ramcode_start = .;
-        *(.ramcode*)
-        . = ALIGN(4);
-        _ramcode_end = .;
-    } > SRAM AT>FLASH
-
 
     .bss :
     {

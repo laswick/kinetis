@@ -1,8 +1,8 @@
 /*
- * linkerscript_boot.ld
+ * linkerscript_rom.ld
  *
  * Linker script for the Freescaled Kinetis K60 / ARM Cortex-M4.
- * Executes bootloader code out of RAM.
+ * Executes code out of FLASH. Bootloader required to launch image
  *
  * Rob Laswick
  * May 15 2012
@@ -10,7 +10,7 @@
 
 MEMORY
 {
-    FLASH  (rx) : ORIGIN = 0x00000000, LENGTH = 16K
+    FLASH  (rx) : ORIGIN = 0x00004000, LENGTH = 496K
     SRAM_L(rwx) : ORIGIN = 0x1FFF0000, LENGTH = 64K
     SRAM  (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
@@ -22,7 +22,7 @@ SECTIONS
         _vector_rom = .;
         *(.vector_table)
 
-        . = 0x00000400;
+        . = _vector_rom + 0x400;
         *(.kinetis_flash_config_field)
 
         *(.default_handlers)
@@ -37,7 +37,7 @@ SECTIONS
         *(.rodata*)
         . = ALIGN(4);
         _text_end = .;
-    } >SRAM_L AT>FLASH
+    } > FLASH
 
     .ramcode :
     {
@@ -48,6 +48,7 @@ SECTIONS
         . = ALIGN(4);
         _ramcode_end = .;
     } > SRAM_L AT>FLASH
+
 
     .ramvect :
     {
@@ -78,19 +79,6 @@ SECTIONS
     } > SRAM
 
     /*
-     * Allocate the last flash sector for application data storage.
-     * Must be the last flash section defined otherwise code may be
-     * placed within the flash sector
-     */
-    .nvStorage :
-    {
-        . = ORIGIN(FLASH) + LENGTH(FLASH) - 0x800;
-        . = ALIGN(4);
-        _nvStorage_start = .;
-        *(.nvStorage*)
-    } > FLASH
-
-    /*
      * The rest of the SRAM is used for the heap and stack.
      * The stack grows down therefore is starts at the end/top of SRAM.
      * The heap grows up and starts at the end of the bss section and
@@ -101,6 +89,5 @@ SECTIONS
     _heap_end = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM) - STACK_SIZE, 8);
     _stack_start = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM), 8);
     _stack_end = _stack_start - STACK_SIZE;
-    _app_code_start = ORIGIN(FLASH) + LENGTH(FLASH);
 }
 
