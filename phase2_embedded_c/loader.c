@@ -20,7 +20,10 @@
  *
  ****************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "kinetis.h"
 #include "hardware.h"
@@ -314,15 +317,13 @@ static void jumpToApp(void)
  *      Erases flash and receives a new SREC image to parse and program
  *  over UART3. Supports CRC XMODEM 128Byte/1K interface only
  ****************************************************************************/
-static uartIF_t uartConfig = {
-    .uart             = UART3,
-    .systemClockHz    = 20480000,
-    .busClockHz       = 20480000,
-    .baud             = 115200,
-    .responseWaitTime = 250,
-};
+static int fd;
+static void print(char *str)
+{
+    write(fd, str, strlen(str));
+}
+
 static xmodemCfg_t xmodemConfig = {
-    .uartPtr    = &uartConfig,
     .numRetries = 50,
 };
 
@@ -339,10 +340,10 @@ static void uartLoader(void)
     };
 
     if (flashErase(bootOptions.codeAddr, bootOptions.codeSize) == ERROR) {
-        uartPrint(&uartConfig, "Flash Failed to erase\r\n");
+        print("Flash Failed to erase\r\n");
         errorLED();
     }
-    uartPrint(&uartConfig, "Flash Erased. Waiting for XMODEM Transfer\r\n");
+    print("Flash Erased. Waiting for XMODEM Transfer\r\n");
     gpioSet(N_LED_GREEN_PORT,  N_LED_GREEN_PIN);
     gpioSet(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
 
@@ -350,7 +351,7 @@ static void uartLoader(void)
         int len = xmodemRecv(rxBuffer, sizeof(rxBuffer));
 
         if (len == 0) {
-            uartPrint(&uartConfig, "\r\nProgramming succesfull!\r\n");
+            print("\r\nProgramming succesfull!\r\n");
             break;
         }
         else if (len > 0) {
@@ -362,8 +363,8 @@ static void uartLoader(void)
                 int value = srecParse(&rxBuffer[offset], len, &srecData);
                 if (value == ERROR) {
                     xmodemAbort();
-                    uartPrint(&uartConfig, "\r\nSREC FILE ERROR!\r\n");
-                    uartPrint(&uartConfig, "Waiting for re-transfer...\r\n");
+                    print("\r\nSREC FILE ERROR!\r\n");
+                    print("Waiting for re-transfer...\r\n");
                     break;
                 }
                 else {
@@ -423,26 +424,29 @@ int main(void)
     }
 
     /* Initialize peripherals */
-    if (uartInit(&uartConfig) == ERROR || xmodemInit(&xmodemConfig) == ERROR
-                                       || flashInit(&flashConfig) == ERROR) {
+    fd = open("uart3", 0, 0);
+    xmodemConfig.uartFd = fd;
+
+    if (fd == -1 || xmodemInit(&xmodemConfig) == ERROR
+                 || flashInit(&flashConfig)   == ERROR) {
         errorLED();
     }
 
     /* Loader Menu
-     * TODO: Add options to display bootOptions. Requires varg printf */
+     * TODO: Add options to display bootOptions. Requires varg print */
     while (1) {
         codePresent = validateCode();
 
-        uartPrint(&uartConfig, "\r\nLoader Menu\r\n");
-        uartPrint(&uartConfig, "1. Load new SREC image from UART\r\n");
+        print("\r\nLoader Menu\r\n");
+        print("1. Load new SREC image from UART\r\n");
         if (codePresent) {
-            uartPrint(&uartConfig, "2. Jump to application\r\n");
+            print("2. Jump to application\r\n");
         }
 
-        while (uartRead(&uartConfig, &menuSel, 1) < 1)
+        while (read(fd, &menuSel, 1) < 1)
             ;
-        uartWrite(&uartConfig, &menuSel, 1);
-        uartPrint(&uartConfig, "\r\n");
+        write(fd, &menuSel, 1);
+        print("\r\n");
 
         switch (menuSel) {
         case '1':
@@ -450,14 +454,14 @@ int main(void)
             break;
         case '2':
             if (codePresent) {
-                uartPrint(&uartConfig, "Jumping to application. Bye Bye\r\n");
+                print("Jumping to application. Bye Bye\r\n");
                 jumpToApp();
                 assert(FALSE);
                 errorLED();
             }
             /* No Break */
         default:
-            uartPrint(&uartConfig, "Invalid Selection\r\n");
+            print("Invalid Selection\r\n");
             break;
         }
     }

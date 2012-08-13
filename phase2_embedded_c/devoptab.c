@@ -106,8 +106,9 @@
 #include "globalDefs.h"
 #include "hardware.h"
 
-
 /* Error Stuff, WIP */
+/* TODO: This doesnt link. If theres a trick to this please add comment */
+#if 0
 #define errno (*__errno())
 extern int *__errno ( void );
 //static struct _reent impure_data = { 0, 0, "", 0, "C" };
@@ -115,10 +116,15 @@ extern int *__errno ( void );
 int * __errno () {
     return &_impure_ptr->_errno;
 }
+#endif
 
 /*******************************************************************************/
 /* DEVOPTAB Entry's Section */
 /*******************************************************************************/
+#if defined(LOADER_BUILD)
+devoptab_t devoptab_uart3 = { "uart3", uart_open_r, uart_ioctl, uart_close_r,
+                                       uart_write_r, uart_read_r, NULL  };
+#else
 devoptab_t devoptab_spi0   = { "spi0", spi_open_r,  spi_ioctl, spi_close_r,
                                              spi_write_r, spi_read_r, NULL  };
 devoptab_t devoptab_spi1   = { "spi1", spi_open_r,  spi_ioctl, spi_close_r,
@@ -139,6 +145,7 @@ devoptab_t devoptab_uart4 = { "uart4", uart_open_r, uart_ioctl, uart_close_r,
                                        uart_write_r, uart_read_r, NULL  };
 devoptab_t devoptab_uart5 = { "uart5", uart_open_r, uart_ioctl, uart_close_r,
                                        uart_write_r, uart_read_r, NULL  };
+#endif
 
 /*******************************************************************************/
 /* DEVOPTAB Section */
@@ -147,6 +154,7 @@ devoptab_t *devoptab_list[] = {
     &devoptab_uart3, /* standard input */
     &devoptab_uart3, /* standard output */
     &devoptab_uart3, /* standard error */
+#if !defined(LOADER_BUILD)
     &devoptab_uart0,
     &devoptab_uart1,
     &devoptab_uart2,
@@ -157,6 +165,7 @@ devoptab_t *devoptab_list[] = {
     &devoptab_spi1,
     &devoptab_spi2,
     &devoptab_crc,
+#endif
     0                /* terminates the list */
 };
 

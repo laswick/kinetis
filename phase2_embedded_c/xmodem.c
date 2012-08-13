@@ -5,6 +5,10 @@
  * defined by Chuck Forsberg. www.textfiles.com/programming/ymodem.txt
  *
  ****************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "globalDefs.h"
 #include "kinetis.h"
 #include "hardware.h"
@@ -26,7 +30,7 @@ typedef enum {
 } xmodemState_t;
 
 typedef struct {
-    uartIF_t uart;
+    int32_t uartFd;
     xmodemState_t state;
     uint32_t numRetries;
     uint32_t sequence;
@@ -94,8 +98,8 @@ int32_t xmodemInit(xmodemCfg_t *cfg)
 {
     int32_t returnVal;
 
-    if (cfg->uartPtr) {
-        xmodem.uart = *cfg->uartPtr;
+    if (cfg->uartFd != -1) {
+        xmodem.uartFd = cfg->uartFd;
         xmodem.numRetries = cfg->numRetries;
         xmodem.state = STATE_WAITING;
         initCRC();
@@ -124,8 +128,8 @@ int32_t xmodemAbort(void)
 
     if (xmodem.state != STATE_WAITING) {
         xmodem.state  = STATE_WAITING;
-        uartWrite(&xmodem.uart, &cmd, 1);
-        uartWrite(&xmodem.uart, &cmd, 1);
+        write(xmodem.uartFd, &cmd, 1);
+        write(xmodem.uartFd, &cmd, 1);
     }
 
     return OK;
@@ -140,7 +144,6 @@ int32_t xmodemAbort(void)
  *****************************************************************************/
 int32_t xmodemRecv(uint8_t *outBuffer, uint32_t numBytes)
 {
-    uartIF_t *uartPtr = &xmodem.uart;
     int32_t returnVal = ERROR;
     uint8_t cmd = 0;
     int32_t retry;
@@ -168,15 +171,14 @@ int32_t xmodemRecv(uint8_t *outBuffer, uint32_t numBytes)
 
     flushBuffer();
 
-//  uartPtr->timeout = 1000;
-    uartWrite(uartPtr, &cmd, 1);
+    write(xmodem.uartFd, &cmd, 1);
 
     done  = FALSE;
     retry = xmodem.numRetries;
     while (retry-- && !done) {
         uint32_t packetSize;
 
-        if (uartRead(uartPtr, xmodem.buffer, 1) <= 0)
+        if (read(xmodem.uartFd, xmodem.buffer, 1) <= 0)
             continue;
 
         switch (xmodem.buffer[0]) {
@@ -200,14 +202,14 @@ int32_t xmodemRecv(uint8_t *outBuffer, uint32_t numBytes)
         if (packetSize) {
             uint8_t seq1, seq2;
 
-            uartRead(uartPtr, &seq1, 1);
-            uartRead(uartPtr, &seq2, 1);
+            read(xmodem.uartFd, &seq1, 1);
+            read(xmodem.uartFd, &seq2, 1);
 
             /* Verify sequence number is what's expected */
             if (seq1 == xmodem.sequence && (0xff - seq2) == xmodem.sequence) {
                 uint16_t crc;
-                uartRead(uartPtr, xmodem.buffer, packetSize);
-                uartRead(uartPtr, (uint8_t *)&crc, 2);
+                read(xmodem.uartFd, xmodem.buffer, packetSize);
+                read(xmodem.uartFd, (uint8_t *)&crc, 2);
                 if (calcCRC(xmodem.buffer, packetSize) != crc) {
                     int i;
                     /* Copy data to output buffer */
@@ -230,15 +232,14 @@ int32_t xmodemRecv(uint8_t *outBuffer, uint32_t numBytes)
         if (retry && !done) {
             flushBuffer();
             cmd = NAK;
-            uartWrite(uartPtr, &cmd, 1);
+            write(xmodem.uartFd, &cmd, 1);
         }
     }
 
     if (returnVal == 0) {
         /* Send ACK to end transfer */
         cmd = ACK;
-//      uartPtr->timeout = 1000;
-        uartWrite(uartPtr, &cmd, 1);
+        write(xmodem.uartFd, &cmd, 1);
         xmodem.state = STATE_WAITING;
     }
     else if (returnVal > 0) {
