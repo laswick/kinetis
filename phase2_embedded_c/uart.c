@@ -36,35 +36,17 @@ typedef struct {
 } uart_t;
 
 typedef enum uartModule_e{
-#if defined(LOADER_BUILD)
-    UART_MODULE_3,
-#else
     UART_MODULE_0,
     UART_MODULE_1,
     UART_MODULE_2,
     UART_MODULE_3,
     UART_MODULE_4,
     UART_MODULE_5,
-#endif
     NUM_UART_MODULES,
 } uartModule_t;
 
 
 uart_t uartList[NUM_UART_MODULES] = {
-    [UART_MODULE_3] = {
-        .reg            = UART3_REG_PTR,
-        .port           = UART3_PORT,
-        .simScgcPtr     = SIM_SCGC4_PTR,
-        .simScgcEnBit   = SIM_UART3_ENABLE,
-        .simScgc5PortEn = UART3_PORT_ENABLE,
-        .txPin          = UART3_TX_PIN,
-        .rxPin          = UART3_RX_PIN,
-        .txPortCtrlBits = UART3_TX_MUX,
-        .rxPortCtrlBits = UART3_RX_MUX,
-        .clockHz    = BUS_CLOCK_HZ,
-        .baud       = 115200,
-    },
-#if !defined(LOADER_BUILD)
     [UART_MODULE_0] = {
         .reg            = UART0_REG_PTR,
         .simScgcPtr     = SIM_SCGC4_PTR,
@@ -111,6 +93,19 @@ uart_t uartList[NUM_UART_MODULES] = {
         .clockHz    = BUS_CLOCK_HZ,
         .baud       = 115200,
     },
+    [UART_MODULE_3] = {
+        .reg            = UART3_REG_PTR,
+        .port           = UART3_PORT,
+        .simScgcPtr     = SIM_SCGC4_PTR,
+        .simScgcEnBit   = SIM_UART3_ENABLE,
+        .simScgc5PortEn = UART3_PORT_ENABLE,
+        .txPin          = UART3_TX_PIN,
+        .rxPin          = UART3_RX_PIN,
+        .txPortCtrlBits = UART3_TX_MUX,
+        .rxPortCtrlBits = UART3_RX_MUX,
+        .clockHz    = BUS_CLOCK_HZ,
+        .baud       = 115200,
+    },
     [UART_MODULE_4] = {
         .reg            = UART4_REG_PTR,
         .port           = UART4_PORT,
@@ -137,8 +132,38 @@ uart_t uartList[NUM_UART_MODULES] = {
         .clockHz    = BUS_CLOCK_HZ,
         .baud       = 115200,
     },
-#endif
 };
+
+int uart_install(void)
+{
+    int ret = TRUE;
+
+    if (!deviceInstall("uart0", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart1", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart2", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart4", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart5", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    return ret;
+}
 
 static int uartOpen(uartModule_t mod, devoptab_t *dot)
 {
@@ -297,11 +322,7 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
     }
 
     /* Determine the module instance */
-    if (strcmp(DEVOPTAB_UART3_STR, dot->name) == 0) {
-        mod = UART_MODULE_3;
-    }
-#if !defined(LOADER_BUILD)
-    else if (strcmp(DEVOPTAB_UART0_STR, dot->name) == 0 ) {
+    if (strcmp(DEVOPTAB_UART0_STR, dot->name) == 0 ) {
         mod = UART_MODULE_0;
     }
     else if (strcmp(DEVOPTAB_UART1_STR, dot->name) == 0) {
@@ -310,13 +331,15 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
     else if (strcmp(DEVOPTAB_UART2_STR, dot->name) == 0) {
         mod = UART_MODULE_2;
     }
+    else if (strcmp(DEVOPTAB_UART3_STR, dot->name) == 0) {
+        mod = UART_MODULE_3;
+    }
     else if (strcmp(DEVOPTAB_UART4_STR, dot->name) == 0) {
         mod = UART_MODULE_4;
     }
     else if (strcmp(DEVOPTAB_UART5_STR, dot->name) == 0) {
         mod = UART_MODULE_5;
     }
-#endif
     else {
         /* Device does not exist */
         ((struct _reent *)reent)->_errno = ENODEV;

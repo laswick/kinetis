@@ -109,6 +109,26 @@ spi_t spiList[NUM_SPI_MODULES] = {
 };
 
 /*******************************************************************************/
+int spi_install(void)
+/*******************************************************************************/
+{
+    int ret = TRUE;
+    if (!deviceInstall("spi0", spi_open_r,  spi_ioctl, spi_close_r,
+                                                  spi_write_r, spi_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("spi1", spi_open_r,  spi_ioctl, spi_close_r,
+                                                  spi_write_r, spi_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("spi2", spi_open_r,  spi_ioctl, spi_close_r,
+                                                  spi_write_r, spi_read_r, NULL))
+        ret = FALSE;
+
+    return ret;
+}
+
+/*******************************************************************************/
 static int spiOpen(spiModule_t mod, devoptab_t *dot)
 /*******************************************************************************/
 {
@@ -444,7 +464,7 @@ int spi_close_r (void *reent, devoptab_t *dot )
 
     if (spi) {
         /* Disable the SIMSCGC for the spi module being used*/
-        *spi->simScgcPtr |= spi->simScgcEnBit;
+        *spi->simScgcPtr &= ~(spi->simScgcEnBit);
         /* Unhook the private spi structure and free it */
         dot->priv = NULL;
         free(spi);
