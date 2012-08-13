@@ -33,7 +33,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -c -g -Wall -MD -O${OPT_LEVEL} -D${PLATFORM} -DUART_POSIX
+C_FLAGS = -c -g -Wall -MD -O${OPT_LEVEL} -D${PLATFORM}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 

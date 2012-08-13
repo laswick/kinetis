@@ -293,7 +293,6 @@ typedef struct {
 } uartPort_t; /* Memmapped registers */
 
 
-#if defined(UART_POSIX)
 /* BDH */
 typedef enum {
     UART_DH_RX_ACTIVE_INT_ENABLE  = BIT_6, /* R/W - 0 */
@@ -398,98 +397,6 @@ typedef enum {
     UART_SFIFO_RXOF     = BIT_0,
 } uartSfifo_t;
 
-
-
-#else /* deprecated */
-#warning ... --- ... This uart driver is deprecated. Use UART_POSIX.
-/* BDH */
-#define UART_BDH_RX_ACTIVE_INT_ENABLE BIT_6
-#define UART_BDH_LIN_BREAK_INT_ENABLE BIT_7
-#define UART_BDH_SBR_MASK 0x1f00
-#define UART_BDH_SBR_SHIFT 8
-
-/* BDL */
-#define UART_BDL_SBR_MASK 0xff
-
-
-/* C1 */
-#define UART_C1_PARITY_ODD            BIT_0
-#define UART_C1_PARITY_ENABLE         BIT_1
-#define UART_C1_IDLE_LINE_AFTER_STOP  BIT_2
-#define UART_C1_ADDRESS_MARK_WAKE     BIT_3
-#define UART_C1_9_BIT_MODE            BIT_4
-#define UART_C1_SINGLE_WIRE_LOOP_BACK BIT_5
-#define UART_C1_UART_FREEZE_IN_WAIT   BIT_6
-#define UART_C1_LOOP_BACK             BIT_7
-
-
-
-/* C2 */
-#define UART_C2_SEND_BREAK              BIT_0
-#define UART_C2_RX_WAKEUP               BIT_1
-#define UART_C2_RX_ENABLE               BIT_2
-#define UART_C2_TX_ENABLE               BIT_3
-#define UART_C2_IDLE_INT_ENABLE         BIT_4
-                                  /* BIT_5 depends on C5[RDMAS] to be either: */
-#define UART_C2_RX_FULL_INT_ENABLE      BIT_5
-#define UART_C2_RX_DMA_TX_ENABLE        BIT_5
-
-#define UART_C2_TX_COMPLETE_INT_ENABLE  BIT_6
-                                  /* BIT_5 depends on C5[TDMAS] to be either: */
-#define UART_C2_TX_READY_INT_ENABLE     BIT_7
-#define UART_C2_TX_DMA_TX_ENABLE        BIT_7
-
-
-/* S1 */
-#define UART_S1_TX_DATA_LOW      BIT_7 /* data <= TWFIFO[TXWATER] */
-#define UART_S1_TX_IDLE          BIT_6
-#define UART_S1_RX_DATA_FULL     BIT_5 /* data >= RWFIFO[RXWATER] */
-#define UART_S1_RX_IDLE          BIT_4
-#define UART_S1_RX_OVERRUN       BIT_3
-#define UART_S1_RX_NOISE         BIT_2
-#define UART_S1_RX_FRAMING_ERROR BIT_1
-#define UART_S1_RX_PARITY_ERROR  BIT_0
-
-
-/* C4 */
-#define UART_C4_10_BIT_MODE                 BIT_5
-#define UART_C4_MATCH_ADDRESS_MODE_ENABLE_2 BIT_6
-#define UART_C4_MATCH_ADDRESS_MODE_ENABLE_1 BIT_7
-#define UART_C4_BRFA_MASK 0xf
-
-/* PFIFO */
-#define UART_PFIFO_TXFE               BIT_7
-#define UART_PFIFO_TXFIFOSIZE_SHIFT   4
-#define UART_PFIFO_TXFIFOSIZE_1       (0x0 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_4       (0x1 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_8       (0x2 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_16      (0x3 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_32      (0x4 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_64      (0x5 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_128     (0x6 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-
-#define UART_PFIFO_RXFE               BIT_3
-#define UART_PFIFO_RXFIFOSIZE_SHIFT   0
-#define UART_PFIFO_RXFIFOSIZE_1       (0x0 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_4       (0x1 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_8       (0x2 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_16      (0x3 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_32      (0x4 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_64      (0x5 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_128     (0x6 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-
-/* CFIFO */
-#define UART_CFIFO_TXFLUSH     BIT_7
-#define UART_CFIFO_RXFLUSH     BIT_6
-#define UART_CFIFO_TXOFE       BIT_1
-#define UART_CFIFO_RXOFE       BIT_0
-
-/* SFIFO */
-#define UART_SFIFO_TXEMPT   BIT_7
-#define UART_SFIFO_RXEMPT   BIT_6
-#define UART_SFIFO_TXOF     BIT_1
-#define UART_SFIFO_RXOF     BIT_0
-#endif
 
 /*******************************************************************************
 * SPI

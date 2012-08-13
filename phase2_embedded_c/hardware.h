@@ -282,23 +282,6 @@ extern int32_t featureRead(uint8_t *buffer, int32_t len);
 #define UART3_RX_MUX  PORT_MUX_ALT3
 #define UART3_TX_MUX  PORT_MUX_ALT3
 
-#if !defined(UART_POSIX)
-typedef struct {
-    uint32_t uart;
-    int32_t  systemClockHz;
-    int32_t  busClockHz;
-    int32_t  baud;
-    uint16_t responseWaitTime;
-/* TODO    uint8_t  loopback; */
-} uartIF_t;
-
-extern int32_t uartInit(uartIF_t *cfg);
-extern void    uartFree(uartIF_t *cfg);
-extern int32_t uartPrint(uartIF_t *cfg, char *string);
-extern int32_t uartWrite(uartIF_t *cfg, uint8_t *buffer, int32_t len);
-extern int32_t uartRead(uartIF_t *cfg, uint8_t *buffer, int32_t len);
-extern void    setStdout(uartIF_t *uartIF);
-#endif
 
 #define DEVOPTAB_UART0_STR    "uart0"
 #define DEVOPTAB_UART1_STR    "uart1"
