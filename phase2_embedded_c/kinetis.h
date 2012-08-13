@@ -8,6 +8,10 @@
 
 #include "globalDefs.h"
 
+/* TODO Move to CLOCKS section */
+#define SYSTEM_CLOCK_HZ  20480000
+#define    BUS_CLOCK_HZ  20480000
+
 /*******************************************************************************
 * ARM NVIC
 *******************************************************************************/
@@ -31,8 +35,12 @@
 #define SIM_PINID_MASK (0xf << SIM_PINID_SHIFT)                 /* Pincout Id */
 
 /* System Clock Gate Control Registers */
-#define SIM_SCGC1 (*(volatile uint32_t *) 0x40048028)
-#define SIM_SCGC4 (*(volatile uint32_t *) 0x40048034)
+#define SIM_SCGC1_ADDR  0x40048028
+#define SIM_SCGC1   (*(volatile uint32_t *) SIM_SCGC1_ADDR)
+#define SIM_SCGC1_PTR (volatile uint32_t *) SIM_SCGC1_ADDR
+#define SIM_SCGC4_ADDR  0x40048034
+#define SIM_SCGC4   (*(volatile uint32_t *) SIM_SCGC4_ADDR)
+#define SIM_SCGC4_PTR (volatile uint32_t *) SIM_SCGC4_ADDR
 #define SIM_UART5_ENABLE  BIT_11
 #define SIM_UART4_ENABLE  BIT_10
 #define SIM_EWM_ENABLE    BIT_1
@@ -189,8 +197,32 @@ typedef struct {
 #define GPIOE_PDIR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x10))
 #define GPIOE_PDDR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x14))
 
+
+#define UART0_BASE_ADDR 0x4006a000
+#define UART0_REG_PTR   (volatile uartPort_t *) UART0_BASE_ADDR
+#define UART1_BASE_ADDR 0x4006b000
+#define UART1_REG_PTR   (volatile uartPort_t *) UART1_BASE_ADDR
+#define UART2_BASE_ADDR 0x4006c000
+#define UART2_REG_PTR   (volatile uartPort_t *) UART2_BASE_ADDR
+#define UART3_BASE_ADDR 0x4006d000
+#define UART3_REG_PTR   (volatile uartPort_t *) UART3_BASE_ADDR
+#define UART4_BASE_ADDR 0x400ea000
+#define UART4_REG_PTR   (volatile uartPort_t *) UART4_BASE_ADDR
+#define UART5_BASE_ADDR 0x400eb000 /* MK60DN512ZVMD10 */
+#define UART5_REG_PTR   (volatile uartPort_t *) UART5_BASE_ADDR
+
+#define UART0 UART0_BASE_ADDR
+#define UART1 UART1_BASE_ADDR
+#define UART2 UART2_BASE_ADDR
+#define UART3 UART3_BASE_ADDR
+#define UART4 UART4_BASE_ADDR
+#define UART5 UART5_BASE_ADDR
+
 /*******************************************************************************
 * UART
+*******************************************************************************/
+
+/*******************************************************************************
 *
 * BDH   = Baud Rate Register High
 * BDL   = Baus Rate Register Low
@@ -258,25 +290,14 @@ typedef struct {
     uint8_t wf7816;   /* 7816 Wait FD Register,              0x1d */
     uint8_t et7816;   /* 7816 Error Threshold Register,      0x1e */
     uint8_t tl7816;   /* 7816 Transmit Length Register,      0x1f */
-} uartPort_t;
+} uartPort_t; /* Memmapped registers */
 
-#define UART0_BASE_ADDR 0x4006a000
-#define UART1_BASE_ADDR 0x4006b000
-#define UART2_BASE_ADDR 0x4006c000
-#define UART3_BASE_ADDR 0x4006d000
-#define UART4_BASE_ADDR 0x400ea000
-#define UART5_BASE_ADDR 0x400eb000 /* MK60DN512ZVMD10 */
-
-#define UART0 UART0_BASE_ADDR
-#define UART1 UART1_BASE_ADDR
-#define UART2 UART2_BASE_ADDR
-#define UART3 UART3_BASE_ADDR
-#define UART4 UART4_BASE_ADDR
-#define UART5 UART5_BASE_ADDR
 
 /* BDH */
-#define UART_BDH_RX_ACTIVE_INT_ENABLE BIT_6
-#define UART_BDH_LIN_BREAK_INT_ENABLE BIT_7
+typedef enum {
+    UART_DH_RX_ACTIVE_INT_ENABLE  = BIT_6, /* R/W - 0 */
+    UART_BDH_LIN_BREAK_INT_ENABLE = BIT_7, /* R/W - 0 */
+} uartBdh_t;
 #define UART_BDH_SBR_MASK 0x1f00
 #define UART_BDH_SBR_SHIFT 8
 
@@ -285,82 +306,97 @@ typedef struct {
 
 
 /* C1 */
-#define UART_C1_PARITY_ODD            BIT_0
-#define UART_C1_PARITY_ENABLE         BIT_1
-#define UART_C1_IDLE_LINE_AFTER_STOP  BIT_2
-#define UART_C1_ADDRESS_MARK_WAKE     BIT_3
-#define UART_C1_9_BIT_MODE            BIT_4
-#define UART_C1_SINGLE_WIRE_LOOP_BACK BIT_5
-#define UART_C1_UART_FREEZE_IN_WAIT   BIT_6
-#define UART_C1_LOOP_BACK             BIT_7
+typedef enum {
+    UART_C1_LOOP_BACK             = BIT_7,
+    UART_C1_UART_FREEZE_IN_WAIT   = BIT_6,
+    UART_C1_SINGLE_WIRE_LOOP_BACK = BIT_5,
+    UART_C1_9_BIT_MODE            = BIT_4,
+    UART_C1_ADDRESS_MARK_WAKE     = BIT_3,
+    UART_C1_IDLE_LINE_AFTER_STOP  = BIT_2,
+    UART_C1_PARITY_ENABLE         = BIT_1,
+    UART_C1_PARITY_ODD            = BIT_0,
+} uartC1_t;
 
 
 
 /* C2 */
-#define UART_C2_SEND_BREAK              BIT_0
-#define UART_C2_RX_WAKEUP               BIT_1
-#define UART_C2_RX_ENABLE               BIT_2
-#define UART_C2_TX_ENABLE               BIT_3
-#define UART_C2_IDLE_INT_ENABLE         BIT_4
-                                  /* BIT_5 depends on C5[RDMAS] to be either: */
-#define UART_C2_RX_FULL_INT_ENABLE      BIT_5
-#define UART_C2_RX_DMA_TX_ENABLE        BIT_5
+typedef enum {
+                                  /* BIT_7 depends on C5[TDMAS] to be either: */
+    UART_C2_TX_READY_INT_ENABLE    = BIT_7,
+    UART_C2_TX_DMA_TX_ENABLE       = BIT_7,
 
-#define UART_C2_TX_COMPLETE_INT_ENABLE  BIT_6
-                                  /* BIT_5 depends on C5[TDMAS] to be either: */
-#define UART_C2_TX_READY_INT_ENABLE     BIT_7
-#define UART_C2_TX_DMA_TX_ENABLE        BIT_7
+    UART_C2_TX_COMPLETE_INT_ENABLE = BIT_6,
+                                  /* BIT_5 depends on C5[RDMAS] to be either: */
+    UART_C2_RX_FULL_INT_ENABLE    =  BIT_5,
+    UART_C2_RX_DMA_TX_ENABLE      =  BIT_5,
+
+    UART_C2_IDLE_INT_ENABLE       =  BIT_4,
+    UART_C2_TX_ENABLE             =  BIT_3,
+    UART_C2_RX_ENABLE             =  BIT_2,
+    UART_C2_RX_WAKEUP             =  BIT_1,
+    UART_C2_SEND_BREAK            =  BIT_0,
+} uartC2_t;
 
 
 /* S1 */
-#define UART_S1_TX_DATA_LOW      BIT_7 /* data <= TWFIFO[TXWATER] */
-#define UART_S1_TX_IDLE          BIT_6
-#define UART_S1_RX_DATA_FULL     BIT_5 /* data >= RWFIFO[RXWATER] */
-#define UART_S1_RX_IDLE          BIT_4
-#define UART_S1_RX_OVERRUN       BIT_3
-#define UART_S1_RX_NOISE         BIT_2
-#define UART_S1_RX_FRAMING_ERROR BIT_1
-#define UART_S1_RX_PARITY_ERROR  BIT_0
+typedef enum {
+UART_S1_TX_DATA_LOW      = BIT_7, /* data <= TWFIFO[TXWATER] */
+UART_S1_TX_IDLE          = BIT_6,
+UART_S1_RX_DATA_FULL     = BIT_5, /* data >= RWFIFO[RXWATER] */
+UART_S1_RX_IDLE          = BIT_4,
+UART_S1_RX_OVERRUN       = BIT_3,
+UART_S1_RX_NOISE         = BIT_2,
+UART_S1_RX_FRAMING_ERROR = BIT_1,
+UART_S1_RX_PARITY_ERROR  = BIT_0,
+} uartS1_t;
 
 
 /* C4 */
-#define UART_C4_10_BIT_MODE                 BIT_5
-#define UART_C4_MATCH_ADDRESS_MODE_ENABLE_2 BIT_6
-#define UART_C4_MATCH_ADDRESS_MODE_ENABLE_1 BIT_7
+typedef enum {
+    UART_C4_MATCH_ADDRESS_MODE_ENABLE_1 = BIT_7,
+    UART_C4_MATCH_ADDRESS_MODE_ENABLE_2 = BIT_6,
+    UART_C4_10_BIT_MODE                 = BIT_5,
+} uartC4_t;
 #define UART_C4_BRFA_MASK 0xf
 
 /* PFIFO */
-#define UART_PFIFO_TXFE               BIT_7
 #define UART_PFIFO_TXFIFOSIZE_SHIFT   4
-#define UART_PFIFO_TXFIFOSIZE_1       (0x0 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_4       (0x1 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_8       (0x2 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_16      (0x3 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_32      (0x4 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_64      (0x5 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-#define UART_PFIFO_TXFIFOSIZE_128     (0x6 << UART_PFIFO_TXFIFOSIZE_SHIFT)
-
-#define UART_PFIFO_RXFE               BIT_3
 #define UART_PFIFO_RXFIFOSIZE_SHIFT   0
-#define UART_PFIFO_RXFIFOSIZE_1       (0x0 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_4       (0x1 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_8       (0x2 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_16      (0x3 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_32      (0x4 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_64      (0x5 << UART_PFIFO_RXFIFOSIZE_SHIFT)
-#define UART_PFIFO_RXFIFOSIZE_128     (0x6 << UART_PFIFO_RXFIFOSIZE_SHIFT)
+typedef enum {
+    UART_PFIFO_TXFE               = BIT_7,
+    UART_PFIFO_TXFIFOSIZE_1       = (0x0 << UART_PFIFO_TXFIFOSIZE_SHIFT),
+    UART_PFIFO_TXFIFOSIZE_4       = (0x1 << UART_PFIFO_TXFIFOSIZE_SHIFT),
+    UART_PFIFO_TXFIFOSIZE_8       = (0x2 << UART_PFIFO_TXFIFOSIZE_SHIFT),
+    UART_PFIFO_TXFIFOSIZE_16      = (0x3 << UART_PFIFO_TXFIFOSIZE_SHIFT),
+    UART_PFIFO_TXFIFOSIZE_32      = (0x4 << UART_PFIFO_TXFIFOSIZE_SHIFT),
+    UART_PFIFO_TXFIFOSIZE_64      = (0x5 << UART_PFIFO_TXFIFOSIZE_SHIFT),
+    UART_PFIFO_TXFIFOSIZE_128     = (0x6 << UART_PFIFO_TXFIFOSIZE_SHIFT),
+    UART_PFIFO_RXFE               = BIT_3,
+    UART_PFIFO_RXFIFOSIZE_1       = (0x0 << UART_PFIFO_RXFIFOSIZE_SHIFT),
+    UART_PFIFO_RXFIFOSIZE_4       = (0x1 << UART_PFIFO_RXFIFOSIZE_SHIFT),
+    UART_PFIFO_RXFIFOSIZE_8       = (0x2 << UART_PFIFO_RXFIFOSIZE_SHIFT),
+    UART_PFIFO_RXFIFOSIZE_16      = (0x3 << UART_PFIFO_RXFIFOSIZE_SHIFT),
+    UART_PFIFO_RXFIFOSIZE_32      = (0x4 << UART_PFIFO_RXFIFOSIZE_SHIFT),
+    UART_PFIFO_RXFIFOSIZE_64      = (0x5 << UART_PFIFO_RXFIFOSIZE_SHIFT),
+    UART_PFIFO_RXFIFOSIZE_128     = (0x6 << UART_PFIFO_RXFIFOSIZE_SHIFT),
+} uartPfifo_t;
 
 /* CFIFO */
-#define UART_CFIFO_TXFLUSH     BIT_7
-#define UART_CFIFO_RXFLUSH     BIT_6
-#define UART_CFIFO_TXOFE       BIT_1
-#define UART_CFIFO_RXOFE       BIT_0
+typedef enum {
+    UART_CFIFO_TXFLUSH     = BIT_7,
+    UART_CFIFO_RXFLUSH     = BIT_6,
+    UART_CFIFO_TXOFE       = BIT_1,
+    UART_CFIFO_RXOFE       = BIT_0,
+} uartCfifo_t;
 
 /* SFIFO */
-#define UART_SFIFO_TXEMPT   BIT_7
-#define UART_SFIFO_RXEMPT   BIT_6
-#define UART_SFIFO_TXOF     BIT_1
-#define UART_SFIFO_RXOF     BIT_0
+typedef enum {
+    UART_SFIFO_TXEMPT   = BIT_7,
+    UART_SFIFO_RXEMPT   = BIT_6,
+    UART_SFIFO_TXOF     = BIT_1,
+    UART_SFIFO_RXOF     = BIT_0,
+} uartSfifo_t;
+
 
 /*******************************************************************************
 * SPI
