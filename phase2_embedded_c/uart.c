@@ -229,23 +229,47 @@ int32_t uartWrite(devoptab_t *dot, const void *data, unsigned len)
 
 
     for (i = 0; i < len; i++) {
-        int readyRetry = 100;
         /* Wait for space in the FIFO */
-        while(!(uart->reg->s1 & UART_S1_TX_DATA_LOW) && --readyRetry);
-
-        if (readyRetry) {
-            /* Send the character */
-            uart->reg->d = *dataPtr++;
-        }
-        else {
-            assert(0);
-            break;
-        }
+        while(!(uart->reg->s1 & UART_S1_TX_DATA_LOW));
+        uart->reg->d = *dataPtr++;
     }
 
     return dataPtr - (uint8_t *)data;
 }
 
+/*******************************************************************************
+*
+* uartRead
+*
+* This routine receives the requested number of bytes from a uart port
+*
+* RETURNS: Number bytes received
+*
+*******************************************************************************/
+int32_t uartRead(devoptab_t *dot, const void *data, unsigned len)
+{
+    int32_t i;
+    uint8_t *dataPtr = (uint8_t *) data;
+    uart_t *uart;
+
+    if (!dot || !dot->priv) return FALSE;
+    else uart = (uart_t *) dot->priv;
+
+
+    for (i = 0; i < len; i++) {
+        int readyRetry = 1000;
+
+        while (!(uart->reg->s1 & UART_S1_RX_DATA_FULL) && --readyRetry);
+
+        if (readyRetry) {
+            *dataPtr++ = uart->reg->d;
+        }
+        else {
+            break;
+        }
+    }
+    return dataPtr - (uint8_t *)data;
+}
 
 
 /*=============================================================================*/
@@ -375,8 +399,7 @@ long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 {
     /* You could just put your read function here, but I want switch between
      * polled & interupt functions here at a later point.*/
-    return 0;
-  //  return uartRead(dot, buf, len);
+    return uartRead(dot, buf, len);
 }
 
 

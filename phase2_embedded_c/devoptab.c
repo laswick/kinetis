@@ -127,12 +127,18 @@ devoptab_t devoptab_spi2   = { "spi2", spi_open_r,  spi_ioctl, spi_close_r,
                                              spi_write_r, spi_read_r, NULL  };
 devoptab_t devoptab_crc    = { "crc",  crc_open_r,  crc_ioctl, crc_close_r,
                                              crc_write_r, crc_read_r, NULL  };
-devoptab_t devoptab_uart0 = { "uart0", 0, 0, 0, 0, 0 };
-devoptab_t devoptab_uart1 = { "uart1", 0, 0, 0, 0, 0 };
-devoptab_t devoptab_uart2 = { "uart2", 0, 0, 0, 0, 0 };
-devoptab_t devoptab_uart3 = { "uart3", 0, 0, 0, 0, 0 };
-devoptab_t devoptab_uart4 = { "uart4", 0, 0, 0, 0, 0 };
-devoptab_t devoptab_uart5 = { "uart5", 0, 0, 0, 0, 0 };
+devoptab_t devoptab_uart0 = { "uart0", uart_open_r, uart_ioctl, uart_close_r,
+                                       uart_write_r, uart_read_r, NULL  };
+devoptab_t devoptab_uart1 = { "uart1", uart_open_r, uart_ioctl, uart_close_r,
+                                       uart_write_r, uart_read_r, NULL  };
+devoptab_t devoptab_uart2 = { "uart2", uart_open_r, uart_ioctl, uart_close_r,
+                                       uart_write_r, uart_read_r, NULL  };
+devoptab_t devoptab_uart3 = { "uart3", uart_open_r, uart_ioctl, uart_close_r,
+                                       uart_write_r, uart_read_r, NULL  };
+devoptab_t devoptab_uart4 = { "uart4", uart_open_r, uart_ioctl, uart_close_r,
+                                       uart_write_r, uart_read_r, NULL  };
+devoptab_t devoptab_uart5 = { "uart5", uart_open_r, uart_ioctl, uart_close_r,
+                                       uart_write_r, uart_read_r, NULL  };
 
 /*******************************************************************************/
 /* DEVOPTAB Section */
