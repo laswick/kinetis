@@ -139,27 +139,27 @@ int uart_install(void)
     int ret = TRUE;
 
     if (!deviceInstall("uart0", uart_open_r, uart_ioctl, uart_close_r,
-                                                  uart_write_r, uart_read_r, NULL))
+                                uart_write_r, uart_read_r, NULL))
         ret = FALSE;
 
     if (!deviceInstall("uart1", uart_open_r, uart_ioctl, uart_close_r,
-                                                  uart_write_r, uart_read_r, NULL))
+                                uart_write_r, uart_read_r, NULL))
         ret = FALSE;
 
     if (!deviceInstall("uart2", uart_open_r, uart_ioctl, uart_close_r,
-                                                  uart_write_r, uart_read_r, NULL))
+                                uart_write_r, uart_read_r, NULL))
         ret = FALSE;
 
     if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
-                                                  uart_write_r, uart_read_r, NULL))
+                                uart_write_r, uart_read_r, NULL))
         ret = FALSE;
 
     if (!deviceInstall("uart4", uart_open_r, uart_ioctl, uart_close_r,
-                                                  uart_write_r, uart_read_r, NULL))
+                                uart_write_r, uart_read_r, NULL))
         ret = FALSE;
 
     if (!deviceInstall("uart5", uart_open_r, uart_ioctl, uart_close_r,
-                                                  uart_write_r, uart_read_r, NULL))
+                                uart_write_r, uart_read_r, NULL))
         ret = FALSE;
 
     return ret;
@@ -429,7 +429,7 @@ long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 }
 
 
-#if 0
+#if 1
 /* WIP */
 #define  _isr_uart3_status_sources isr_uart3_status_sources
 /******************************************************************************
