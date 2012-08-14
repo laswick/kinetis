@@ -138,6 +138,18 @@ int uart_install(void)
 {
     int ret = TRUE;
 
+    /* Std  In, Out, Err use uart3 */
+    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
+                                uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
+                                uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
+                                uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+
     if (!deviceInstall("uart0", uart_open_r, uart_ioctl, uart_close_r,
                                 uart_write_r, uart_read_r, NULL))
         ret = FALSE;
@@ -165,6 +177,40 @@ int uart_install(void)
     return ret;
 }
 
+
+#if 1
+/* WIP */
+#define  _isr_uart3_status_sources isr_uart3_status_sources
+/******************************************************************************
+* isr_uart3_status_sources(void)
+*
+* Status ISR definition.
+*
+******************************************************************************/
+extern void isrUart3StatusSources(void)
+
+{
+    static volatile int32_t count;
+
+    count++;
+   return;
+}
+
+
+/******************************************************************************
+* _isr_uart3_error_sources
+*
+* Error ISR definition.
+*
+******************************************************************************/
+extern void _isr_uart3_error_sources(void)
+
+{
+
+   return;
+}
+
+#endif
 static int uartOpen(uartModule_t mod, devoptab_t *dot)
 {
     uart_t *uart;
@@ -228,8 +274,17 @@ static int uartOpen(uartModule_t mod, devoptab_t *dot)
         uart->reg->rwfifo = 1; /* FIFO is 16 datawords. Trigger buffer full
                                  flag when at least one byte is in the FIFO */
 
-        uart->reg->c2 |= UART_C2_RX_ENABLE
-                      | UART_C2_TX_ENABLE;// | UART_C2_RX_FULL_INT_ENABLE;
+#if 0
+
+                                          | UART_C2_IDLE_INT_ENABLE
+                                          | UART_C2_TX_COMPLETE_INT_ENABLE
+                                          | UART_C2_TX_READY_INT_ENABLE;
+#endif
+
+        hwInstallISRHandler(ISR_UART3_STATUS_SOURCES, isrUart3StatusSources);
+        uart->reg->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE
+                      | UART_C2_RX_FULL_INT_ENABLE;
+
     }
 
     return TRUE;
@@ -430,39 +485,4 @@ long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 }
 
 
-#if 0
-/* WIP */
-#define  _isr_uart3_status_sources isr_uart3_status_sources
-/******************************************************************************
-* isr_uart3_status_sources(void)
-*
-* Status ISR definition.
-*
-******************************************************************************/
-extern void isr_uart3_status_sources(void)
 
-{
-    static volatile int32_t count;
-
-    count++;
-   #define VECTORNUM                     (*(volatile uint8_t*)(0xE000ED04))
-
-   return;
-}
-
-
-/******************************************************************************
-* _isr_uart3_error_sources
-*
-* Error ISR definition.
-*
-******************************************************************************/
-extern void _isr_uart3_error_sources(void)
-
-{
-   #define VECTORNUM                     (*(volatile uint8_t*)(0xE000ED04))
-
-   return;
-}
-
-#endif
