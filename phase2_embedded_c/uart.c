@@ -228,7 +228,8 @@ static int uartOpen(uartModule_t mod, devoptab_t *dot)
         uart->reg->rwfifo = 1; /* FIFO is 16 datawords. Trigger buffer full
                                  flag when at least one byte is in the FIFO */
 
-        uart->reg->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE;
+        uart->reg->c2 |= UART_C2_RX_ENABLE
+                      | UART_C2_TX_ENABLE;// | UART_C2_RX_FULL_INT_ENABLE;
     }
 
     return TRUE;
@@ -429,7 +430,7 @@ long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 }
 
 
-#if 1
+#if 0
 /* WIP */
 #define  _isr_uart3_status_sources isr_uart3_status_sources
 /******************************************************************************
