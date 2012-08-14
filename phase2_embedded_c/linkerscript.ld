@@ -84,7 +84,7 @@ SECTIONS
      * ends at the bottom of the stack (defined below).
      */
 
-    STACK_SIZE = 1K;
+    STACK_SIZE = 2K;
     _heap_end = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM) - STACK_SIZE, 8);
     _stack_start = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM), 8);
     _stack_end = _stack_start - STACK_SIZE;
