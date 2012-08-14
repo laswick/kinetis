@@ -106,8 +106,9 @@
 #include "globalDefs.h"
 #include "hardware.h"
 
-
 /* Error Stuff, WIP */
+/* TODO: This doesnt link. If theres a trick to this please add comment */
+#if 0
 #define errno (*__errno())
 extern int *__errno ( void );
 //static struct _reent impure_data = { 0, 0, "", 0, "C" };
@@ -115,72 +116,72 @@ extern int *__errno ( void );
 int * __errno () {
     return &_impure_ptr->_errno;
 }
-
-/*******************************************************************************/
-/* DEVOPTAB Entry's Section */
-/*******************************************************************************/
-devoptab_t devoptab_spi0   = { "spi0", spi_open_r,  spi_ioctl, spi_close_r,
-                                             spi_write_r, spi_read_r, NULL  };
-devoptab_t devoptab_spi1   = { "spi1", spi_open_r,  spi_ioctl, spi_close_r,
-                                             spi_write_r, spi_read_r, NULL  };
-devoptab_t devoptab_spi2   = { "spi2", spi_open_r,  spi_ioctl, spi_close_r,
-                                             spi_write_r, spi_read_r, NULL  };
-devoptab_t devoptab_crc    = { "crc",  crc_open_r,  crc_ioctl, crc_close_r,
-                                             crc_write_r, crc_read_r, NULL  };
-devoptab_t devoptab_uart0 = { "uart0", uart_open_r, uart_ioctl, uart_close_r,
-                                       uart_write_r, uart_read_r, NULL  };
-devoptab_t devoptab_uart1 = { "uart1", uart_open_r, uart_ioctl, uart_close_r,
-                                       uart_write_r, uart_read_r, NULL  };
-devoptab_t devoptab_uart2 = { "uart2", uart_open_r, uart_ioctl, uart_close_r,
-                                       uart_write_r, uart_read_r, NULL  };
-devoptab_t devoptab_uart3 = { "uart3", uart_open_r, uart_ioctl, uart_close_r,
-                                       uart_write_r, uart_read_r, NULL  };
-devoptab_t devoptab_uart4 = { "uart4", uart_open_r, uart_ioctl, uart_close_r,
-                                       uart_write_r, uart_read_r, NULL  };
-devoptab_t devoptab_uart5 = { "uart5", uart_open_r, uart_ioctl, uart_close_r,
-                                       uart_write_r, uart_read_r, NULL  };
+#endif
 
 /*******************************************************************************/
 /* DEVOPTAB Section */
 /*******************************************************************************/
-devoptab_t *devoptab_list[] = {
-    &devoptab_uart3, /* standard input */
-    &devoptab_uart3, /* standard output */
-    &devoptab_uart3, /* standard error */
-    &devoptab_uart0,
-    &devoptab_uart1,
-    &devoptab_uart2,
-    &devoptab_uart3,
-    &devoptab_uart4,
-    &devoptab_uart5,
-    &devoptab_spi0,
-    &devoptab_spi1,
-    &devoptab_spi2,
-    &devoptab_crc,
-    0                /* terminates the list */
-};
+
+devoptab_t *devoptab_list = NULL;
+static int devoptab_size = 0;
+#define MAX_DEVICE_NAME_SIZE    10
+
+/*******************************************************************************/
+int deviceInstall (
+    const char *name,
+    int  (*open_r )( void *reent, struct devoptab_s *dot, int mode, int flags ),
+    int  (*ioctl  )(              struct devoptab_s *dot, int cmd,  int flags ),
+    int  (*close_r)( void *reent, struct devoptab_s *dot ),
+    long (*write_r)( void *reent, struct devoptab_s *dot, const void *buf,
+                                                                      int len ),
+    long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf,
+                                                                      int len ),
+    void *priv )
+/*******************************************************************************/
+{
+    if (name == NULL) return FALSE;
+
+    devoptab_list = (devoptab_t *) realloc(devoptab_list,
+                                           sizeof(devoptab_t)*(devoptab_size+1));
+    if (devoptab_list == NULL) return FALSE;
+
+    devoptab_size += 1;
+
+                                            /* Allocate the device name string */
+    devoptab_list[devoptab_size-1].name = (char *) malloc(strlen(name));
+    strcpy((char *)devoptab_list[devoptab_size-1].name,name);
+
+    devoptab_list[devoptab_size-1].open_r = open_r;
+    devoptab_list[devoptab_size-1].ioctl = ioctl;
+    devoptab_list[devoptab_size-1].close_r = close_r;
+    devoptab_list[devoptab_size-1].write_r = write_r;
+    devoptab_list[devoptab_size-1].read_r = read_r;
+    devoptab_list[devoptab_size-1].priv = priv;
+
+
+    return TRUE;
+}
+
 
 /*******************************************************************************/
 int _open_r (struct _reent *ptr, const char *file, int flags, int mode )
 /*******************************************************************************/
 {
-    int which_devoptab = 0;
     int fd = -1;
+    int i;
 
     /* search for "file" in dotab_list[].name */
-    do {
-        if( strcmp( devoptab_list[which_devoptab]->name, file ) == 0 ) {
-            fd = which_devoptab;
+    for (i = 0; i < devoptab_size; i++) {
+        if( strcmp( devoptab_list[i].name, file ) == 0 ) {
+            fd = i;
             break;
         }
-    } while( devoptab_list[which_devoptab++] );
-
+    }
 
     /* if we found the requested file/device,
      *     then invoke the device's open_r() method */
-
     if( fd != -1 ) {
-        devoptab_list[fd]->open_r( ptr, devoptab_list[fd], mode, flags );
+        devoptab_list[fd].open_r( ptr, &devoptab_list[fd], mode, flags );
     } else {
         /* it doesn't exist in the devoptab list! */
         ptr->_errno = ENODEV;
@@ -193,26 +194,26 @@ int _open_r (struct _reent *ptr, const char *file, int flags, int mode )
 int _close_r ( struct _reent *ptr, int fd )
 /*******************************************************************************/
 {
-    return devoptab_list[fd]->close_r(ptr, devoptab_list[fd]);
+    return devoptab_list[fd].close_r(ptr, &devoptab_list[fd]);
 }
 
 /*******************************************************************************/
 int ioctl (int fd, int cmd, int flags)
 /*******************************************************************************/
 {
-    return devoptab_list[fd]->ioctl(devoptab_list[fd], cmd, flags);
+    return devoptab_list[fd].ioctl(&devoptab_list[fd], cmd, flags);
 }
 
 /*******************************************************************************/
 long _write_r (struct _reent *ptr, int fd, const void *buf, size_t cnt )
 /*******************************************************************************/
 {
-    return devoptab_list[fd]->write_r(ptr, devoptab_list[fd], buf, cnt);
+    return devoptab_list[fd].write_r(ptr, &devoptab_list[fd], buf, cnt);
 }
 
 /*******************************************************************************/
 long _read_r (struct _reent *ptr, int fd, void *buf, size_t cnt )
 /*******************************************************************************/
 {
-    return devoptab_list[fd]->read_r(ptr, devoptab_list[fd], buf, cnt);
+    return devoptab_list[fd].read_r(ptr, &devoptab_list[fd], buf, cnt);
 }

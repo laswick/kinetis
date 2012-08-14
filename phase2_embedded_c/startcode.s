@@ -529,12 +529,65 @@ set_stack_pointer:
     /*
      * The main stack pointer is automatically set to the value stored in
      * address 0x00000000 (which is the first element in the vector_table) by
-     * the hardware, so technically the next 3 lines are not required.
+     * the hardware. The next three lines are required in case this image
+     * is not located at 0x0 (i.e. it is being launched from a bootloader)
      */
 
     ldr r1, =_vector_table
     ldr r2, [r1]
     mov	sp,r2
+
+    /*
+     * Relocate the .text section from FLASH to SRAM only if the load
+     * address and the start address are not the same. This code supports
+     * running an entire image out of SRAM
+     */
+    ldr r0, =_text_start
+    ldr r1, =_text_end
+    ldr r2, =_text_load
+
+    cmp r0, r2
+    beq end_text_loop
+text_loop:
+    cmp r0, r1
+    ittt    lt
+    ldrlt   r3, [r2], #4
+    strlt   r3, [r0], #4
+    blt     text_loop
+end_text_loop:
+
+
+    /*
+     * Relocate the .ramcode section from FLASH to SRAM
+     */
+    ldr r0, =_ramcode_start
+    ldr r1, =_ramcode_end
+    ldr r2, =_ramcode_load
+
+ramcode_loop:
+    cmp r0, r1
+    ittt    lt
+    ldrlt   r3, [r2], #4
+    strlt   r3, [r0], #4
+    blt     ramcode_loop
+
+    /*
+     * Relocate vector table to SRAM
+     */
+     ldr r0, =_vector_ram_start
+     ldr r1, =_vector_ram_end
+     ldr r2, =_vector_rom
+vector_loop:
+    cmp r0, r1
+    ittt    lt
+    ldrlt   r3, [r2], #4
+    strlt   r3, [r0], #4
+    blt     vector_loop
+
+    /* Point to the SRAM vector table */
+    ldr r1,=0xe000ed08
+    ldr r0,=_vector_ram_start
+    str r0,[r1]
 
 
 c_runtime_setup:
@@ -614,37 +667,6 @@ stack_loop:
     itt     lt
     strlt   r2, [r0], #4
     blt     stack_loop
-
-    /*
-     * Relocate the .ramcode section from FLASH to SRAM
-     */
-    ldr r0, =_ramcode_start
-    ldr r1, =_ramcode_end
-    ldr r2, =_ramcode_load
-
-ramcode_loop:
-    cmp r0, r1
-    ittt    lt
-    ldrlt   r3, [r2], #4
-    strlt   r3, [r0], #4
-    blt     ramcode_loop
-
-    /*
-     * Relocate vector table to SRAM
-     */
-     ldr r0, =_vector_ram_start
-     ldr r1, =_vector_ram_end
-     ldr r2, =_vector_rom
-vector_loop:
-    cmp r0, r1
-    ittt    lt
-    ldrlt   r3, [r2], #4
-    strlt   r3, [r0], #4
-    blt     vector_loop
-
-    ldr r1,=0xe000ed08
-    ldr r0,=_vector_ram_start
-    str r0,[r1]
 
 call_user_asm_code:
     bl main

@@ -12,9 +12,7 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
-#define __RAMCODE__ __attribute__ ((long_call, section(".ramcode")))
-
-static int32_t checkErrors(void)
+static __RAMCODE__ int32_t checkErrors(void)
 {
     if ((FTFL_FSTAT & (FTFL_FPVIOL   | FTFL_ACCERR
                     |  FTFL_RDCOLERR | FTFL_MGSTAT0))) {
@@ -23,6 +21,19 @@ static int32_t checkErrors(void)
     else {
         return OK;
     }
+}
+
+/* Note: Caching of flash data is enabled by default for crossbar masters 0-2
+ *       (ARM Instruction/Data buses + DMA). Anytime we modify flash
+ *       we must invalidate the cache and prespeculative buffer to ensure
+ *       data coherency */
+static __RAMCODE__ void flashInvalidateCache(void)
+{
+    FMC_PFB0CR |= FMC_CINV_WAY;
+    FMC_PFB0CR |= FMC_S_B_INV;
+
+    FMC_PFB1CR |= FMC_CINV_WAY;
+    FMC_PFB1CR |= FMC_S_B_INV;
 }
 
 static __RAMCODE__ int32_t safeFlashErase(uint32_t addr, uint32_t numBytes)
@@ -59,6 +70,8 @@ static __RAMCODE__ int32_t safeFlashErase(uint32_t addr, uint32_t numBytes)
         if (checkErrors() == ERROR)
             return ERROR;
     }
+
+    flashInvalidateCache();
 
     return OK;
 }
@@ -99,6 +112,8 @@ static __RAMCODE__ int32_t safeFlashWrite(uint32_t addr, uint32_t *dataPtr,
         addr += 4;
     }
 
+    flashInvalidateCache();
+
     return OK;
 }
 
@@ -107,7 +122,6 @@ int32_t flashInit(const flashConfig_t *cfg)
     /* TODO: Clocking. By Default clkdiv is 2
      * and mcg is 50MHz giving max clock
      * of 25MHz */
-    /* TODO: Configure FMC for data caching */
 
     return checkErrors();
 }

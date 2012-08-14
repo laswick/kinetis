@@ -3,7 +3,7 @@
 #include "hardware.h"
 
 typedef struct {
-    uartIF_t *uartPtr;
+    int32_t   uartFd;
     int32_t   numRetries;
 } xmodemCfg_t;
 

@@ -14,7 +14,7 @@ ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware spi demoSpi gpio devoptab crc
+C_PIECES = hardware spi demoSpi gpio devoptab
 
 # Define Hardware Platform
 

@@ -51,6 +51,9 @@ int main(void)
     char str[10];
     spiWriteRead_t wr;
 
+    /* Install spi into the device table before using it */
+    spi_install();
+
     /* OPEN the spi2 device. Check to make sure you are given a 'good'
      * file descriptor, ie. not -1. The file descriptor is required
      * for any future POSIX system call. */

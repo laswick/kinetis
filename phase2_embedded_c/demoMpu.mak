@@ -6,7 +6,7 @@
 
 # Name of project/output file:
 
-TARGET = loader_demo
+TARGET = mpu_demo
 
 # List your asm files here (minus the .s):
 
@@ -14,7 +14,7 @@ ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware gpio demoGpio
+C_PIECES = hardware mpu demoMpu
 
 # Define Hardware Platform
 
@@ -27,7 +27,6 @@ AS = arm-none-eabi-as
 LD = arm-none-eabi-ld
 GDB = arm-none-eabi-gdb
 OBJDUMP = arm-none-eabi-objdump
-OBJCOPY = arm-none-eabi-objcopy
 
 ASM_FLAGS = -g
 ASM_FILES = ${ASM_PIECES:%=%.s}
@@ -35,7 +34,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -Wall -c -g -O${OPT_LEVEL} -D${PLATFORM}
+C_FLAGS = -Wall -c -g -O${OPT_LEVEL} -D${PLATFORM} -mlong-calls
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
@@ -43,12 +42,7 @@ O_FILES = ${ASM_O_FILES} ${C_O_FILES}
 
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
-TYPE = ROM
-ifeq ($(TYPE),RAM)
-LD_SCRIPT = linkerscript_ram.ld
-else
-LD_SCRIPT = linkerscript_rom.ld
-endif
+LD_SCRIPT = linkerscript.ld
 
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
@@ -59,9 +53,8 @@ LIBS  = ${LIBPATH}/libc.a
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
-	@${OBJCOPY} -Osrec ${TARGET}.axf ${TARGET}.hex
-	@ln -fs ${TARGET}.out.s out.s
-	@ln -fs ${TARGET}.axf out.axf
+#	@ln -fs ${TARGET}.out.s out.s
+#	@ln -fs ${TARGET}.axf out.axf
 	@echo
 	@echo Executable: ${TARGET}.axf, sym-linked to out.axf
 	@echo
@@ -71,7 +64,7 @@ all: ${TARGET}.axf
 
 ${TARGET}.axf: ${O_FILES}
 	@echo
-	${LD} ${O_FILES} ${LIBS} ${LD_FLAGS} -T ${LD_SCRIPT} -o ${TARGET}.axf
+	${LD} ${O_FILES} ${LIBS} -T ${LD_SCRIPT} ${LD_FLAGS} -o ${TARGET}.axf
 
 %.o: %.s
 	${AS} ${ASM_FLAGS} ${CPU_FLAGS} -o $@ $<
@@ -85,7 +78,6 @@ clean:
 	@echo
 	rm -f *.o
 	rm -f ${TARGET}.axf
-	rm -f ${TARGET}.hex
 	rm -f ${TARGET}.out.s
 	rm -f out.axf
 	rm -f out.s

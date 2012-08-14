@@ -20,7 +20,10 @@
  *
  ****************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "kinetis.h"
 #include "hardware.h"
@@ -227,12 +230,71 @@ static void errorLED(void)
         ;
 }
 
+/*****************************************************************************
+ * setBootOptions
+ *
+ * This structure is retained at the end of the flash memory allocated for
+ * boot space (defined in linkerscript_boot.ld). It retains the address of
+ * where the application image was loaded to and a checksum of the code used
+ * to verify image integrity on powerup
+ ****************************************************************************/
+typedef struct {
+    uint32_t signature;
+    uint32_t codeAddr;
+    uint32_t codeSize;
+    uint32_t codeChecksum;
+} bootOptions_t;
+
+#define BOOT_OPTS_SIGNATURE 0x12344321
+static const volatile
+__attribute__ ((section(".nvStorage"))) bootOptions_t bootOptions = {
+    .signature    = BOOT_OPTS_SIGNATURE,
+    .codeAddr     = 0x4000,
+    .codeSize     = 0x20000,
+    .codeChecksum = 0xffffffff,
+};
+
+static void setBootOptions(bootOptions_t *bootOptsPtr)
+{
+    extern uint32_t _nvStorage_start;
+    flashErase((uint32_t)&_nvStorage_start, FTFL_FLASH_SECTOR_SIZE);
+    flashWrite((uint32_t)&_nvStorage_start, (uint32_t *)bootOptsPtr,
+                                            sizeof(bootOptions_t) / 4);
+}
+
+/*****************************************************************************
+ * validateCode
+ *
+ * This routine checks if an application image is present in flash.
+ * It uses the data stored in the bootOptions structure. It also performs
+ * a checksum on the application code to verify data integrity
+ ****************************************************************************/
+static bool32_t validateCode(void)
+{
+    volatile uint8_t *codePtr = (volatile uint8_t *)bootOptions.codeAddr;
+    uint32_t checksum = 0;
+    int i;
+
+    if (bootOptions.signature != BOOT_OPTS_SIGNATURE)
+        return FALSE;
+
+    if (bootOptions.codeChecksum == 0xffffffff)
+        return FALSE;
+
+    for (i = 0; i < bootOptions.codeSize; i++)
+        checksum += *codePtr++;
+
+    return (checksum == bootOptions.codeChecksum);
+}
+
 /****************************************************************************
  * jumpToApp
  *      Jumps to the application code.
  ***************************************************************************/
 static void jumpToApp(void)
 {
+    uint32_t codeAddr = *(uint32_t *)(bootOptions.codeAddr + 0x4);
+
     gpioSet(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
     /* NVIC offset register has to be 64bit word aligned as per the ARM TRM
      * in order to support a maximum of 128 vectors. Rather then waste flash
@@ -241,12 +303,7 @@ static void jumpToApp(void)
      * the applications startup code to remap its vector map into
      * SRAM and update VTOR */
     NVIC_VTOR_SET(0);
-    asm volatile (
-        "ldr r1, =_app_code_start\n\t"  /* TODO: pass in start address */
-        "add r1,r1,#4\n\t"
-        "ldr r0,[r1]\n\t"
-        "bx r0"
-    );
+    asm volatile  ("bx %[addr]" : : [addr] "r" (codeAddr));
     /* Should be running in application land now.
      * Getting here is bad news bears */
     assert(FALSE);
@@ -258,30 +315,35 @@ static void jumpToApp(void)
  * UART Loader Menu
  *
  *      Erases flash and receives a new SREC image to parse and program
- *  over UART3. Supports XMODEM interface only
+ *  over UART3. Supports CRC XMODEM 128Byte/1K interface only
  ****************************************************************************/
-static uartIF_t uartConfig = {
-    .uart             = UART3,
-    .systemClockHz    = 20480000,
-    .busClockHz       = 20480000,
-    .baud             = 115200,
-    .responseWaitTime = 250,
-};
+static int fd;
+static void print(char *str)
+{
+    write(fd, str, strlen(str));
+}
+
 static xmodemCfg_t xmodemConfig = {
-    .uartPtr    = &uartConfig,
     .numRetries = 50,
 };
 
-static void uartLoader(uint32_t appCodeAddr, uint32_t appCodeSize)
+static void uartLoader(void)
 {
     static uint8_t rxBuffer[1024];
     static srecData_t srecData;
 
-    if (flashErase(appCodeAddr, appCodeSize) == ERROR) {
-        uartPrint(&uartConfig, "Flash Failed to erase\r\n");
+    bootOptions_t newBootOpts = {
+        .signature    = BOOT_OPTS_SIGNATURE,
+        .codeAddr     = -1,
+        .codeSize     =  0,
+        .codeChecksum =  0,
+    };
+
+    if (flashErase(bootOptions.codeAddr, bootOptions.codeSize) == ERROR) {
+        print("Flash Failed to erase\r\n");
         errorLED();
     }
-    uartPrint(&uartConfig, "Flash Erased. Waiting for XMODEM Transfer\r\n");
+    print("Flash Erased. Waiting for XMODEM Transfer\r\n");
     gpioSet(N_LED_GREEN_PORT,  N_LED_GREEN_PIN);
     gpioSet(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
 
@@ -289,7 +351,7 @@ static void uartLoader(uint32_t appCodeAddr, uint32_t appCodeSize)
         int len = xmodemRecv(rxBuffer, sizeof(rxBuffer));
 
         if (len == 0) {
-            uartPrint(&uartConfig, "\r\nProgramming succesfull!\r\n");
+            print("\r\nProgramming succesfull!\r\n");
             break;
         }
         else if (len > 0) {
@@ -301,12 +363,23 @@ static void uartLoader(uint32_t appCodeAddr, uint32_t appCodeSize)
                 int value = srecParse(&rxBuffer[offset], len, &srecData);
                 if (value == ERROR) {
                     xmodemAbort();
-                    uartPrint(&uartConfig, "\r\nSREC FILE ERROR!\r\n");
-                    uartPrint(&uartConfig, "Waiting for re-transfer...\r\n");
+                    print("\r\nSREC FILE ERROR!\r\n");
+                    print("Waiting for re-transfer...\r\n");
                     break;
                 }
                 else {
                     if (srecData.numBytes) {
+                        int i;
+
+                        /* Calculate checkum for the image being loaded */
+                        newBootOpts.codeSize += srecData.numBytes;
+                        for (i = 0; i < srecData.numBytes; i++)
+                            newBootOpts.codeChecksum += srecData.data[i];
+
+                        /* Record the address of where the image is loaded */
+                        if (newBootOpts.codeAddr == -1)
+                            newBootOpts.codeAddr  = srecData.address;
+
                         flashWrite(srecData.address, (uint32_t *)srecData.data,
                                                          srecData.numBytes / 4);
                     }
@@ -322,6 +395,8 @@ static void uartLoader(uint32_t appCodeAddr, uint32_t appCodeSize)
         gpioToggle(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
     }
 
+    setBootOptions(&newBootOpts);
+
     gpioSet  (N_LED_BLUE_PORT,   N_LED_BLUE_PIN);
     gpioSet  (N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
     gpioClear(N_LED_GREEN_PORT,  N_LED_GREEN_PIN);
@@ -333,9 +408,7 @@ static void uartLoader(uint32_t appCodeAddr, uint32_t appCodeSize)
 extern uint32_t _app_code_start;
 int main(void)
 {
-    uint32_t appCodeAddr = (uint32_t)&_app_code_start;
-    uint32_t appCodeSize = 0x20000; /* 128K by default */
-    bool32_t codePresent = (*(volatile uint32_t *)appCodeAddr) != 0xffffffff;
+    bool32_t codePresent = validateCode();
     uint8_t menuSel = 0;
 
     gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_PIN,   GPIO_OUTPUT | GPIO_LOW);
@@ -351,42 +424,44 @@ int main(void)
     }
 
     /* Initialize peripherals */
-    if (uartInit(&uartConfig) == ERROR || xmodemInit(&xmodemConfig) == ERROR
-                                       || flashInit(&flashConfig) == ERROR) {
+    fd = open("uart3", 0, 0);
+    xmodemConfig.uartFd = fd;
+
+    if (fd == -1 || xmodemInit(&xmodemConfig) == ERROR
+                 || flashInit(&flashConfig)   == ERROR) {
         errorLED();
     }
 
     /* Loader Menu
-     * TODO: Add options to display and modify code address + size
-     *       Requires varg printf */
+     * TODO: Add options to display bootOptions. Requires varg print */
     while (1) {
-        codePresent = (*(volatile uint32_t *)appCodeAddr) != 0xffffffff;
+        codePresent = validateCode();
 
-        uartPrint(&uartConfig, "\r\nLoader Menu\r\n");
-        uartPrint(&uartConfig, "1. Load new SREC image from UART\r\n");
+        print("\r\nLoader Menu\r\n");
+        print("1. Load new SREC image from UART\r\n");
         if (codePresent) {
-            uartPrint(&uartConfig, "2. Jump to application\r\n");
+            print("2. Jump to application\r\n");
         }
 
-        while (uartRead(&uartConfig, &menuSel, 1) < 1)
+        while (read(fd, &menuSel, 1) < 1)
             ;
-        uartWrite(&uartConfig, &menuSel, 1);
-        uartPrint(&uartConfig, "\r\n");
+        write(fd, &menuSel, 1);
+        print("\r\n");
 
         switch (menuSel) {
         case '1':
-            uartLoader(appCodeAddr, appCodeSize);
+            uartLoader();
             break;
         case '2':
             if (codePresent) {
-                uartPrint(&uartConfig, "Jumping to application. Bye Bye\r\n");
+                print("Jumping to application. Bye Bye\r\n");
                 jumpToApp();
                 assert(FALSE);
                 errorLED();
             }
             /* No Break */
         default:
-            uartPrint(&uartConfig, "Invalid Selection\r\n");
+            print("Invalid Selection\r\n");
             break;
         }
     }

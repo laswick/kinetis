@@ -134,6 +134,37 @@ uart_t uartList[NUM_UART_MODULES] = {
     },
 };
 
+int uart_install(void)
+{
+    int ret = TRUE;
+
+    if (!deviceInstall("uart0", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart1", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart2", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart4", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    if (!deviceInstall("uart5", uart_open_r, uart_ioctl, uart_close_r,
+                                                  uart_write_r, uart_read_r, NULL))
+        ret = FALSE;
+
+    return ret;
+}
+
 static int uartOpen(uartModule_t mod, devoptab_t *dot)
 {
     uart_t *uart;
@@ -309,7 +340,6 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
     else if (strcmp(DEVOPTAB_UART5_STR, dot->name) == 0) {
         mod = UART_MODULE_5;
     }
-
     else {
         /* Device does not exist */
         ((struct _reent *)reent)->_errno = ENODEV;

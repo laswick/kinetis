@@ -177,8 +177,9 @@ asm_main:                                         /* Called by our start code */
     .set MCG_C5_PRDIV_8, 0x18 /* divide by 25: 50MHz/25 = 2  req range 2MHz - 4MHz */
 
     .set MCG_C6_PLLS_ENABLE, (1 << 6)
-    .set MCG_C6_VDIV_32X,    0x1A /* X50  2*50 =  100MHz! */
-    .set MCG_C6_PBE_MODE,    (MCG_C6_PLLS_ENABLE | MCG_C6_VDIV_32X)
+    .set MCG_C6_VDIV_50X,    0x1A /* X50  2*50 =  100MHz! */
+    .set MCG_C6_VDIV_48X,    0x18 /* X48  2*48 =  96MHz */
+    .set MCG_C6_PBE_MODE,    (MCG_C6_PLLS_ENABLE | MCG_C6_VDIV_48X)
 
     .set MCG_S_OSCINIT_BIT,     (1 << 1)
     .set MCG_S_IREFST_BIT,      (1 << 4)
