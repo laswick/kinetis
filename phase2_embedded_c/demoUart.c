@@ -30,6 +30,11 @@ int main(void)
     int32_t len;
     char readString[256] = {'\0'};
 
+    /* Install uart into the device table before using it */
+    uart_install();
+
+
+
     int fd;
     fd = open("uart3", 0, 0);
     if (fd==-1) {
@@ -38,7 +43,8 @@ int main(void)
 
 
 
-    printf("The start of something good...\r\n"); /* StdOut is uart3 */
+   /* TODO Shaun printf is broken w the uart_install() changeds. */
+   //printf("The start of something good...\r\n"); /* StdOut is uart3 */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -72,10 +78,12 @@ int main(void)
         len = read(fd, (uint8_t *)readString, 1);
         if (len) {
             if (readString[0] == 'Q' || readString[0] == 'q') {
-                printf("\r\n");
-                printf("BuBye \r\n");
-                printf("==================================== \r\n");
-                printf("\r\n");
+                write(fd, "\r\n BuBye \r\n \r\n",
+                  strlen("\r\n BuBye \r\n \r\n"));
+                //printf("\r\n");
+                //printf("BuBye \r\n");
+                //printf("==================================== \r\n");
+                //printf("\r\n");
                 break;
             }
         }
@@ -92,7 +100,9 @@ int main(void)
     for (;;) {
         delay();
         gpioClear(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
-        printf("Shaun.\n\n"); /* Shaun likes seeing his name. */
+        //printf("Shaun.\n\n"); /* Shaun likes seeing his name. */
+        write(fd, "Shaun \n\n", strlen("Shaun \n\n"));
+
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
     }

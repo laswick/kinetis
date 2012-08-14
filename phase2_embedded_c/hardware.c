@@ -57,8 +57,9 @@ void hwInstallISRHandler(uint32_t isr, void *isrHandler)
         nvicICPR += (irq / 32);
         nvicISER += (irq / 32);
 
-        *nvicICPR = irq % 32;    /* Clear pending interrupt */
-        *nvicISER = irq % 32;    /* Enable interrupt */
+        /* TODO Paul I think this should be like this to set the bit no?: */
+        *nvicICPR = (1 << (irq % 32));    /* Clear pending interrupt */
+        *nvicISER = (1 << (irq % 32));    /* Enable interrupt */
     }
 
     hwInterruptsEnable();
