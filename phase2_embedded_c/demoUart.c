@@ -26,7 +26,8 @@ enum {
 };
 
 enum {
-    UPDATE_READ,
+    UPDATE_HELP,
+    UPDATE_QUIT,
 };
 static int updateFlags;
 /******************************************************************************
@@ -38,7 +39,19 @@ static int updateFlags;
 static void isrUartStatusSources(void)
 
 {
-   updateFlags |= UPDATE_READ;
+
+
+    int32_t len;
+    len = read(fd, (uint8_t *)readString, 1);
+    if (len) {
+        if (readString[0] == 'Q' || readString[0] == 'q') {
+            updateFlags |= UPDATE_READ;
+        }
+        else {
+            updateFlags |= UPDATE_HELP;
+        }
+    }
+
    return;
 }
 
@@ -95,24 +108,22 @@ int main(void)
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
 
-        if (updateFlags & UPDATE_QUIT) {
-            int32_t len;
+        if (updateFlags & UPDATE_HELP) {
             write(fd, "\r\n Press Q to quit \r\n",
                strlen("\r\n Press Q to quit \r\n"));
+            updateFlags &= ~UPDATE_HELP;
+        }
 
-            len = read(fd, (uint8_t *)readString, 1);
-            if (len) {
-                if (readString[0] == 'Q' || readString[0] == 'q') {
-                    write(fd, "\r\n BuBye \r\n \r\n",
-                            strlen("\r\n BuBye \r\n \r\n"));
-                    //printf("\r\n");
-                    //printf("BuBye \r\n");
-                    //printf("==================================== \r\n");
-                    //printf("\r\n");
-                    break;
-                }
-            }
-            updateFlags &= ~UPDATE_READ;
+
+        if (updateFlags & UPDATE_QUIT) {
+            write(fd, "\r\n BuBye \r\n \r\n",
+                    strlen("\r\n BuBye \r\n \r\n"));
+            //printf("\r\n");
+            //printf("BuBye \r\n");
+            //printf("==================================== \r\n");
+            //printf("\r\n");
+            updateFlags &= ~UPDATE_QUIT;
+            break
         }
 
     }
