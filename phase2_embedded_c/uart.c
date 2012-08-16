@@ -485,4 +485,3 @@ long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 }
 
 
-
