@@ -26,10 +26,12 @@ enum {
 };
 
 enum {
+    UPDATE_NONE,
     UPDATE_HELP,
     UPDATE_QUIT,
 };
 static int updateFlags;
+static int fd;
 /******************************************************************************
 * isr_uart3_status_sources(void)
 *
@@ -39,13 +41,12 @@ static int updateFlags;
 static void isrUartStatusSources(void)
 
 {
-
-
+    char readString[256] = {'\0'};
     int32_t len;
     len = read(fd, (uint8_t *)readString, 1);
     if (len) {
         if (readString[0] == 'Q' || readString[0] == 'q') {
-            updateFlags |= UPDATE_READ;
+            updateFlags |= UPDATE_QUIT;
         }
         else {
             updateFlags |= UPDATE_HELP;
@@ -59,14 +60,12 @@ static void isrUartStatusSources(void)
 int main(void)
 {
     static char *colourStrings[] = { COLOUR_STRINGS };
-    char readString[256] = {'\0'};
 
     /* Install uart into the device table before using it */
     uart_install();
 
 
 
-    int fd;
     fd = open("uart3", 0, 0);
     if (fd==-1) {
         assert(0);
@@ -123,7 +122,7 @@ int main(void)
             //printf("==================================== \r\n");
             //printf("\r\n");
             updateFlags &= ~UPDATE_QUIT;
-            break
+            break;
         }
 
     }
