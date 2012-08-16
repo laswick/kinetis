@@ -178,7 +178,7 @@ int uart_install(void)
 }
 
 
-#if 1
+#if 0
 /* WIP */
 #define  _isr_uart3_status_sources isr_uart3_status_sources
 /******************************************************************************
@@ -275,12 +275,14 @@ static int uartOpen(uartModule_t mod, devoptab_t *dot)
                                  flag when at least one byte is in the FIFO */
 
 #if 0
-        hwInstallISRHandler(ISR_UART3_STATUS_SOURCES, isrUart3StatusSources);
+
+                                          | UART_C2_IDLE_INT_ENABLE
+                                          | UART_C2_TX_COMPLETE_INT_ENABLE
+                                          | UART_C2_TX_READY_INT_ENABLE;
 #endif
         uart->reg->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE;
-#if 0
-                      | UART_C2_RX_FULL_INT_ENABLE;
-#endif
+//                      | UART_C2_RX_FULL_INT_ENABLE;
+
     }
 
     return TRUE;
@@ -425,6 +427,53 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
 /* TODO: return errors if flags or cmd is bad */
 {
+    uart_t *uart;
+    int major;
+
+    if (!dot || !dot->priv) return FALSE;
+    else uart = (uart_t *) dot->priv;
+
+    switch ((int)uart->reg) {
+    case (int)UART0_REG_PTR:
+        major = 0;
+        break;
+    case (int)UART1_REG_PTR:
+        major = 1;
+        break;
+    case (int)UART2_REG_PTR:
+        major = 2;
+        break;
+    case (int)UART3_REG_PTR:
+        major = 3;
+        break;
+    case (int)UART4_REG_PTR:
+        major = 4;
+        break;
+    case (int)UART5_REG_PTR:
+        major = 5;
+        break;
+    default:
+        assert(0);
+        return FALSE;
+    break;
+    }
+
+
+    switch (cmd) {
+    case IO_IOCTL_UART_ENABLE_RX_INTERUPT:
+        if (flags) {
+            hwInstallISRHandler(ISR_UART0_STATUS_SOURCES + 2 * major,
+                    (int *)flags);
+            uart->reg->c2 |= UART_C2_RX_FULL_INT_ENABLE;
+        }
+
+        break;
+    default:
+        assert(0);
+        return FALSE;
+        break;
+    }
+
     return TRUE;
 }
 
@@ -479,6 +528,5 @@ long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
      * polled & interupt functions here at a later point.*/
     return uartRead(dot, buf, len);
 }
-
 
 

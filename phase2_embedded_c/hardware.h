@@ -345,6 +345,13 @@ int  uart_close_r ( void *reent, devoptab_t *dot );
 long uart_write_r ( void *reent, devoptab_t *dot, const void *buf, int len );
 long uart_read_r  ( void *reent, devoptab_t *dat,       void *buf, int len );
 
+/* IO_IOCTL_ commands */
+enum {
+    IO_IOCTL_UART_ENABLE_RX_INTERUPT,
+    //IO_IOCTL_UART_SET_BAUD,             /* Sets the BAUD rate */
+};
+
+
 
 /******************************************************************************/
 

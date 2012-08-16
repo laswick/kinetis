@@ -24,27 +24,60 @@ enum {
     GREEN,
     BLUE,
 };
+
+enum {
+    UPDATE_NONE,
+    UPDATE_HELP,
+    UPDATE_QUIT,
+};
+static int updateFlags;
+static int fd;
+/******************************************************************************
+* isr_uart3_status_sources(void)
+*
+* Status ISR definition.
+*
+******************************************************************************/
+static void isrUartStatusSources(void)
+
+{
+    char readString[256] = {'\0'};
+    int32_t len;
+    len = read(fd, (uint8_t *)readString, 1);
+    if (len) {
+        if (readString[0] == 'Q' || readString[0] == 'q') {
+            updateFlags |= UPDATE_QUIT;
+        }
+        else {
+            updateFlags |= UPDATE_HELP;
+        }
+    }
+
+   return;
+}
+
+
 int main(void)
 {
     static char *colourStrings[] = { COLOUR_STRINGS };
-    int32_t len;
-    char readString[256] = {'\0'};
 
     /* Install uart into the device table before using it */
     uart_install();
 
 
 
-    int fd;
     fd = open("uart3", 0, 0);
     if (fd==-1) {
         assert(0);
     }
 
 
+    /* This feels dirty, but I like it... Let me know if I am sinning here.
+     * I want to register an RX interupt handler here in this file. */
+    ioctl(fd, IO_IOCTL_UART_ENABLE_RX_INTERUPT, (int)isrUartStatusSources);
 
    /* TODO Shaun printf is broken w the uart_install() changeds. */
-   //printf("The start of something good...\r\n"); /* StdOut is uart3 */
+   printf("The start of something good...\r\n"); /* StdOut is uart3 */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -74,18 +107,22 @@ int main(void)
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
 
+        if (updateFlags & UPDATE_HELP) {
+            write(fd, "\r\n Press Q to quit \r\n",
+               strlen("\r\n Press Q to quit \r\n"));
+            updateFlags &= ~UPDATE_HELP;
+        }
 
-        len = read(fd, (uint8_t *)readString, 1);
-        if (len) {
-            if (readString[0] == 'Q' || readString[0] == 'q') {
-                write(fd, "\r\n BuBye \r\n \r\n",
-                  strlen("\r\n BuBye \r\n \r\n"));
-                //printf("\r\n");
-                //printf("BuBye \r\n");
-                //printf("==================================== \r\n");
-                //printf("\r\n");
-                break;
-            }
+
+        if (updateFlags & UPDATE_QUIT) {
+            write(fd, "\r\n BuBye \r\n \r\n",
+                    strlen("\r\n BuBye \r\n \r\n"));
+            //printf("\r\n");
+            //printf("BuBye \r\n");
+            //printf("==================================== \r\n");
+            //printf("\r\n");
+            updateFlags &= ~UPDATE_QUIT;
+            break;
         }
 
     }
@@ -100,12 +137,12 @@ int main(void)
     for (;;) {
         delay();
         gpioClear(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
-        //printf("Shaun.\n\n"); /* Shaun likes seeing his name. */
-        write(fd, "Shaun \n\n", strlen("Shaun \n\n"));
+        printf("Shaun.\n\n"); /* Shaun likes seeing his name. */
 
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
     }
 
+    close(fd);
     return 0;
 }
