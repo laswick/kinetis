@@ -121,10 +121,11 @@ int * __errno () {
 /*******************************************************************************/
 /* DEVOPTAB Section */
 /*******************************************************************************/
-
-devoptab_t *devoptab_list = NULL;
-static int devoptab_size = 0;
+#define       MAX_POSIX_DEVICES 10
+#define NUM_STDIO_POSIX_DEVICES 3
 #define MAX_DEVICE_NAME_SIZE    10
+static devoptab_t devoptab_list[MAX_POSIX_DEVICES + NUM_STDIO_POSIX_DEVICES];
+static int devoptab_size = 0;
 
 /*******************************************************************************/
 int deviceInstall (
@@ -139,25 +140,17 @@ int deviceInstall (
     void *priv )
 /*******************************************************************************/
 {
-    if (name == NULL) return FALSE;
+    if (name == NULL)
+        return FALSE;
 
-    devoptab_list = (devoptab_t *) realloc(devoptab_list,
-                                           sizeof(devoptab_t)*(devoptab_size+1));
-    if (devoptab_list == NULL) return FALSE;
-
-    devoptab_size += 1;
-
-                                            /* Allocate the device name string */
-    devoptab_list[devoptab_size-1].name = (char *) malloc(strlen(name));
-    strcpy((char *)devoptab_list[devoptab_size-1].name,name);
-
-    devoptab_list[devoptab_size-1].open_r = open_r;
-    devoptab_list[devoptab_size-1].ioctl = ioctl;
-    devoptab_list[devoptab_size-1].close_r = close_r;
-    devoptab_list[devoptab_size-1].write_r = write_r;
-    devoptab_list[devoptab_size-1].read_r = read_r;
-    devoptab_list[devoptab_size-1].priv = priv;
-
+    devoptab_list[devoptab_size].name    = name;
+    devoptab_list[devoptab_size].open_r  = open_r;
+    devoptab_list[devoptab_size].ioctl   = ioctl;
+    devoptab_list[devoptab_size].close_r = close_r;
+    devoptab_list[devoptab_size].write_r = write_r;
+    devoptab_list[devoptab_size].read_r  = read_r;
+    devoptab_list[devoptab_size].priv    = priv;
+    devoptab_size++;
 
     return TRUE;
 }
