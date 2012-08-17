@@ -424,6 +424,7 @@ int main(void)
     }
 
     /* Initialize peripherals */
+    uart_install();
     fd = open("uart3", 0, 0);
     xmodemConfig.uartFd = fd;
 

@@ -14,7 +14,7 @@ ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES  = hardware devoptab util uart
+C_PIECES  = hardware devoptab util loaderUart
 C_PIECES += gpio flash xmodem loader
 
 # Define Hardware Platform
@@ -33,7 +33,7 @@ ASM_FLAGS = -g
 ASM_FILES = ${ASM_PIECES:%=%.s}
 ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
-OPT_LEVEL = 1
+OPT_LEVEL = 0
 
 C_FLAGS  = -Wall -c -ggdb -MD -O${OPT_LEVEL} -D${PLATFORM} -mlong-calls
 C_FILES  = ${C_PIECES:%=%.c}
