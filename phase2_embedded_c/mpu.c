@@ -164,9 +164,9 @@ static void processFault(uint32_t addr, uint32_t data)
                                           | MPU_SPERR3 | MPU_SPERR4)
 bool32_t mpuCheckFaults(void)
 {
-    uint32_t faults = MPU_CESR;
+    uint32_t faults = (MPU_CESR & MPU_SLAVE_PORT_ERRORS);
 
-    if (faults & MPU_SLAVE_PORT_ERRORS) {
+    if (faults) {
         if (faults &  MPU_SPERR0) {
             processFault(MPU_EAR0, MPU_EDR0);
             MPU_CESR |= MPU_SPERR0;   /* Clear Error */
