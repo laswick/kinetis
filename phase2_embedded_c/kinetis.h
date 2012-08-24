@@ -251,43 +251,53 @@ enum {
 
 /* System Clock Gate Control Registers */
 #define SIM_SCGC1_ADDR  0x40048028
-#define SIM_SCGC1   (*(volatile uint32_t *) SIM_SCGC1_ADDR)
-#define SIM_SCGC1_PTR (volatile uint32_t *) SIM_SCGC1_ADDR
+#define SIM_SCGC1_PTR     (volatile uint32_t *) SIM_SCGC1_ADDR
+#define SIM_SCGC1       (*(volatile uint32_t *) SIM_SCGC1_ADDR)
+#define SIM_SCGC1_UART5_ENABLE  BIT_11
+#define SIM_SCGC1_UART4_ENABLE  BIT_10
+
+#define SIM_SCGC2_ADDR  0x4004802C
+#define SIM_SCGC2_PTR     (volatile uint32_t *) SIM_SCGC2_ADDR
+#define SIM_SCGC2       (*(volatile uint32_t *) SIM_SCGC2_ADDR)
+#define SIM_SCGC2_DAC0_ENABLE  BIT_12
+
+#define SIM_SCGC3_ADDR  0x40048030
+#define SIM_SCGC3_PTR     (volatile uint32_t *) SIM_SCGC3_ADDR
+#define SIM_SCGC3       (*(volatile uint32_t *) SIM_SCGC3_ADDR)
+#define SIM_SCGC3_SPI2_ENABLE  BIT_12
+
 #define SIM_SCGC4_ADDR  0x40048034
-#define SIM_SCGC4   (*(volatile uint32_t *) SIM_SCGC4_ADDR)
-#define SIM_SCGC4_PTR (volatile uint32_t *) SIM_SCGC4_ADDR
-#define SIM_UART5_ENABLE  BIT_11
-#define SIM_UART4_ENABLE  BIT_10
-#define SIM_EWM_ENABLE    BIT_1
-#define SIM_CMT_ENABLE    BIT_2
-#define SIM_I2C0_ENABLE   BIT_6
-#define SIM_I2C1_ENABLE   BIT_7
-#define SIM_UART0_ENABLE  BIT_10
-#define SIM_UART1_ENABLE  BIT_11
-#define SIM_UART2_ENABLE  BIT_12
-#define SIM_UART3_ENABLE  BIT_13
-#define SIM_USBOTG_ENABLE BIT_18
-#define SIM_CMP_ENABLE    BIT_19
-#define SIM_VREF_ENABLE   BIT_20
-#define SIM_LLWU_ENABLE   BIT_28
+#define SIM_SCGC4_PTR     (volatile uint32_t *) SIM_SCGC4_ADDR
+#define SIM_SCGC4       (*(volatile uint32_t *) SIM_SCGC4_ADDR)
+#define SIM_SCGC4_EWM_ENABLE    BIT_1
+#define SIM_SCGC4_CMT_ENABLE    BIT_2
+#define SIM_SCGC4_I2C0_ENABLE   BIT_6
+#define SIM_SCGC4_I2C1_ENABLE   BIT_7
+#define SIM_SCGC4_UART0_ENABLE  BIT_10
+#define SIM_SCGC4_UART1_ENABLE  BIT_11
+#define SIM_SCGC4_UART2_ENABLE  BIT_12
+#define SIM_SCGC4_UART3_ENABLE  BIT_13
+#define SIM_SCGC4_USBOTG_ENABLE BIT_18
+#define SIM_SCGC4_CMP_ENABLE    BIT_19
+#define SIM_SCGC4_VREF_ENABLE   BIT_20
+#define SIM_SCGC4_LLWU_ENABLE   BIT_28
+
+#define SIM_SCGC5_ADDR  0x40048038
+#define SIM_SCGC5_PTR     (volatile uint32_t *) SIM_SCGC5_ADDR
+#define SIM_SCGC5       (*(volatile uint32_t *) SIM_SCGC5_ADDR)
+#define SIM_SCGC5_PORTA_ENABLE BIT_9
+#define SIM_SCGC5_PORTB_ENABLE BIT_10
+#define SIM_SCGC5_PORTC_ENABLE BIT_11
+#define SIM_SCGC5_PORTD_ENABLE BIT_12
+#define SIM_SCGC5_PORTE_ENABLE BIT_13
+
 #define SIM_SCGC6_ADDR  0x4004803C
-#define SIM_SCGC6_PTR (volatile uint32_t *) SIM_SCGC6_ADDR
-#define SIM_SCGC6 (*(volatile uint32_t *) SIM_SCGC6_ADDR)
+#define SIM_SCGC6_PTR     (volatile uint32_t *) SIM_SCGC6_ADDR
+#define SIM_SCGC6       (*(volatile uint32_t *) SIM_SCGC6_ADDR)
 #define SIM_SCGC6_SPI0_ENABLE  BIT_12
 #define SIM_SCGC6_SPI1_ENABLE  BIT_13
 #define SIM_SCGC6_CRC_ENABLE   BIT_18
-#define SIM_SCGC3_ADDR  0x40048030
-#define SIM_SCGC3_PTR (volatile uint32_t *) SIM_SCGC3_ADDR
-#define SIM_SCGC3 (*(volatile uint32_t *) SIM_SCGC3_ADDR)
-#define SIM_SCGC3_SPI2_ENABLE  BIT_12
-#define SIM_SCGC5_ADDR  0x40048038
-#define SIM_SCGC5_PTR (volatile uint32_t) * SIM_SCGC5_ADDR
-#define SIM_SCGC5 (*(volatile uint32_t *) SIM_SCGC5_ADDR)
-#define SIM_PORTA_ENABLE BIT_9
-#define SIM_PORTB_ENABLE BIT_10
-#define SIM_PORTC_ENABLE BIT_11
-#define SIM_PORTD_ENABLE BIT_12
-#define SIM_PORTE_ENABLE BIT_13
+
 
 /*******************************************************************************
 * PORT CONTROLLER
@@ -1022,4 +1032,12 @@ typedef struct {
 #define MPU_RGDAAC9  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x24))
 #define MPU_RGDAAC10 (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x28))
 #define MPU_RGDAAC11 (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x2C))
+
+/*******************************************************************************
+* DAC
+*******************************************************************************/
+
+#define DAC0_BASE_ADDR 0x400CC000
+
+
 #endif

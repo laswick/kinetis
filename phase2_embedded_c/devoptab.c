@@ -126,7 +126,7 @@ int * __errno () {
 #define MAX_FD 20
 static int fdTable[MAX_FD] =
 {
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  0, 1, 2, -1, -1, -1, -1, -1, -1, -1,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
 
@@ -176,7 +176,8 @@ int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
     int dev = -1;
     int i;
 
-    for (i = 0; i < MAX_FD; i++) {
+    /* search for the first free FD */
+    for (i = NUM_STDIO_POSIX_DEVICES; i < MAX_FD; i++) {
         if (fdTable[i] != -1) {
             fd = i;
 	    break;
@@ -205,6 +206,7 @@ int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
             fdTable[fd] = dev;
 	}
 	else {
+            /* open failed, do not store device in FD table */
             fd = -1;
 	}
     }
@@ -213,7 +215,7 @@ int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
 }
 
 /******************************************************************************/
-int _check_fd_valid(struct _reent *ptr, int fd)
+static int is_fd_valid( struct _reent *ptr, int fd )
 /******************************************************************************/
 {
     if (fd < 0 || fd >= MAX_FD) {
@@ -233,7 +235,7 @@ int _close_r ( struct _reent *ptr, int fd )
 /******************************************************************************/
 {
     int retVal = -1;
-    if (_check_fd_valid(ptr, fd)) {
+    if (is_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
         retVal = devoptab_list[dev].close_r(ptr, &devoptab_list[dev]);
 	if (!retVal) {
@@ -244,12 +246,12 @@ int _close_r ( struct _reent *ptr, int fd )
 }
 
 /******************************************************************************/
-int ioctl (int fd, int cmd, int flags)
+int ioctl ( int fd, int cmd, int flags)
 /******************************************************************************/
 {
     int retVal = -1;
-    struct _reent reent;
-    if (_check_fd_valid(&reent, fd)) {
+    struct _reent tmp;
+    if (is_fd_valid(&tmp, fd)) {
         int dev = fdTable[fd];
         retVal = devoptab_list[dev].ioctl(&devoptab_list[dev], cmd, flags);
     }
@@ -261,8 +263,8 @@ int ioctl (int fd, int cmd, int flags)
 long _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )
 /******************************************************************************/
 {
-    int retVal = -1;
-    if (_check_fd_valid(ptr, fd)) {
+    long retVal = -1;
+    if (is_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
         retVal = devoptab_list[dev].write_r(ptr,
                 &devoptab_list[dev], buf, cnt);
@@ -271,11 +273,11 @@ long _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )
 }
 
 /******************************************************************************/
-long _read_r (struct _reent *ptr, int fd, void *buf, size_t cnt )
+long _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt )
 /******************************************************************************/
 {
-    int retVal = -1;
-    if (_check_fd_valid(ptr, fd)) {
+    long retVal = -1;
+    if (is_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
         retVal = devoptab_list[dev].read_r(ptr,
                 &devoptab_list[dev], buf, cnt);
