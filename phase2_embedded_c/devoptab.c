@@ -233,7 +233,7 @@ int _close_r ( struct _reent *ptr, int fd )
 /******************************************************************************/
 {
     int retVal = -1;
-    if (_check_fd_valid(_reent, fd)) {
+    if (_check_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
         retVal = devoptab_list[dev].close_r(ptr, &devoptab_list[dev]);
 	if (!retVal) {
@@ -248,7 +248,8 @@ int ioctl (int fd, int cmd, int flags)
 /******************************************************************************/
 {
     int retVal = -1;
-    if (_check_fd_valid(_reent, fd)) {
+    struct _reent reent;
+    if (_check_fd_valid(&reent, fd)) {
         int dev = fdTable[fd];
         retVal = devoptab_list[dev].ioctl(&devoptab_list[dev], cmd, flags);
     }
@@ -261,7 +262,7 @@ long _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )
 /******************************************************************************/
 {
     int retVal = -1;
-    if (_check_fd_valid(_reent, fd)) {
+    if (_check_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
         retVal = devoptab_list[dev].write_r(ptr,
                 &devoptab_list[dev], buf, cnt);
@@ -274,7 +275,7 @@ long _read_r (struct _reent *ptr, int fd, void *buf, size_t cnt )
 /******************************************************************************/
 {
     int retVal = -1;
-    if (_check_fd_valid(_reent, fd)) {
+    if (_check_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
         retVal = devoptab_list[dev].read_r(ptr,
                 &devoptab_list[dev], buf, cnt);
