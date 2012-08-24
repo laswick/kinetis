@@ -296,7 +296,7 @@ int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
     }
     else {
         /* Device does not exist */
-//        ((struct _reent *)reent)->_errno = ENODEV;
+        ((struct _reent *)reent)->_errno = ENODEV;
         return FALSE;
     }
 
@@ -305,7 +305,7 @@ int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
         return TRUE;
     } else {
         /* Device is already open, is this an issue or not? */
-//        ((struct _reent *)reent)->_errno = EPERM;
+        ((struct _reent *)reent)->_errno = EPERM;
         return FALSE;
     }
 }
