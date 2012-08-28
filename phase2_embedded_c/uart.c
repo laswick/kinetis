@@ -2,6 +2,8 @@
 *
 * uart.c
 *
+* jimmyMac!
+*
 * Low level driver for the Kinetis UART module.
 *
 * API: uartInit(), uartWrite(), uartRead(),
@@ -9,14 +11,20 @@
 *  Driver assumes 8N1, no hardware control.   Let me know if you need something
 *  else.
 *
-* jimmyMac!
-* June 26 2012
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
 *
 *******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
 #include "kinetis.h"
+
 #include "hardware.h"
 #include "globalDefs.h"
 

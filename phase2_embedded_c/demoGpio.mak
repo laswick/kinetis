@@ -33,7 +33,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -Wall -c -g -O${OPT_LEVEL} -D${PLATFORM}
+C_FLAGS = -Wall -MD -c -g -O${OPT_LEVEL} -D${PLATFORM}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
@@ -75,6 +75,7 @@ clean:
 	@echo Cleaning up...
 	@echo
 	rm -f *.o
+	rm -f *.d
 	rm -f ${TARGET}.axf
 	rm -f ${TARGET}.out.s
 	rm -f out.axf

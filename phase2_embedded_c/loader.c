@@ -1,24 +1,31 @@
-/*****************************************************************************
- * loader.c
- *
- * UART bootloader for the Kinetis K60 chip.
- * Module resides in the first 16Kbytes of flash memory. On powerup the
- * loader checks to see if application code exists at the start of the next
- * memory location (0x4000). If it doesn't or the user is pressing switch 1
- * the loader menu will be displayed. An active serial connection over UART3
- * is required to interface with the loader (baud is 115200).
- * Any terminal program that supports the XMODEM file transfer protocol
- * (hyperTerm, minicom etc..) can be used. Loader is expecting images to be
- * in SREC format. To build an image the loader can be sent use
- * linkerscript_app.ld. This just offsets the start of flash to after the boot
- * space.
- *
- * Read the note under NVIC_VTOR_SET regarding the application codes vectors
- *
- * Paul Quevedo
- * August 6 2012
- *
- ****************************************************************************/
+/*******************************************************************************
+*
+* loader.c
+*
+* Paul Quevedo
+*
+* UART bootloader for the Kinetis K60 chip.
+* Module resides in the first 16Kbytes of flash memory. On powerup the
+* loader checks to see if application code exists at the start of the next
+* memory location (0x4000). If it doesn't or the user is pressing switch 1
+* the loader menu will be displayed. An active serial connection over UART3
+* is required to interface with the loader (baud is 115200).
+* Any terminal program that supports the XMODEM file transfer protocol
+* (hyperTerm, minicom etc..) can be used. Loader is expecting images to be
+* in SREC format. To build an image the loader can be sent use
+* linkerscript_app.ld. This just offsets the start of flash to after the boot
+* space.
+*
+* Read the note under NVIC_VTOR_SET regarding the application codes vectors
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
+*
+*******************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -1,12 +1,22 @@
-/*****************************************************************************
- * flash.c
- *
- * Driver for the FTFL Flash module. In the k60n512 there are two
- * 256kB program flash blocks. Access to either flash block is permitted only
- * if code is not currently executing out of that block. As such any functions
- * that modify flash are executed out of RAM to prevent any possible contention
- *
- ****************************************************************************/
+/*******************************************************************************
+*
+* flash.c
+*
+* Paul Quevedo
+*
+* Driver for the FTFL Flash module. In the k60n512 there are two
+* 256kB program flash blocks. Access to either flash block is permitted only
+* if code is not currently executing out of that block. As such any functions
+* that modify flash are executed out of RAM to prevent any possible contention.
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
+*
+*******************************************************************************/
 #include "kinetis.h"
 
 #include "hardware.h"

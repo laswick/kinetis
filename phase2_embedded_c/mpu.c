@@ -1,16 +1,25 @@
-/*****************************************************************************
- * mpu.c
- * pquevedo 12/08/2012
- *
- * This driver provides the interface to control and configure the MPU.
- * The MPU consists of multiple region descriptors that can be configured.
- * For regions that overlap the attributes defined are logically OR'd together.
- * Region 0 is a unique region that is initialized by hardware to allow
- * the Core, Debugger and DMA full access to the entire memory space. The core
- * is only able to modify attributes (except the debuggers) for region 0.
- * It cannot modify start/end address or the enable/disable of that region
- *
- *****************************************************************************/
+/*******************************************************************************
+*
+* mpu.c
+*
+* Paul Quevedo
+*
+* This driver provides the interface to control and configure the MPU.
+* The MPU consists of multiple region descriptors that can be configured.
+* For regions that overlap the attributes defined are logically OR'd together.
+* Region 0 is a unique region that is initialized by hardware to allow
+* the Core, Debugger and DMA full access to the entire memory space. The core
+* is only able to modify attributes (except the debuggers) for region 0.
+* It cannot modify start/end address or the enable/disable of that region
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
+*
+*******************************************************************************/
 #include "kinetis.h"
 
 #include "hardware.h"

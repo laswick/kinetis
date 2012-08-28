@@ -1,13 +1,22 @@
 /*****************************************************************************
- * demoMpu.c
- * pquevedo 12/08/2012
- *
- * This example sets up memory such that a 1K array of data cannot be
- * written to by anyone except the debugger. The core has full read access
- * to memory but cannot write to the protected region. Once the protected
- * region is written to a busFault exception is triggered which will call
- * back to the notify function we registered with the MPU.
- *
+*
+* demoMpu.c
+*
+* Paul Quevedo
+*
+* This example sets up memory such that a 1K array of data cannot be
+* written to by anyone except the debugger. The core has full read access
+* to memory but cannot write to the protected region. Once the protected
+* region is written to a busFault exception is triggered which will call
+* back to the notify function we registered with the MPU.
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
+*
  ****************************************************************************/
 #include "kinetis.h"
 #include "hardware.h"

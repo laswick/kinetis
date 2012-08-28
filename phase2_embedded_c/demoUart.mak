@@ -75,6 +75,7 @@ clean:
 	@echo Cleaning up...
 	@echo
 	rm -f *.o
+	rm -f *.d
 	rm -f ${TARGET}.axf
 	rm -f ${TARGET}.out.s
 	rm -f out.axf

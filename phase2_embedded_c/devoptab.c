@@ -1,10 +1,12 @@
 /*******************************************************************************
+*
 * devoptab.c
-********************************************************************************
+*
+* Shaun Weise
 *
 * POSIX Interface
 *
-* This was based on an article by bill gatliff. It can be found:
+* This was based on an excellent article by bill gatliff. It can be found at:
 *   http://neptune.billgatliff.com/newlib.html2
 *
 * Small changes were made to his implementation, but the fundatmentals are the
@@ -21,6 +23,13 @@
 * In general, any I/O device driver should follow the POSIX model for its
 * interface going forward. Exceptions will be discussed & decided by the
 * project team.
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
 *
 *******************************************************************************
 
@@ -97,7 +106,7 @@
         See spi.c for an example of how a driver implements the POSIX model and
         see demoSpi.c for an example of how to use the spi POSIX driver.
 
-********************************************************************************/
+*******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -118,7 +127,7 @@ int * __errno () {
 }
 #endif
 
-/*******************************************************************************/
+/******************************************************************************/
 /* DEVOPTAB Section */
 /*******************************************************************************/
 #define       MAX_POSIX_DEVICES 10

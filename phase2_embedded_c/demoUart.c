@@ -3,7 +3,13 @@
 * demoUart.c
 *
 * James McAnanama
-* Canada Day 2012
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
 *
 *******************************************************************************/
 #include <stdlib.h>
@@ -12,12 +18,12 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+
 #include "kinetis.h"
 #include "hardware.h"
 #include "globalDefs.h"
 #include "util.h"
 
-#define COLOUR_STRINGS "ORANGE\t", "YELLOW\t", "GREEN\t", "BLUE\n\v\r"
 enum {
     ORANGE,
     YELLOW,
@@ -25,13 +31,17 @@ enum {
     BLUE,
 };
 
+#define COLOUR_STRINGS "ORANGE\t", "YELLOW\t", "GREEN\t", "BLUE\n\v\r"
+
 enum {
     UPDATE_NONE,
     UPDATE_HELP,
     UPDATE_QUIT,
 };
+
 static int updateFlags;
 static int fd;
+
 /******************************************************************************
 * isr_uart3_status_sources(void)
 *

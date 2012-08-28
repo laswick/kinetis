@@ -1,10 +1,20 @@
-#ifndef __HARDWARE_H__
-#define __HARDWARE_H__
 /*******************************************************************************
 *
 * hardware.h
 *
+* Rob Laswick
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
+*
 *******************************************************************************/
+#if !defined(HARDWARE_H)
+#define HARDWARE_H
+
 #include <stdlib.h>
 #include "globalDefs.h"
 
@@ -18,41 +28,44 @@ extern void assert_(const char *file, const int line);
 
 #define assert(cond) ((cond)? (void) 0 : assert_(__FILE__, __LINE__))
 
+/******************************************************************************/
+
 #define swap32(x) \
     asm volatile ("rev %[out], %[in]" : [out] "=r" (x) : [in] "r" (x))
 
 #define __RAMCODE__ __attribute__ ((long_call, section(".ramcode")))
 
-/* POSIX Interface ***********************************************************/
+/* POSIX Interface ************************************************************/
 
-extern int ioctl (int fd, int cmd, int flags);
+extern int ioctl(int fd, int cmd, int flags);
 
-typedef struct devoptab_s {
+typedef struct devoptab_s {                        /* Device Operations Table */
     const char *name;
-    int  (*open_r )( void *reent, struct devoptab_s *dot, int mode, int flags );
-    int  (*ioctl  )(              struct devoptab_s *dot, int cmd,  int flags );
-    int  (*close_r)( void *reent, struct devoptab_s *dot );
-    long (*write_r)( void *reent, struct devoptab_s *dot, const void *buf,
-                                                                      int len );
-    long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf,
-                                                                      int len );
+    int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags);
+    int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags);
+    int  (*close_r)(void *reent, struct devoptab_s *dot);
+    long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
+                                                                       int len);
+    long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len);
     void *priv;
 } devoptab_t;
 
-int deviceInstall(
+extern int deviceInstall(
     const char *name,
-    int  (*open_r )( void *reent, struct devoptab_s *dot, int mode, int flags ),
-    int  (*ioctl  )(              struct devoptab_s *dot, int cmd,  int flags ),
-    int  (*close_r)( void *reent, struct devoptab_s *dot ),
-    long (*write_r)( void *reent, struct devoptab_s *dot, const void *buf,
-                                                                      int len ),
-    long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf,
-                                                                      int len ),
-    void *priv );
+    int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags),
+    int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags),
+    int  (*close_r)(void *reent, struct devoptab_s *dot),
+    long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
+                                                                       int len),
+    long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len),
+    void *priv
+);
 
 /* INTERRUPTS *****************************************************************/
+
 #define hwInterruptsEnable()  asm volatile ("cpsie i")
 #define hwInterruptsDisable() asm volatile ("cpsid i")
+
 extern void hwInstallISRHandler(uint32_t isr, void *isrHandler);
 
 /* GPIO ***********************************************************************/
@@ -79,30 +92,30 @@ extern uint32_t gpioRead(uint32_t port, uint32_t pin);
 
 /* SPI  ***********************************************************************/
 
-/* IO_IOCTL_ commands */
+                                                        /* IO_IOCTL_ commands */
 enum {
     IO_IOCTL_SPI_SET_PORT_PCRS,        /* Selects the SPI in the PORT MUXs */
     IO_IOCTL_SPI_SET_BAUD,             /* Sets the BAUD rate */
-    IO_IOCTL_SPI_SET_SCLK_MODE,        /* Sets clock polarity and sample mode. */
+    IO_IOCTL_SPI_SET_SCLK_MODE,        /* Sets clock polarity and sample mode.*/
     IO_IOCTL_SPI_SET_FMSZ,             /* */
     IO_IOCTL_SPI_SET_OPTS,             /* */
     IO_IOCTL_SPI_SET_CS,               /* */
     IO_IOCTL_SPI_SET_CS_INACT_STATE,   /* */
     IO_IOCTL_SPI_FLUSH_RX_FIFO,        /* */
     IO_IOCTL_SPI_WRITE_READ,           /* */
-    MAX_IO_IOCTRL_SPI_CMDS             /* Name of this enum is pending... */
+    MAX_IO_IOCTRL_SPI_CMDS,            /* Name of this enum is pending... */
 };
 
-/* Mode select for the spi module */
+                                            /* Mode select for the spi module */
 typedef enum spiSclkMode_e {
     SPI_SCLK_MODE_0 = 0, /* CPOL = 0, CPHA = 0, ***DEFAULT*** */
     SPI_SCLK_MODE_1,     /* CPOL = 0, CPHA = 1                */
     SPI_SCLK_MODE_2,     /* CPOL = 1, CPHA = 0                */
     SPI_SCLK_MODE_3,     /* CPOL = 1, CPHA = 1                */
-    MAX_SPI_SCLK_MODES
+    MAX_SPI_SCLK_MODES,
 } spiSclkMode_t;
 
-/* Mask for all the spi module options */
+                                       /* Mask for all the spi module options */
 typedef enum {
     SPI_OPTS_MASTER         = (1<<0), /* Module is SPI Master */
     SPI_OPTS_LSB_FIRST      = (1<<1), /* LSB of frame is transferred first */
@@ -110,10 +123,10 @@ typedef enum {
     SPI_OPTS_TX_FIFO_DSBL   = (1<<3), /* Disable Tx FIFO */
     SPI_OPTS_RX_FIFO_DSBL   = (1<<4), /* Disable Rx FIFO */
     SPI_OPTS_RX_FIFO_OVR_EN = (1<<5), /* Receive FIFO Overflow Overwrite */
-    SPI_OPTS_PCS_CONT       = (1<<6), /* Keep pcs pins asserted between transfers */
+    SPI_OPTS_PCS_CONT       = (1<<6), /* Keep pcs pins asserted between xfers */
 } spiOptions_t;
 
-/* Mask for chip selects to assert when writing / reading */
+                    /* Mask for chip selects to assert when writing / reading */
 typedef enum {
     SPI_CS_0 = (1<<0),
     SPI_CS_1 = (1<<1),
@@ -123,7 +136,7 @@ typedef enum {
     SPI_CS_5 = (1<<5),
 } spiChipSelect_t;
 
-/* Mask for the inactive state of the chip select, 0 = INACT_LOW */
+             /* Mask for the inactive state of the chip select, 0 = INACT_LOW */
 typedef enum {
     SPI_CS_0_INACT_HIGH = (1<<0),
     SPI_CS_1_INACT_HIGH = (1<<1),
@@ -133,7 +146,7 @@ typedef enum {
     SPI_CS_5_INACT_HIGH = (1<<5),
 } spiCSInactState_t;
 
-/* Baud rate selection for the SPI */
+                                           /* Baud rate selection for the SPI */
 typedef enum {
     SPI_BAUDRATE_CLKDIV_4,
     SPI_BAUDRATE_CLKDIV_8,
@@ -155,17 +168,17 @@ typedef enum {
 } spiBaudRate_t;
 
 typedef struct spiWriteRead_s {
-    uint8_t * out;
-    uint8_t * in;
+    uint8_t *out;
+    uint8_t *in;
     unsigned len;
 } spiWriteRead_t;
 
 #define SPI_FMSZ_MAX 16
 #define SPI_FMSZ_MIN 3
 
-#define DEVOPTAB_SPI0_STR    "spi0"
-#define DEVOPTAB_SPI1_STR    "spi1"
-#define DEVOPTAB_SPI2_STR    "spi2"
+#define DEVOPTAB_SPI0_STR "spi0"
+#define DEVOPTAB_SPI1_STR "spi1"
+#define DEVOPTAB_SPI2_STR "spi2"
 
 int  spi_install (void);
 int  spi_open_r  (void *reent, devoptab_t *dot,  int mode,  int flags);
@@ -175,6 +188,7 @@ long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len);
 long spi_read_r  (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* FLASH **********************************************************************/
+
 typedef struct {
 } flashConfig_t;
 
@@ -184,7 +198,7 @@ extern int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords);
 
 /* CRC  ***********************************************************************/
 
-/* IO_IOCTL_ commands */
+                                                        /* IO_IOCTL_ commands */
 enum {
     IO_IOCTL_CRC_SET_TOT,         /* Set Type of Transpose */
     IO_IOCTL_CRC_GET_TOT,         /* Get Type of Transpose */
@@ -201,7 +215,7 @@ enum {
     MAX_IO_IOCTRL_CRC_CMDS
 };
 
-/* TOT - CRC Type of Transposition */
+                                           /* TOT - CRC Type of Transposition */
 typedef enum {
     CRC_TOT_NONE           = 0, /* No transposition */
     CRC_TOT_BITS           = 1, /* Only Bits in bytes are transposed */
@@ -210,7 +224,7 @@ typedef enum {
     MAX_CRC_TOT,
 } crcTot_t;
 
-/* TOTR - CRC Type of Transposition for Read*/
+                                  /* TOTR - CRC Type of Transposition for Read*/
 typedef enum {
     CRC_TOTR_NONE           = 0, /* No transposition */
     CRC_TOTR_BITS           = 1, /* Only Bits in bytes are transposed */
@@ -219,30 +233,31 @@ typedef enum {
     MAX_CRC_TOTR,
 } crcTotr_t;
 
-/* FXOR - Compliment Read (XOR) of CRC Data Register*/
+                          /* FXOR - Compliment Read (XOR) of CRC Data Register*/
 typedef enum {
     CRC_FXOR_DISABLE = 0, /* Final checksum will not be XOR'd */
     CRC_FXOR_ENABLE  = 1, /* Final checksum XOR'd with all 1's mask */
-    MAX_CRC_FXOR
+    MAX_CRC_FXOR,
 } crcFxor_t;
 
-/* WIDTH - CRC Protocol Width*/
+                                                 /* WIDTH - CRC Protocol Width*/
 typedef enum {
     CRC_WIDTH_16      = 0, /* 16-bit CRC Checksum */
     CRC_WIDTH_32      = 1, /* 32-bit CRC Checksum */
-    MAX_CRC_WIDTH
+    MAX_CRC_WIDTH,
 } crcWidth_t;
 
 #define DEVOPTAB_CRC_STR    "crc"
 
-int  crc_install ( void );
-int  crc_open_r  ( void *reent, devoptab_t *dot,  int mode,  int flags );
-int  crc_ioctl   (              devoptab_t *dot,  int cmd,   int flags );
-int  crc_close_r ( void *reent, devoptab_t *dot );
-long crc_write_r ( void *reent, devoptab_t *dot, const void *buf, int len );
-long crc_read_r  ( void *reent, devoptab_t *dat,       void *buf, int len );
+int  crc_install(void);
+int  crc_open_r (void *reent, devoptab_t *dot, int mode, int flags);
+int  crc_ioctl  (             devoptab_t *dot, int cmd,  int flags);
+int  crc_close_r(void *reent, devoptab_t *dot);
+long crc_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
+long crc_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
-/* MPU ***********************************************************************/
+/* MPU ************************************************************************/
+
 enum {
     MPU_ATTR_READ    = BIT_0,
     MPU_ATTR_WRITE   = BIT_1,
@@ -250,6 +265,7 @@ enum {
 };
 
 #define MPU_REGION0_ID 0xDEAFC0DE
+
 typedef struct {
     uint32_t addr;
     uint32_t master;
@@ -260,8 +276,8 @@ typedef struct {
 
 typedef struct {
     bool32_t enable;
-    uint32_t startAddr; /* Must be  32bit aligned */
-    uint32_t endAddr;   /* Must be (32bit aligned - 1) i.e 0x001f */
+    uint32_t startAddr;             /* Must be  32bit aligned */
+    uint32_t endAddr;               /* Must be (32bit aligned - 1) i.e 0x001f */
     uint8_t  attr[MAX_CROSSBAR_MASTERS];
     void (*notifyFn)(const mpuFaultDesc_t *);
 } mpuRegion_t;
@@ -270,40 +286,6 @@ extern int32_t  mpuEnable(bool32_t enable);
 extern int32_t  mpuAddRegion(const mpuRegion_t *regionPtr);
 extern int32_t  mpuModifyRegion(int32_t regionId, const mpuRegion_t *regionPtr);
 extern bool32_t mpuCheckFaults(void);
-
-/* EXAMPLE *******************************************************************/
-
-typedef struct {
-} featureConfig_t;                                        /* i.e. spiConfig_t */
-
-extern int32_t featureInit(const featureConfig_t *cfg);
-extern int32_t featureWrite(uint8_t *buffer, int32_t len);
-extern int32_t featureRead(uint8_t *buffer, int32_t len);
-
-/*******************************************************************************
-*
-* CCA Hardware Defines
-*
-*******************************************************************************/
-#if defined(FREESCALE_K60N512_TOWER_HW)
-
-/* LEDS ***********************************************************************/
-
-#define N_LED_ORANGE_PORT PORTA
-#define N_LED_ORANGE_PIN  11
-
-#define N_LED_YELLOW_PORT PORTA
-#define N_LED_YELLOW_PIN  28
-
-#define N_LED_GREEN_PORT  PORTA
-#define N_LED_GREEN_PIN   29
-
-#define N_LED_BLUE_PORT   PORTA
-#define N_LED_BLUE_PIN    10
-
-/* SWITCHES *******************************************************************/
-#define N_SWITCH_1_PORT  PORTA
-#define N_SWITCH_1_PIN   19
 
 /* UART ***********************************************************************/
 
@@ -330,33 +312,56 @@ extern int32_t featureRead(uint8_t *buffer, int32_t len);
 #define UART3_RX_MUX  PORT_MUX_ALT3
 #define UART3_TX_MUX  PORT_MUX_ALT3
 
+#define DEVOPTAB_UART0_STR "uart0"
+#define DEVOPTAB_UART1_STR "uart1"
+#define DEVOPTAB_UART2_STR "uart2"
+#define DEVOPTAB_UART3_STR "uart3"
+#define DEVOPTAB_UART4_STR "uart4"
+#define DEVOPTAB_UART5_STR "uart5"
 
-#define DEVOPTAB_UART0_STR    "uart0"
-#define DEVOPTAB_UART1_STR    "uart1"
-#define DEVOPTAB_UART2_STR    "uart2"
-#define DEVOPTAB_UART3_STR    "uart3"
-#define DEVOPTAB_UART4_STR    "uart4"
-#define DEVOPTAB_UART5_STR    "uart5"
+int  uart_install(void);
+int  uart_open_r (void *reent, devoptab_t *dot, int mode, int flags);
+int  uart_ioctl  (             devoptab_t *dot, int cmd,  int flags);
+int  uart_close_r(void *reent, devoptab_t *dot);
+long uart_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
+long uart_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
-int  uart_install ( void );
-int  uart_open_r  ( void *reent, devoptab_t *dot,  int mode,  int flags );
-int  uart_ioctl   (              devoptab_t *dot,  int cmd,   int flags );
-int  uart_close_r ( void *reent, devoptab_t *dot );
-long uart_write_r ( void *reent, devoptab_t *dot, const void *buf, int len );
-long uart_read_r  ( void *reent, devoptab_t *dat,       void *buf, int len );
-
-/* IO_IOCTL_ commands */
+                                                        /* IO_IOCTL_ commands */
 enum {
     IO_IOCTL_UART_ENABLE_RX_INTERUPT,
     //IO_IOCTL_UART_SET_BAUD,             /* Sets the BAUD rate */
 };
 
+/*******************************************************************************
+*
+* CCA Hardware Defines
+*
+*******************************************************************************/
+#if defined(FREESCALE_K60N512_TOWER_HW)
 
+/* LEDS ***********************************************************************/
+
+#define N_LED_ORANGE_PORT PORTA
+#define N_LED_ORANGE_PIN  11
+
+#define N_LED_YELLOW_PORT PORTA
+#define N_LED_YELLOW_PIN  28
+
+#define N_LED_GREEN_PORT  PORTA
+#define N_LED_GREEN_PIN   29
+
+#define N_LED_BLUE_PORT   PORTA
+#define N_LED_BLUE_PIN    10
+
+/* SWITCHES *******************************************************************/
+#define N_SWITCH_1_PORT  PORTA
+#define N_SWITCH_1_PIN   19
 
 /******************************************************************************/
 
 #else
 #error Undefined Hardware Platform
 #endif
+
 #endif
 

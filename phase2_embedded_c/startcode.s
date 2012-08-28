@@ -2,11 +2,17 @@
 *
 * startcode.s
 *
+* Rob Laswick
+*
 * Startcode for the Freescale Kinetis K60 / ARM Cortex-M4.
 * Includes CRT setup.
 *
-* Rob Laswick
-* June 5 2012
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
 *
 *******************************************************************************/
     .syntax unified

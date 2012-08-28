@@ -3,15 +3,21 @@
 * demoSpi.c
 *
 * Shaun Weise
-* 2012 06 28
 *
-*******************************************************************************
 * This demo demonstrates basic SPI functionality. SPI2 is connected to a
 * digilent PmodCls, a 16x2 lcd character display. It features SPI, I2C and UART
 * interfaces so its perfect for testing out these interfaces on new platforms.
 * Write character data to it and it will display the characters, no
 * initialization required. There are special control sequences to control the
 * cursor, current line, etc.
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
+*
 *******************************************************************************/
 #include <stdlib.h>
 #include <stdio.h>

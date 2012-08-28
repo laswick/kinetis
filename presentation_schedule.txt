@@ -28,9 +28,9 @@ PHASE 2: Embedded C Programming
 
     Start Code & Linker Scripts (3)     Rob
     GPIO                                Rob
-    Interrupts                          Rob
+    Interrupts                          Paul
     Interfacing C & Assembly            Rob
-    Executing out of RAM                Rob
+    Executing out of RAM                Paul
     Clock Options                       Jan
     Touch Sensor Interface (TSI)        David
     Watchdog                            Andrew

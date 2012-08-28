@@ -1,9 +1,21 @@
 /*******************************************************************************
+*
 * crc.c
+*
+* Shaun Weise
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
+*
 *******************************************************************************/
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
 #include "kinetis.h"
 #include "hardware.h"
 #include "globalDefs.h"
@@ -33,9 +45,9 @@ crc_t crcDflt = {
     .simScgcEnBit = SIM_SCGC6_CRC_ENABLE,
 };
 
-/*******************************************************************************/
+/******************************************************************************/
 int crc_install(void)
-/*******************************************************************************/
+/******************************************************************************/
 {
     if (!deviceInstall("crc", crc_open_r,  crc_ioctl, crc_close_r,
                                                   crc_write_r, crc_read_r, NULL))
