@@ -28,29 +28,42 @@ PHASE 2: Embedded C Programming
 
     Start Code & Linker Scripts (3)     Rob
     GPIO                                Rob
-    Interrupts                          Paul
-    Interfacing C & Assembly            Rob
-    Executing out of RAM                Paul
-    Clock Options                       Jan
-    Touch Sensor Interface (TSI)        David
-    Watchdog                            Andrew
-    Power Modes                         Andrew
-    Timers                              Daryl
-    DAC                                 Daryl
+    Interrupts                          Rob
+
     UART                                James
     ADC                                 James
-    I2C                                 Chris
-    SPI                                 Shaun
-    USB                                 Neil
+
     FLASH                               Greg
     External Bus Interface (EBI)        Greg
-    SDHC                                Geoff
-    CAN                                 Carlos
+
+    Executing out of RAM                Paul
     Boot Loader                         Paul
     MPU                                 Paul
+
+    Timers                              Daryl
+    DAC                                 Daryl
+
+    Interfacing C & Assembly            Rob
+    I2C                                 Chris
+
+    SPI                                 Shaun
+    CRC (WSCP)                          Shaun
+
+    SDHC                                Geoff
+
+    Touch Sensor Interface (TSI)        David
+
+    USB                                 Neil
+
+    CAN                                 Carlos
+
     Ethernet                            Steve
     DMA                                 Steve
-    CRC (WSCP)                          Shaun
+
+    Clock Options                       Jan
+
+    Watchdog                            Andrew
+    Power Modes                         Andrew
 
 
 PHASE 3: Real Time Embedded C Programing

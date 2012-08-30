@@ -1,1 +1,54 @@
-See http://sam.zoy.org/wtfpl/COPYING
+
+COPYING
+
+Rob Laswick
+Aug.28 2012
+
+Apparently not defining and providing a copyright does not defeat the fact
+that a default copyright is globally assumed and implied, which allows others to
+read the source code, but they have no legal right to use or modify it.  This
+is NOT the intention of this project by any stretch.  The entire purpose of
+publishing the our source code is in the hopes that it may be found useful, to
+students, teachers, hobbyiests, and professionals.  All source code is intended
+to be made available without restriction to be used for learning purposes,
+and/or to be used in full or in part in both open and closed source
+applications.
+
+The license agreement we've chosen to associate with this project is the
+WTF Public License (WTFPL).  Despite its arguably offensive name, this license
+clearly conveys the restrictions (or lack thereof) placed upon the use of the
+software/source code provided in this project.
+
+Again, appologies to those who may be offended by Sam Hocevar's naming choice
+of this license agreement.
+
+
+
+
+/******************************************************************************/
+
+           DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+                   Version 2, December 2004
+
+Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
+
+Everyone is permitted to copy and distribute verbatim or modified
+copies of this license document, and changing it is allowed as long
+as the name is changed.
+
+           DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+  TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+
+0. You just DO WHAT THE FUCK YOU WANT TO.
+
+/******************************************************************************/
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+/******************************************************************************/
