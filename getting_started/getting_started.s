@@ -10,7 +10,7 @@
     .syntax unified
     .thumb
 
-    .extern _stack_start                      /* Defined in our linker script */
+    .extern _stack_start
 
     .text
     .org 0
@@ -19,7 +19,6 @@
 vector_table:
     .word _stack_start
     .word _reset_handler
-
 
     .org 0x400
     .align 2
@@ -32,7 +31,6 @@ kinetis_flash_config_field:
     .byte 0xff
     .byte 0xff
     .byte 0xff
-
 
     .align 2
     .thumb_func
@@ -51,22 +49,9 @@ disable_watchdog:
     ldr r0, =0x01d2
     strh r0, [r6]
 
-    /*
-     * Note: The preceeding code must complete at speed before we can start 
-     *       setting breakpoints and single stepping, hense the provided
-     *       label below "first_break" (i.e. (gdb) tb first_break).
-     */
-
 first_break:
 
-set_stack_pointer: 
-
-    /*
-     * The main stack pointer is automatically set to the value stored in
-     * address 0x00000000 (which is the first element in the vector_table) by
-     * the hardware, so technically the next 3 lines are not required.
-     */
-
+set_stack_pointer:
     ldr r1, =vector_table
     ldr r2, [r1]
     mov	sp,r2

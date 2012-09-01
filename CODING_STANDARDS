@@ -6,7 +6,9 @@ Aug.28 2012
 
 The coding standards and conventions for the kinetis.git project
 should, for the most part, follow the popular Linux Coding Sytle guidelines
-(which are attached below for convenience).
+(which are attached below for convenience).  Developers will not be
+held accountable to these guidelines, but they should be seriously
+considered.
 
 
 

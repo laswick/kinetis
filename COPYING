@@ -15,14 +15,16 @@ and/or to be used in full or in part in both open and closed source
 applications.
 
 The license agreement we've chosen to associate with this project is the
-WTF Public License (WTFPL).  Despite its arguably offensive name, this license
-clearly conveys the restrictions (or lack thereof) placed upon the use of the
-software/source code provided in this project.
+WTF Public License (WTFPL), as it very clearly conveys the restrictions
+(or lack thereof) placed upon the use of the software/source code provided
+in this project.  Despite its (arguably) offensive name, this license is
+approved by the Free Software Foundation (FSF) and is fully GNU GPL compatible.
 
 Again, appologies to those who may be offended by Sam Hocevar's naming choice
 of this license agreement.
 
-
+A copy of the license is presented below.
+See http://sam.zoy.org/wtfpl for more details.
 
 
 /******************************************************************************/
