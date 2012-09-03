@@ -555,14 +555,14 @@ typedef enum {
 
 /* S1 */
 typedef enum {
-UART_S1_TX_DATA_LOW      = BIT_7, /* data <= TWFIFO[TXWATER] */
-UART_S1_TX_IDLE          = BIT_6,
-UART_S1_RX_DATA_FULL     = BIT_5, /* data >= RWFIFO[RXWATER] */
-UART_S1_RX_IDLE          = BIT_4,
-UART_S1_RX_OVERRUN       = BIT_3,
-UART_S1_RX_NOISE         = BIT_2,
-UART_S1_RX_FRAMING_ERROR = BIT_1,
-UART_S1_RX_PARITY_ERROR  = BIT_0,
+UART_S1_TX_DATA_LOW      = BIT_7, /* TDRE data <= TWFIFO[TXWATER] */
+UART_S1_TX_IDLE          = BIT_6, /* TC */
+UART_S1_RX_DATA_FULL     = BIT_5, /* RDRF data >= RWFIFO[RXWATER] */
+UART_S1_RX_IDLE          = BIT_4, /* IDLE */
+UART_S1_RX_OVERRUN       = BIT_3, /* OR */
+UART_S1_RX_NOISE         = BIT_2, /* NF */
+UART_S1_RX_FRAMING_ERROR = BIT_1, /* FE */
+UART_S1_RX_PARITY_ERROR  = BIT_0, /* PF */
 } uartS1_t;
 
 
@@ -575,6 +575,8 @@ typedef enum {
 #define UART_C4_BRFA_MASK 0xf
 
 /* PFIFO */
+#define UART_TXFIFOSIZE_MASK  0x70
+#define UART_RXFIFOSIZE_MASK  0x07
 #define UART_PFIFO_TXFIFOSIZE_SHIFT   4
 #define UART_PFIFO_RXFIFOSIZE_SHIFT   0
 typedef enum {

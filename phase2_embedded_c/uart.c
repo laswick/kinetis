@@ -20,15 +20,6 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
-#define UART_BUFFER_SIZE 256
-#define UART_BUFFER_WRAP (UART_BUFFER_SIZE - 1)
-
-typedef struct {
-    volatile uint8_t buffer[UART_BUFFER_SIZE];
-    volatile uint8_t inIndex;
-    volatile uint8_t outIndex;
-    volatile uint8_t length;
-} uartBuffer_t;
 
 
 typedef struct {
@@ -57,6 +48,17 @@ typedef enum uartModule_e{
     UART_MODULE_5,
     NUM_UART_MODULES,
 } uartModule_t;
+
+#define UART_BUFFER_SIZE 256
+#define UART_BUFFER_WRAP (UART_BUFFER_SIZE - 1)
+
+typedef struct {
+    volatile uint8_t buffer[UART_BUFFER_SIZE];
+    volatile uint8_t inIndex;
+    volatile uint8_t outIndex;
+    volatile uint8_t length;
+} uartBuffer_t;
+
 
 static uartBuffer_t uartRxBuffer[NUM_UART_MODULES];
 
@@ -210,17 +212,15 @@ static void isrHandler(int major)
     uart_t *uart = &uartList[major];
     uartBuffer_t *bufferPtr = &uartRxBuffer[major];
 
-#if 0
-    if (!(uart->reg->sfifo & UART_SFIFO_RXEMPT)) {
+    if (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
         while (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
-#endif
-        while (uart->reg->rcfifo) {
             bufferPtr->buffer[bufferPtr->inIndex] = uart->reg->d;
-            bufferPtr->inIndex = (bufferPtr->inIndex + 1) & UART_BUFFER_WRAP;
+            bufferPtr->inIndex = (bufferPtr->inIndex + 1)
+                & UART_BUFFER_WRAP;
             bufferPtr->length++;
         }
 
-//    }
+    }
     return;
 }
 
@@ -334,12 +334,16 @@ static int uartOpen(uartModule_t mod, devoptab_t *dot)
         uart->reg->c4 = baudFineAdjust & UART_C4_BRFA_MASK;
 
         /* Setup RX FIFO */
+        /* TODO Paul: fifo sizes are read only. */
+
+#if 0
         uart->reg->pfifo  = UART_PFIFO_RXFIFOSIZE_16;
+        uart->reg->rwfifo = 2; /* FIFO is 16 datawords. Trigger buffer full
+                                 flag when at least one byte is in the FIFO */
+#endif
+
         uart->reg->cfifo |= UART_CFIFO_RXFLUSH;
         uart->reg->pfifo |= UART_PFIFO_RXFE;
-        uart->reg->rwfifo = 4; /* FIFO is 16 datawords. Trigger buffer full
-                                 flag when at least one byte is in the FIFO */
-
 #if 0
 
                                           | UART_C2_IDLE_INT_ENABLE
