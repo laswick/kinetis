@@ -24,7 +24,7 @@ PATH :=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin:${PATH}
 CC = arm-none-eabi-gcc
 AS = arm-none-eabi-as
 LD = arm-none-eabi-ld
-GDB = arm-none-eabi-gdbtui
+GDB = arm-none-eabi-gdb
 OBJDUMP = arm-none-eabi-objdump
 
 ASM_FLAGS = -g
