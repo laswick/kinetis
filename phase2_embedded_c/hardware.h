@@ -328,8 +328,11 @@ long uart_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
                                                         /* IO_IOCTL_ commands */
 enum {
-    IO_IOCTL_UART_ENABLE_RX_INTERUPT,
-    //IO_IOCTL_UART_SET_BAUD,             /* Sets the BAUD rate */
+    IO_IOCTL_UART_CALL_BACK_SET,    /* Register a RX call back function. */
+    IO_IOCTL_UART_TERMINATOR_SET,   /* Specify a RX termination character.*/
+    IO_IOCTL_UART_FLUSH_RX_FIFO,    /* Flush driver's RX FIFO */
+    IO_IOCTL_UART_LOOPBACK_ENABLE,  /* Set the loopback mode */
+    IO_IOCTL_UART_BAUD_SET,         /* Set the baud rate */
 };
 
 /*******************************************************************************

@@ -28,7 +28,10 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
+
+
 typedef struct {
+    int32_t             major;
     volatile uartPort_t *reg;
     unsigned             port;
     unsigned             sim;
@@ -39,8 +42,6 @@ typedef struct {
     uint32_t             rxPin;
     uint32_t             txPortCtrlBits;
     uint32_t             rxPortCtrlBits;
-    int32_t              clockHz;
-    int32_t              baud;
 } uart_t;
 
 typedef enum uartModule_e{
@@ -54,8 +55,10 @@ typedef enum uartModule_e{
 } uartModule_t;
 
 
-uart_t uartList[NUM_UART_MODULES] = {
+
+static uart_t uartList[NUM_UART_MODULES] = {
     [UART_MODULE_0] = {
+        .major          = UART_MODULE_0,
         .reg            = UART0_REG_PTR,
         .simScgcPtr     = SIM_SCGC4_PTR,
         .simScgcEnBit   = SIM_UART0_ENABLE,
@@ -67,11 +70,9 @@ uart_t uartList[NUM_UART_MODULES] = {
         .txPortCtrlBits = UART0_TX_MUX,
         .rxPortCtrlBits = UART0_RX_MUX,
 #endif
-        .clockHz    = SYSTEM_CLOCK_HZ,
-        .baud       = 115200,
-
     },
     [UART_MODULE_1] = {
+        .major          = UART_MODULE_1,
         .reg            = UART1_REG_PTR,
         .simScgcPtr     = SIM_SCGC4_PTR,
         .simScgcEnBit   = SIM_UART1_ENABLE,
@@ -83,10 +84,9 @@ uart_t uartList[NUM_UART_MODULES] = {
         .txPortCtrlBits = UART1_TX_MUX,
         .rxPortCtrlBits = UART1_RX_MUX,
 #endif
-        .clockHz    = SYSTEM_CLOCK_HZ,
-        .baud       = 115200,
     },
     [UART_MODULE_2] = {
+        .major          = UART_MODULE_2,
         .reg            = UART2_REG_PTR,
         .simScgcPtr     = SIM_SCGC4_PTR,
         .simScgcEnBit   = SIM_UART2_ENABLE,
@@ -98,10 +98,9 @@ uart_t uartList[NUM_UART_MODULES] = {
         .txPortCtrlBits = UART2_TX_MUX,
         .rxPortCtrlBits = UART2_RX_MUX,
 #endif
-        .clockHz    = BUS_CLOCK_HZ,
-        .baud       = 115200,
     },
     [UART_MODULE_3] = {
+        .major          = UART_MODULE_3,
         .reg            = UART3_REG_PTR,
         .port           = UART3_PORT,
         .simScgcPtr     = SIM_SCGC4_PTR,
@@ -111,10 +110,9 @@ uart_t uartList[NUM_UART_MODULES] = {
         .rxPin          = UART3_RX_PIN,
         .txPortCtrlBits = UART3_TX_MUX,
         .rxPortCtrlBits = UART3_RX_MUX,
-        .clockHz    = BUS_CLOCK_HZ,
-        .baud       = 115200,
     },
     [UART_MODULE_4] = {
+        .major          = UART_MODULE_4,
         .reg            = UART4_REG_PTR,
         .port           = UART4_PORT,
         .simScgcPtr     = SIM_SCGC1_PTR,
@@ -124,10 +122,9 @@ uart_t uartList[NUM_UART_MODULES] = {
         .rxPin          = UART4_RX_PIN,
         .txPortCtrlBits = UART4_TX_MUX,
         .rxPortCtrlBits = UART4_RX_MUX,
-        .clockHz    = BUS_CLOCK_HZ,
-        .baud       = 115200,
     },
     [UART_MODULE_5] = {
+        .major          = UART_MODULE_5,
         .reg            = UART5_REG_PTR,
         .port           = UART5_PORT,
         .simScgcPtr     = SIM_SCGC1_PTR,
@@ -137,8 +134,52 @@ uart_t uartList[NUM_UART_MODULES] = {
         .rxPin          = UART5_RX_PIN,
         .txPortCtrlBits = UART5_TX_MUX,
         .rxPortCtrlBits = UART5_RX_MUX,
+    },
+};
+
+
+#define UART_BUFFER_SIZE 256
+#define UART_BUFFER_WRAP (UART_BUFFER_SIZE - 1)
+
+typedef struct {
+    volatile uint8_t buffer[UART_BUFFER_SIZE];
+    volatile uint8_t tailIdx;
+    volatile uint8_t headIdx;
+    volatile uint8_t length;
+} uartBuffer_t;
+
+typedef struct {
+    int32_t      clockHz;
+    int32_t      baud;
+    int32_t      (*callBack)(uint8_t const *buf, int len);
+    char         terminator;
+    uartBuffer_t uartRxBuffer;
+} uartDev_t;
+
+static uartDev_t uartDev[NUM_UART_MODULES] = {
+    [UART_MODULE_0] = {
+        .clockHz    = SYSTEM_CLOCK_HZ,
+        .baud       = 9600,
+    },
+    [UART_MODULE_1] = {
+        .clockHz    = SYSTEM_CLOCK_HZ,
+        .baud       = 9600,
+    },
+    [UART_MODULE_2] = {
         .clockHz    = BUS_CLOCK_HZ,
-        .baud       = 115200,
+        .baud       = 9600,
+    },
+    [UART_MODULE_3] = {
+        .clockHz    = BUS_CLOCK_HZ,
+        .baud       = 9600,
+    },
+    [UART_MODULE_4] = {
+        .clockHz    = BUS_CLOCK_HZ,
+        .baud       = 9600,
+    },
+    [UART_MODULE_5] = {
+        .clockHz    = BUS_CLOCK_HZ,
+        .baud       = 9600,
     },
 };
 
@@ -186,25 +227,92 @@ int uart_install(void)
 }
 
 
-#if 0
-/* WIP */
-#define  _isr_uart3_status_sources isr_uart3_status_sources
+static void rxMsgNotify(uart_t *uart, uartBuffer_t *bufferPtr)
+{
+    uint8_t buf[bufferPtr->length];
+    int i;
+    for (i = 0; i < bufferPtr->length; i++) {
+        buf[i] = bufferPtr->buffer[bufferPtr->headIdx];
+        bufferPtr->headIdx = (bufferPtr->headIdx + 1)
+            & UART_BUFFER_WRAP;
+    }
+    uartDev[uart->major].callBack(buf, bufferPtr->length);
+    bufferPtr->length = 0;
+    return;
+}
 /******************************************************************************
-* isr_uart3_status_sources(void)
+* isrrUartX _status_sources(void)
 *
 * Status ISR definition.
 *
 ******************************************************************************/
-extern void isrUart3StatusSources(void)
-
+static void isrHandler(int major)
 {
-    static volatile int32_t count;
+    uart_t *uart = &uartList[major];
+    char d;
+    uartBuffer_t *bufferPtr = &uartDev[major].uartRxBuffer;
 
-    count++;
-   return;
+    if (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
+        while (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
+            d = uart->reg->d;
+            if (uartDev[major].callBack && uartDev[major].terminator == d) {
+                rxMsgNotify(uart, bufferPtr);
+            }
+            else {
+                bufferPtr->buffer[bufferPtr->tailIdx] = d;
+                bufferPtr->tailIdx = (bufferPtr->tailIdx + 1)
+                    & UART_BUFFER_WRAP;
+                bufferPtr->length++;
+                if (uartDev[major].callBack && !uartDev[major].terminator) {
+                    /* Send every char back to caller when no
+                     * terminator specified
+                     */
+                    rxMsgNotify(uart, bufferPtr);
+                }
+            }
+        }
+    }
+    return;
+}
+
+static void isrUart0(void)
+{
+    isrHandler(UART_MODULE_0);
+    return;
+}
+
+static void isrUart1(void)
+{
+    isrHandler(UART_MODULE_1);
+    return;
+}
+
+static void isrUart2(void)
+{
+    isrHandler(UART_MODULE_2);
+    return;
+}
+
+static void isrUart3(void)
+{
+    isrHandler(UART_MODULE_3);
+    return;
+}
+
+static void isrUart4(void)
+{
+    isrHandler(UART_MODULE_4);
+    return;
+}
+
+static void isrUart5(void)
+{
+    isrHandler(UART_MODULE_5);
+    return;
 }
 
 
+#if 0
 /******************************************************************************
 * _isr_uart3_error_sources
 *
@@ -219,9 +327,39 @@ extern void _isr_uart3_error_sources(void)
 }
 
 #endif
+static void setBaud(uart_t *uart)
+{
+    uint16_t sbr;
+    uint16_t baudFineAdjust;
+
+    int32_t major = uart->major;
+    int32_t clockHz = uartDev[major].clockHz;
+    int32_t baud    = uartDev[major].baud;
+
+
+    uart->reg->c2 &= ~(UART_C2_RX_ENABLE | UART_C2_TX_ENABLE);
+
+    sbr = (uint16_t)(clockHz/(baud * 16));
+    uart->reg->bdh = (sbr & UART_BDH_SBR_MASK) >> UART_BDH_SBR_SHIFT;
+    uart->reg->bdl =  sbr & UART_BDL_SBR_MASK;
+
+    /* fine adjust to sbr is in 1/32 increments, calculated as
+     * (uartClockHz * 32) / (baud * 16) - (sbr * 32) */
+    baudFineAdjust = 2 * clockHz / baud  - sbr * 32;
+    uart->reg->c4 = baudFineAdjust & UART_C4_BRFA_MASK;
+
+
+    uart->reg->cfifo |= UART_CFIFO_RXFLUSH;
+    uart->reg->pfifo |= UART_PFIFO_RXFE;
+
+    uart->reg->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE;
+
+    return;
+}
 static int uartOpen(uartModule_t mod, devoptab_t *dot)
 {
     uart_t *uart;
+    void   *isrPtr;
 
     if (dot->priv) return FALSE; /* Device is already open */
 
@@ -258,40 +396,41 @@ static int uartOpen(uartModule_t mod, devoptab_t *dot)
     /*
      * Write configuration register values
      */
-    {
-        uint16_t sbr;
-        uint16_t baudFineAdjust;
+    setBaud(uart);
+    uart->reg->c2 &= ~(UART_C2_RX_ENABLE | UART_C2_TX_ENABLE);
+    uart->reg->cfifo |= UART_CFIFO_RXFLUSH;
+    uart->reg->pfifo |= UART_PFIFO_RXFE;
 
-
-        uart->reg->c2 &= ~(UART_C2_RX_ENABLE | UART_C2_TX_ENABLE);
-        uart->reg->c1 = 0; /* Cleared for default 8n1 behaviour */
-
-        sbr = (uint16_t)(uart->clockHz/(uart->baud * 16));
-        uart->reg->bdh = (sbr & UART_BDH_SBR_MASK) >> UART_BDH_SBR_SHIFT;
-        uart->reg->bdl =  sbr & UART_BDL_SBR_MASK;
-
-        /* fine adjust to sbr is in 1/32 increments, calculated as
-         * (uartClockHz * 32) / (baud * 16) - (sbr * 32) */
-        baudFineAdjust = 2 * uart->clockHz / uart->baud  - sbr * 32;
-        uart->reg->c4 = baudFineAdjust & UART_C4_BRFA_MASK;
-
-        /* Setup RX FIFO */
-        uart->reg->pfifo  = UART_PFIFO_RXFIFOSIZE_16;
-        uart->reg->cfifo |= UART_CFIFO_RXFLUSH;
-        uart->reg->pfifo |= UART_PFIFO_RXFE;
-        uart->reg->rwfifo = 1; /* FIFO is 16 datawords. Trigger buffer full
-                                 flag when at least one byte is in the FIFO */
-
-#if 0
-
-                                          | UART_C2_IDLE_INT_ENABLE
-                                          | UART_C2_TX_COMPLETE_INT_ENABLE
-                                          | UART_C2_TX_READY_INT_ENABLE;
-#endif
-        uart->reg->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE;
-//                      | UART_C2_RX_FULL_INT_ENABLE;
-
+    switch (uart->major) {
+        case UART_MODULE_0:
+            isrPtr = isrUart0;
+            break;
+        case UART_MODULE_1:
+            isrPtr = isrUart1;
+            break;
+        case UART_MODULE_2:
+            isrPtr = isrUart2;
+            break;
+        case UART_MODULE_3:
+            isrPtr = isrUart3;
+            break;
+        case UART_MODULE_4:
+            isrPtr = isrUart4;
+            break;
+        case UART_MODULE_5:
+            isrPtr = isrUart5;
+            break;
+        default:
+            assert(0);
+            return FALSE;
     }
+
+    hwInstallISRHandler(ISR_UART0_STATUS_SOURCES + 2 * uart->major,
+            isrPtr);
+
+    uart->reg->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE
+        | UART_C2_RX_FULL_INT_ENABLE;
+
 
     return TRUE;
 }
@@ -345,6 +484,7 @@ int32_t uartRead(devoptab_t *dot, const void *data, unsigned len)
     else uart = (uart_t *) dot->priv;
 
 
+return 0;
     for (i = 0; i < len; i++) {
         int readyRetry = 1000;
 
@@ -436,45 +576,44 @@ int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
 /* TODO: return errors if flags or cmd is bad */
 {
     uart_t *uart;
-    int major;
+    uartBuffer_t *bufferPtr;
+
 
     if (!dot || !dot->priv) return FALSE;
     else uart = (uart_t *) dot->priv;
 
-    switch ((int)uart->reg) {
-    case (int)UART0_REG_PTR:
-        major = 0;
-        break;
-    case (int)UART1_REG_PTR:
-        major = 1;
-        break;
-    case (int)UART2_REG_PTR:
-        major = 2;
-        break;
-    case (int)UART3_REG_PTR:
-        major = 3;
-        break;
-    case (int)UART4_REG_PTR:
-        major = 4;
-        break;
-    case (int)UART5_REG_PTR:
-        major = 5;
-        break;
-    default:
-        assert(0);
-        return FALSE;
-    break;
-    }
-
+    bufferPtr = &uartDev[uart->major].uartRxBuffer;
 
     switch (cmd) {
-    case IO_IOCTL_UART_ENABLE_RX_INTERUPT:
+    case IO_IOCTL_UART_CALL_BACK_SET:
         if (flags) {
-            hwInstallISRHandler(ISR_UART0_STATUS_SOURCES + 2 * major,
-                    (int *)flags);
-            uart->reg->c2 |= UART_C2_RX_FULL_INT_ENABLE;
+            uartDev[uart->major].callBack = (void *) flags;
         }
-
+        break;
+    case IO_IOCTL_UART_TERMINATOR_SET:
+        uartDev[uart->major].terminator = (char) flags;
+        break;
+    case IO_IOCTL_UART_FLUSH_RX_FIFO:
+        uart->reg->c2 &= ~UART_C2_RX_FULL_INT_ENABLE;
+        bufferPtr->tailIdx = 0;
+        bufferPtr->length  = 0;
+        uart->reg->c2 |= UART_C2_RX_FULL_INT_ENABLE;
+        break;
+    case IO_IOCTL_UART_LOOPBACK_ENABLE:
+        if (flags == TRUE) {
+            uart->reg->c1 |= UART_C1_LOOP_BACK;
+        }
+        else {
+            uart->reg->c1 &= ~UART_C1_LOOP_BACK;
+        }
+        break;
+    case IO_IOCTL_UART_BAUD_SET:
+                            /*
+                             * I'm not checking standard baud rates.
+                             * Just don't be an a$$hole... :)
+                             */
+        uartDev[uart->major].baud = flags;
+        setBaud(uart);
         break;
     default:
         assert(0);
