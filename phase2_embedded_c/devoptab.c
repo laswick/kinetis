@@ -210,3 +210,22 @@ long _read_r (struct _reent *ptr, int fd, void *buf, size_t cnt )
 {
     return devoptab_list[fd].read_r(ptr, &devoptab_list[fd], buf, cnt);
 }
+
+/* TODO Rob - I moved this here from uart.c, but it is not getting called by
+ * printf.  Don't know why */
+/*******************************************************************************
+*
+* _write
+*
+* This routine retargets STDOUT to devoptab[1]
+*
+* RETURNS: Number of bytes written.
+*
+*******************************************************************************/
+int _write(struct _reent *ptr, int fd, void *buf, size_t cnt )
+{
+    assert(devoptab_list[fd].write_r);  /* Ensure a STDOUT has been designated */
+    return devoptab_list[fd].write_r(ptr, &devoptab_list[fd], buf, cnt);
+}
+
+
