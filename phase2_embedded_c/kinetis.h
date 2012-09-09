@@ -292,6 +292,7 @@ enum {
 #define SIM_SCGC5_ADDR  0x40048038
 #define SIM_SCGC5_PTR (volatile uint32_t) * SIM_SCGC5_ADDR
 #define SIM_SCGC5 (*(volatile uint32_t *) SIM_SCGC5_ADDR)
+#define SIM_TSI_ENABLE   BIT_5
 #define SIM_PORTA_ENABLE BIT_9
 #define SIM_PORTB_ENABLE BIT_10
 #define SIM_PORTC_ENABLE BIT_11
@@ -905,6 +906,213 @@ enum {
 #define FMC_PFB0CR  (*(volatile uint32_t *) (FMC_BASE_ADDR + 0x4))
 #define FMC_PFB1CR  (*(volatile uint32_t *) (FMC_BASE_ADDR + 0x8))
 
+/*******************************************************************************
+* TSI
+*******************************************************************************/
+#define TSI0_BASE_ADDR 0x40045000
+#define TSI_GENCS(addr)       (*(volatile uint32_t *) (addr + 0x00))
+#define TSI_SCANC(addr)       (*(volatile uint32_t *) (addr + 0x04))
+#define TSI_PEN(addr)         (*(volatile uint32_t *) (addr + 0x08))
+#define TSI_STATUS(addr)      (*(volatile uint32_t *) (addr + 0x0C))
+#define TSI_CNTR1(addr)       (*(volatile uint32_t *) (addr + 0x100))
+#define TSI_CNTR3(addr)       (*(volatile uint32_t *) (addr + 0x104))
+#define TSI_CNTR5(addr)       (*(volatile uint32_t *) (addr + 0x108))
+#define TSI_CNTR7(addr)       (*(volatile uint32_t *) (addr + 0x10C))
+#define TSI_CNTR9(addr)       (*(volatile uint32_t *) (addr + 0x110))
+#define TSI_CNTR11(addr)      (*(volatile uint32_t *) (addr + 0x114))
+#define TSI_CNTR13(addr)      (*(volatile uint32_t *) (addr + 0x118))
+#define TSI_CNTR15(addr)      (*(volatile uint32_t *) (addr + 0x11C))
+#define TSI_CNTR(addr)        ( (volatile uint16_t *) (addr + 0x100))
+#define TSI_THRESHOLD0(addr)  (*(volatile uint32_t *) (addr + 0x120))
+#define TSI_THRESHOLD1(addr)  (*(volatile uint32_t *) (addr + 0x124))
+#define TSI_THRESHOLD2(addr)  (*(volatile uint32_t *) (addr + 0x128))
+#define TSI_THRESHOLD3(addr)  (*(volatile uint32_t *) (addr + 0x12C))
+#define TSI_THRESHOLD4(addr)  (*(volatile uint32_t *) (addr + 0x130))
+#define TSI_THRESHOLD5(addr)  (*(volatile uint32_t *) (addr + 0x134))
+#define TSI_THRESHOLD6(addr)  (*(volatile uint32_t *) (addr + 0x138))
+#define TSI_THRESHOLD7(addr)  (*(volatile uint32_t *) (addr + 0x13C))
+#define TSI_THRESHOLD8(addr)  (*(volatile uint32_t *) (addr + 0x140))
+#define TSI_THRESHOLD9(addr)  (*(volatile uint32_t *) (addr + 0x144))
+#define TSI_THRESHOLD10(addr) (*(volatile uint32_t *) (addr + 0x148))
+#define TSI_THRESHOLD11(addr) (*(volatile uint32_t *) (addr + 0x14C))
+#define TSI_THRESHOLD12(addr) (*(volatile uint32_t *) (addr + 0x150))
+#define TSI_THRESHOLD13(addr) (*(volatile uint32_t *) (addr + 0x154))
+#define TSI_THRESHOLD14(addr) (*(volatile uint32_t *) (addr + 0x158))
+#define TSI_THRESHOLD15(addr) (*(volatile uint32_t *) (addr + 0x15C))
+#define TSI_THRESHOLD(addr)   ( (volatile uint32_t *) (addr + 0x120))
+
+#define TSI0_GENCS            (TSI_GENCS      (TSI0_BASE_ADDR))
+#define TSI0_SCANC            (TSI_SCANC      (TSI0_BASE_ADDR))
+#define TSI0_PEN              (TSI_PEN        (TSI0_BASE_ADDR))
+#define TSI0_STATUS           (TSI_STATUS     (TSI0_BASE_ADDR))
+#define TSI0_CNTR1            (TSI_CNTR1      (TSI0_BASE_ADDR))
+#define TSI0_CNTR3            (TSI_CNTR3      (TSI0_BASE_ADDR))
+#define TSI0_CNTR5            (TSI_CNTR5      (TSI0_BASE_ADDR))
+#define TSI0_CNTR7            (TSI_CNTR7      (TSI0_BASE_ADDR))
+#define TSI0_CNTR9            (TSI_CNTR9      (TSI0_BASE_ADDR))
+#define TSI0_CNTR11           (TSI_CNTR11     (TSI0_BASE_ADDR))
+#define TSI0_CNTR13           (TSI_CNTR13     (TSI0_BASE_ADDR))
+#define TSI0_CNTR15           (TSI_CNTR15     (TSI0_BASE_ADDR))
+#define TSI0_CNTR             (TSI_CNTR       (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD0       (TSI_THRESHOLD0 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD1       (TSI_THRESHOLD1 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD2       (TSI_THRESHOLD2 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD3       (TSI_THRESHOLD3 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD4       (TSI_THRESHOLD4 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD5       (TSI_THRESHOLD5 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD6       (TSI_THRESHOLD6 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD7       (TSI_THRESHOLD7 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD8       (TSI_THRESHOLD8 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD9       (TSI_THRESHOLD9 (TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD10      (TSI_THRESHOLD10(TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD11      (TSI_THRESHOLD11(TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD12      (TSI_THRESHOLD12(TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD13      (TSI_THRESHOLD13(TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD14      (TSI_THRESHOLD14(TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD15      (TSI_THRESHOLD15(TSI0_BASE_ADDR))
+#define TSI0_THRESHOLD        (TSI_THRESHOLD  (TSI0_BASE_ADDR))
+
+typedef enum {
+    TSI_GENCS_LPCLKS          = 1 << 28,    /* R/W - 0 */
+    TSI_GENCS_LPSCNITV_MASK   = 0xF << 24,  /* R/W - 0 */
+    TSI_GENCS_LPSCNITV_1MS    = 0x0 << 24,
+    TSI_GENCS_LPSCNITV_5MS    = 0x1 << 24,
+    TSI_GENCS_LPSCNITV_10MS   = 0x2 << 24,
+    TSI_GENCS_LPSCNITV_15MS   = 0x3 << 24,
+    TSI_GENCS_LPSCNITV_20MS   = 0x4 << 24,
+    TSI_GENCS_LPSCNITV_30MS   = 0x5 << 24,
+    TSI_GENCS_LPSCNITV_40MS   = 0x6 << 24,
+    TSI_GENCS_LPSCNITV_50MS   = 0x7 << 24,
+    TSI_GENCS_LPSCNITV_75MS   = 0x8 << 24,
+    TSI_GENCS_LPSCNITV_100MS  = 0x9 << 24,
+    TSI_GENCS_LPSCNITV_125MS  = 0xA << 24,
+    TSI_GENCS_LPSCNITV_150MS  = 0xB << 24,
+    TSI_GENCS_LPSCNITV_200MS  = 0xC << 24,
+    TSI_GENCS_LPSCNITV_300MS  = 0xD << 24,
+    TSI_GENCS_LPSCNITV_400MS  = 0xE << 24,
+    TSI_GENCS_LPSCNITV_500MS  = 0xF << 24,
+    TSI_GENCS_NSCN_MASK       = 0x1F << 19, /* R/W - 0 */
+    TSI_GENCS_NSCN_SHIFT      = 19,
+    TSI_GENCS_PS_MASK         = 0x7 << 16,  /* R/W - 0 */
+    TSI_GENCS_PS_SHIFT        = 16,
+    TSI_GENCS_EOSF            = 1 << 15,    /* R/W - 0 */
+    TSI_GENCS_OUTRGF          = 1 << 14,    /* R/W - 0 */
+    TSI_GENCS_EXTERF          = 1 << 13,    /* R/W - 0 */
+    TSI_GENCS_OVRF            = 1 << 12,    /* R/W - 0 */
+    TSI_GENCS_SCNIP           = 1 << 9,     /* R/W - 0 */
+    TSI_GENCS_SWTS            = 1 << 8,     /* R/W - 0 */
+    TSI_GENCS_TSIEN           = 1 << 7,     /* R/W - 0 */
+    TSI_GENCS_TSIIE           = 1 << 6,     /* R/W - 0 */
+    TSI_GENCS_ERIE            = 1 << 5,     /* R/W - 0 */
+    TSI_GENCS_ESOR            = 1 << 4,     /* R/W - 0 */
+    TSI_GENCS_STM             = 1 << 1,     /* R/W - 0 */
+    TSI_GENCS_STPE            = 1 << 0,     /* R/W - 0 */
+} tsiGencs_t;
+
+typedef enum {
+    TSI_SCANC_REFCHRG_MASK    = 0x1F << 27, /* R/W - 0 */
+    TSI_SCANC_REFCHRG_SHIFT   = 27,
+    TSI_SCANC_CAPTRM_MASK     = 0x7 << 24,  /* R/W - 0 */
+    TSI_SCANC_CAPTRM_SHIFT    = 24,
+    TSI_SCANC_CAPTRM_0p5      = 0x0 << 24,  /* R/W - 0 */
+    TSI_SCANC_CAPTRM_0p6      = 0x1 << 24,  /* R/W - 0 */
+    TSI_SCANC_CAPTRM_0p7      = 0x2 << 24,  /* R/W - 0 */
+    TSI_SCANC_CAPTRM_0p8      = 0x3 << 24,  /* R/W - 0 */
+    TSI_SCANC_CAPTRM_0p9      = 0x4 << 24,  /* R/W - 0 */
+    TSI_SCANC_CAPTRM_1p0      = 0x5 << 24,  /* R/W - 0 */
+    TSI_SCANC_CAPTRM_1p1      = 0x6 << 24,  /* R/W - 0 */
+    TSI_SCANC_CAPTRM_1p2      = 0x7 << 24,  /* R/W - 0 */
+    TSI_SCANC_EXTCHRG_MASK    = 0x1F << 19, /* R/W - 0 */
+    TSI_SCANC_EXTCHRG_SHIFT   = 19,
+    TSI_SCANC_DELVOL_MASK     = 0x7 << 16,  /* R/W - 0 */
+    TSI_SCANC_DELVOL_100mV    = 0x0 << 16,
+    TSI_SCANC_DELVOL_150mV    = 0x1 << 16,
+    TSI_SCANC_DELVOL_200mV    = 0x2 << 16,
+    TSI_SCANC_DELVOL_250mV    = 0x3 << 16,
+    TSI_SCANC_DELVOL_300mV    = 0x4 << 16,
+    TSI_SCANC_DELVOL_400mV    = 0x5 << 16,
+    TSI_SCANC_DELVOL_500mV    = 0x6 << 16,
+    TSI_SCANC_DELVOL_600mV    = 0x7 << 16,
+    TSI_SCANC_SMOD_MASK       = 0xFF << 8, /* R/W - 0 */
+    TSI_SCANC_SMOD_SHIFT      = 8,
+    TSI_SCANC_AMCLKDIV        = 1 << 5,    /* R/W - 0 */
+    TSI_SCANC_AMCLKS_MASk     = 3 << 3,    /* R/W - 0 */
+    TSI_SCANC_AMCLKS_BUS_CLK  = 0 << 3,
+    TSI_SCANC_AMCLKS_MCGIRCLK = 1 << 3,
+    TSI_SCANC_AMCLKS_OSCERCLK = 2 << 3,
+    TSI_SCANC_AMPSC_MASK      = 7 << 0,    /* R/W - 0 */
+    TSI_SCANC_AMPSC_SHIFT     = 0,
+} tsiScanc_t;
+
+typedef enum {
+    TSI_PEN_LPSCP_MASK        = 0xF << 16, /* R/W - 0 */
+    TSI_PEN_LPSCP_SHIFT       = 16,
+    TSI_PEN_PEN15             = 1 << 15,   /* R/W - 0 */
+    TSI_PEN_PEN14             = 1 << 14,   /* R/W - 0 */
+    TSI_PEN_PEN13             = 1 << 13,   /* R/W - 0 */
+    TSI_PEN_PEN12             = 1 << 12,   /* R/W - 0 */
+    TSI_PEN_PEN11             = 1 << 11,   /* R/W - 0 */
+    TSI_PEN_PEN10             = 1 << 10,   /* R/W - 0 */
+    TSI_PEN_PEN9              = 1 << 9,    /* R/W - 0 */
+    TSI_PEN_PEN8              = 1 << 8,    /* R/W - 0 */
+    TSI_PEN_PEN7              = 1 << 7,    /* R/W - 0 */
+    TSI_PEN_PEN6              = 1 << 6,    /* R/W - 0 */
+    TSI_PEN_PEN5              = 1 << 5,    /* R/W - 0 */
+    TSI_PEN_PEN4              = 1 << 4,    /* R/W - 0 */
+    TSI_PEN_PEN3              = 1 << 3,    /* R/W - 0 */
+    TSI_PEN_PEN2              = 1 << 2,    /* R/W - 0 */
+    TSI_PEN_PEN1              = 1 << 1,    /* R/W - 0 */
+    TSI_PEN_PEN0              = 1 << 0,    /* R/W - 0 */
+} tsiPen_t;
+
+typedef enum {
+    TSI_STATUS_ERROF15        = 1 << 31,   /* R/W - 0 */
+    TSI_STATUS_ERROF14        = 1 << 30,   /* R/W - 0 */
+    TSI_STATUS_ERROF13        = 1 << 29,   /* R/W - 0 */
+    TSI_STATUS_ERROF12        = 1 << 28,   /* R/W - 0 */
+    TSI_STATUS_ERROF11        = 1 << 27,   /* R/W - 0 */
+    TSI_STATUS_ERROF10        = 1 << 26,   /* R/W - 0 */
+    TSI_STATUS_ERROF9         = 1 << 25,   /* R/W - 0 */
+    TSI_STATUS_ERROF8         = 1 << 24,   /* R/W - 0 */
+    TSI_STATUS_ERROF7         = 1 << 23,   /* R/W - 0 */
+    TSI_STATUS_ERROF6         = 1 << 22,   /* R/W - 0 */
+    TSI_STATUS_ERROF5         = 1 << 21,   /* R/W - 0 */
+    TSI_STATUS_ERROF4         = 1 << 20,   /* R/W - 0 */
+    TSI_STATUS_ERROF3         = 1 << 19,   /* R/W - 0 */
+    TSI_STATUS_ERROF2         = 1 << 18,   /* R/W - 0 */
+    TSI_STATUS_ERROF1         = 1 << 17,   /* R/W - 0 */
+    TSI_STATUS_ERROF0         = 1 << 16,   /* R/W - 0 */
+    TSI_STATUS_ORNGF15        = 1 << 15,   /* R/W - 0 */
+    TSI_STATUS_ORNGF14        = 1 << 14,   /* R/W - 0 */
+    TSI_STATUS_ORNGF13        = 1 << 13,   /* R/W - 0 */
+    TSI_STATUS_ORNGF12        = 1 << 12,   /* R/W - 0 */
+    TSI_STATUS_ORNGF11        = 1 << 11,   /* R/W - 0 */
+    TSI_STATUS_ORNGF10        = 1 << 10,   /* R/W - 0 */
+    TSI_STATUS_ORNGF9         = 1 << 9,    /* R/W - 0 */
+    TSI_STATUS_ORNGF8         = 1 << 8,    /* R/W - 0 */
+    TSI_STATUS_ORNGF7         = 1 << 7,    /* R/W - 0 */
+    TSI_STATUS_ORNGF6         = 1 << 6,    /* R/W - 0 */
+    TSI_STATUS_ORNGF5         = 1 << 5,    /* R/W - 0 */
+    TSI_STATUS_ORNGF4         = 1 << 4,    /* R/W - 0 */
+    TSI_STATUS_ORNGF3         = 1 << 3,    /* R/W - 0 */
+    TSI_STATUS_ORNGF2         = 1 << 2,    /* R/W - 0 */
+    TSI_STATUS_ORNGF1         = 1 << 1,    /* R/W - 0 */
+    TSI_STATUS_ORNGF0         = 1 << 0,    /* R/W - 0 */
+} tsiStatus_t;
+
+typedef enum {
+    TSI_CNTR_ODD_MASK         = 0xFFFF << 16, /* R/W - 0 */
+    TSI_CNTR_ODD_SHIFT        = 16,
+    TSI_CNTR_EVEN_MASK        = 0xFFFF << 0,  /* R/W - 0 */
+    TSI_CNTR_EVEN_SHIFT       = 0,
+} tsiCntr_t;
+
+typedef enum {
+    TSI_THRESHOLD_LTHH_MASK   = 0xFFFF << 16, /* R/W - 0 */
+    TSI_THRESHOLD_LTHH_SHIFT  = 16,
+    TSI_THRESHOLD_HTHH_MASK   = 0xFFFF << 0,  /* R/W - 0 */
+    TSI_THRESHOLD_HTHH_SHIFT  = 0,
+} tsiThreshold_t;
 
 /*******************************************************************************
 * CRC

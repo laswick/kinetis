@@ -6,7 +6,7 @@
 
 # Name of project/output file:
 
-TARGET = gpio_demo
+TARGET = demoGpio
 
 # List your asm files here (minus the .s):
 

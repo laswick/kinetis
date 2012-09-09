@@ -196,6 +196,28 @@ extern int32_t flashInit(const flashConfig_t *cfg);
 extern int32_t flashErase(uint32_t addr, uint32_t numBytes);
 extern int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords);
 
+/* TSI ************************************************************************/
+#define TSI_COUNT 16
+
+typedef struct {
+    uint32_t pinEnable;
+    uint32_t scanc;
+    uint16_t prescale;
+    uint16_t threshold[TSI_COUNT];
+} tsiConfig_t;
+
+#define TSI_SCANC_DEFAULT (((12-1) << TSI_SCANC_REFCHRG_SHIFT) \
+                                                      | TSI_SCANC_CAPTRM_1p0 \
+                                       | ((12-1) << TSI_SCANC_EXTCHRG_SHIFT) \
+                                                    | TSI_SCANC_DELVOL_600mV \
+                                               | (1 << TSI_SCANC_SMOD_SHIFT) \
+                                                  | TSI_SCANC_AMCLKS_BUS_CLK \
+                                                 | (0 << TSI_SCANC_AMPSC_SHIFT))
+
+extern int32_t tsiInit(const tsiConfig_t *cfg);
+extern uint32_t tsiRead(const tsiConfig_t *cfg);
+extern uint32_t tsiReadRaw(uint32_t pin);
+
 /* CRC  ***********************************************************************/
 
                                                         /* IO_IOCTL_ commands */
@@ -360,6 +382,9 @@ enum {
 #define N_SWITCH_1_PORT  PORTA
 #define N_SWITCH_1_PIN   19
 
+/* TSI  ***********************************************************************/
+
+
 /******************************************************************************/
 
 #else
@@ -367,4 +392,3 @@ enum {
 #endif
 
 #endif
-
