@@ -422,6 +422,226 @@ typedef struct {
 #define GPIOE_PDIR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x10))
 #define GPIOE_PDDR (*(volatile uint32_t *) (GPIOE_BASE_ADDR + 0x14))
 
+/*******************************************************************************
+* ADC
+*******************************************************************************/
+
+#define ADC0_BASE_ADDR 0x4003b000
+#define ADC0_REG_PTR   (volatile adc_t *) ADC0_BASE_ADDR
+#define ADC1_BASE_ADDR 0x400bb000
+#define ADC1_REG_PTR   (volatile adc_t *) ADC0_BASE_ADDR
+
+
+#define ADC0 UART0_BASE_ADDR
+#define ADC1 UART0_BASE_ADDR
+
+typedef struct {
+    uint32_t sc1a;    /* Status and control registers 1, R/W, 0x0000001F */
+    uint32_t sc1b;    /* Status and control registers 1, R/W, 0x0000001F */
+    uint32_t cfg1;    /* Config register 1             , R/W, 0x00000000 */
+    uint32_t cfg2;    /* Config register 2             , R/W, 0x00000000 */
+    uint32_t ra;      /* Data result register          , R  , 0x00000000 */
+    uint32_t rb;      /* Data result register          , R  , 0x00000000 */
+    uint32_t cv1;     /* Compare value registers       , R/W, 0x00000000 */
+    uint32_t cv2;     /* Compare value registers       , R/W, 0x00000000 */
+    uint32_t sc2;     /* Status and control registers 2, R/W, 0x00000000 */
+    uint32_t sc3;     /* Status and control registers 3, R/W, 0x00000000 */
+    uint32_t ofs;     /* Offset correction register    , R/W, 0x00000004 */
+    uint32_t pg;      /* Plus-side gain register       , R/W, 0x00008200 */
+    uint32_t mg;      /* Minus-side gain register      , R/W, 0x00008200 */
+    uint32_t clpd;    /* Plus-side general cal. value  , R/W, 0x0000000A */
+    uint32_t clps;    /* Plus-side general cal. value  , R/W, 0x00000020 */
+    uint32_t clp4;    /* Plus-side general cal. value  , R/W, 0x00000200 */
+    uint32_t clp3;    /* Plus-side general cal. value  , R/W, 0x00000100 */
+    uint32_t clp2;    /* Plus-side general cal. value  , R/W, 0x00000080 */
+    uint32_t clp1;    /* Plus-side general cal. value  , R/W, 0x00000040 */
+    uint32_t clp0;    /* Plus-side general cal. value  , R/W, 0x00000020 */
+    uint32_t pga;     /* PGA register                  , R/W, 0x00000000 */
+    uint32_t clmd;    /* Minus-side general cal. value  , R/W, 0x0000000A */
+    uint32_t clms;    /* Minus-side general cal. value  , R/W, 0x00000020 */
+    uint32_t clm4;    /* Minus-side general cal. value  , R/W, 0x00000200 */
+    uint32_t clm3;    /* Minus-side general cal. value  , R/W, 0x00000100 */
+    uint32_t clm2;    /* Minus-side general cal. value  , R/W, 0x00000080 */
+    uint32_t clm1;    /* Minus-side general cal. value  , R/W, 0x00000040 */
+    uint32_t clm0;    /* Minus-side general cal. value  , R/W, 0x00000020 */
+} adc_t; /* Memmapped registers */
+
+
+/* SC1n */
+typedef enum {
+    ADC_SC1_COCO_BIT  = 1 << 7,
+    ADC_SC1_AIEN_BIT  = 1 << 6,
+    ADC_SC1_DIFF_BIT  = 1 << 5,
+} adcSc1_t;
+#define ADC_SC1_ADCH_MASK 0x1f
+
+typedef enum {
+    ADC_SC1_ADCH_CH0,
+    ADC_SC1_ADCH_CH1,
+    ADC_SC1_ADCH_CH2,
+    ADC_SC1_ADCH_CH3,
+    /* CH4 - CH23 valid when DIFF=0, reserved otherwise */
+    ADC_SC1_ADCH_CH4,
+    ADC_SC1_ADCH_CH5,
+    ADC_SC1_ADCH_CH6,
+    ADC_SC1_ADCH_CH7,
+    ADC_SC1_ADCH_CH8,
+    ADC_SC1_ADCH_CH9,
+    ADC_SC1_ADCH_CH10,
+    ADC_SC1_ADCH_CH11,
+    ADC_SC1_ADCH_CH12,
+    ADC_SC1_ADCH_CH13,
+    ADC_SC1_ADCH_CH14,
+    ADC_SC1_ADCH_CH15,
+    ADC_SC1_ADCH_CH16,
+    ADC_SC1_ADCH_CH17,
+    ADC_SC1_ADCH_CH18,
+    ADC_SC1_ADCH_CH19,
+    ADC_SC1_ADCH_CH20,
+    ADC_SC1_ADCH_CH21,
+    ADC_SC1_ADCH_CH22,
+    ADC_SC1_ADCH_CH23,
+    ADC_SC1_ADCH_RESERVED1,
+    ADC_SC1_ADCH_RESERVED2,
+    ADC_SC1_ADCH_TEMP_SENS,
+    ADC_SC1_ADCH_TEMP_BANDGAP,
+    ADC_SC1_ADCH_RESERVED3,
+    /* Voltage references selected is determined by REFSEL in SC2 */
+    ADC_SC1_ADCH_V_REFSH, /* V_REFSH if DIFF = 0, -V_REFSH if DIFF = 1 */
+    ADC_SC1_ADCH_V_REFSL, /* V_REFSL if DIFF = 0, Reserved if DIFF = 1 */
+    ADC_SC1_ADCH_DISABLED,
+} adcSc1ADCH_t;
+
+/* CFG1 */
+#define ADC_CFG1_ADLPC_BIT  (1 << 7)
+#define ADC_CFG1_ADIV_MASK  0x3
+#define ADC_CFG1_ADIV_SHIFT 5
+#define ADC_CFG1_ADLSMP_BIT (1 << 4)
+#define ADC_CFG1_MODE_MASK  0x3
+#define ADC_CFG1_MODE_SHIFT 2
+#define ADC_CFG1_ADICLK_MASK  0x3
+
+enum {
+    ADC_CFG1_ADIV_1,
+    ADC_CFG1_ADIV_2,
+    ADC_CFG1_ADIV_4,
+    ADC_CFG1_ADIV_8,
+};
+
+enum {
+    ADC_CFG1_MODE_8_BIT,  /* 2's complitment 9-bit output in DIFF */
+    ADC_CFG1_MODE_12_BIT, /* 2's complitment 13-bit output in DIFF */
+    ADC_CFG1_MODE_10_BIT, /* 2's complitment 11-bit output in DIFF */
+    ADC_CFG1_MODE_16_BIT, /* 2's complitment 16-bit output in DIFF */
+};
+
+enum {
+    ADC_CFG1_ADICLK_BUS,
+    ADC_CFG1_ADICLK_BUS_DIV_2,
+    ADC_CFG1_ADICLK_ALTCLK,
+    ADC_CFG1_ADICLK_ADACK,
+};
+
+/* CFG2 */
+enum {
+    ADC_CFG2_MUXSEL_BIT  = 1 << 4, /* Selects ADxxb */
+    ADC_CFG2_ADACKEN_BIT = 1 << 3,
+    ADC_CFG2_ADHSC_BIT   = 1 << 2,
+};
+
+enum {
+    ADC_CFG2_ADLSTS_ADCK_20,
+    ADC_CFG2_ADLSTS_ADCK_12,
+    ADC_CFG2_ADLSTS_ADCK_6,
+    ADC_CFG2_ADLSTS_ADCK_2,
+};
+#define ADC_CFG_ADLSTS_MASK 0x3
+
+/* CVn */
+#define ADC_CVN_CV_MASK 0xFFFF
+
+/* SC2 */
+enum {
+    ADC_SC2_ADACT_BIT   = 1 << 7,
+    ADC_SC2_ADTRG_BIT   = 1 << 6, /* Set for hardware trigger */
+    ADC_SC2_ACFE_BIT    = 1 << 5, /* Compare function enable */
+    ADC_SC2_ACFGT_BIT   = 1 << 4, /* Compare function greater than enable */
+    ADC_SC2_ADREN_BIT   = 1 << 3, /* Compare function range enable */
+    ADC_SC2_DMAEN_BIT   = 1 << 2, /* DMA enable */
+};
+
+enum {
+    ADC_SC2_REFESL_DEFAULT,   /* External pins V_REFH, V_REFL */
+    ADC_SC2_REFESL_ALTERNATE, /* V_ALTH, V_ALTL */
+};
+#define ADC_SC2_REFESL_MASK 0x3
+
+/* SC3 */
+enum {
+    ADC_SC3_CAL_BIT     = 1 << 7,
+    ADC_SC3_CALF_BIT    = 1 << 6,
+
+    ADC_SC3_ADCO_BIT    = 1 << 3, /* Enable continuous conversions */
+    ADC_SC3_AVGE_BIT    = 1 << 2, /* Enable hardware average function */
+};
+
+enum {
+    ADC_SC3_AVGS_4,
+    ADC_SC3_AVGS_8,
+    ADC_SC3_AVGS_16,
+    ADC_SC3_AVGS_32,
+};
+#define ADC_SC3_AVGS_MASK 0x3
+
+
+/* OFS, PG, MG */
+#define ADC_OFS_MASK 0xFFFF
+#define ADC_PG_MASK  0xFFFF
+#define ADC_MG_MASK  0xFFFF
+
+/* CLP* */
+#define ADC_CLPD_MASK  0x3F
+#define ADC_CLPS_MASK  0x3F
+#define ADC_CLP4_MASK  0x3FF
+#define ADC_CLP3_MASK  0x1FF
+#define ADC_CLP2_MASK  0xFF
+#define ADC_CLP1_MASK  0x7F
+#define ADC_CLP0_MASK  0x3F
+
+/*  PGA */
+enum {
+    ADC_PGA_PGAEN_BIT    = 1 << 23,
+    ADC_PGA_PGALPB_BIT   = 1 << 20,
+};
+
+enum {
+    ADC_PGA_PGAG_1,
+    ADC_PGA_PGAG_2,
+    ADC_PGA_PGAG_4,
+    ADC_PGA_PGAG_8,
+    ADC_PGA_PGAG_16,
+    ADC_PGA_PGAG_32,
+    ADC_PGA_PGAG_64,
+};
+#define ADC_PGA_PGAG_MASK 0xF
+#define ADC_PGA_PGAG_SHIFT 16
+
+
+/* CLM* */
+#define ADC_CLMD_MASK  0x3F
+#define ADC_CLMS_MASK  0x3F
+#define ADC_CLM4_MASK  0x3FF
+#define ADC_CLM3_MASK  0x1FF
+#define ADC_CLM2_MASK  0xFF
+#define ADC_CLM1_MASK  0x7F
+#define ADC_CLM0_MASK  0x3F
+
+
+
+
+/*******************************************************************************
+* UART
+*******************************************************************************/
 
 #define UART0_BASE_ADDR 0x4006a000
 #define UART0_REG_PTR   (volatile uartPort_t *) UART0_BASE_ADDR
@@ -443,9 +663,6 @@ typedef struct {
 #define UART4 UART4_BASE_ADDR
 #define UART5 UART5_BASE_ADDR
 
-/*******************************************************************************
-* UART
-*******************************************************************************/
 
 /*******************************************************************************
 *
