@@ -15,8 +15,8 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
-//#define MODE_4PIN                 /* Use touch pads on TWR-K60N512 main board */
- #define MODE_KEYPAD /**/    /* Use touch pads on TWRPI-KEYPAD daughter board */
+#define MODE_4PIN                 /* Use touch pads on TWR-K60N512 main board */
+/* #define MODE_KEYPAD */    /* Use touch pads on TWRPI-KEYPAD daughter board */
 
 /* #define CALIBRATE */              /* Display raw TSI counts on serial port */
 
