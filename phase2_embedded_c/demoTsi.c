@@ -15,10 +15,10 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
-#define MODE_4PIN
-//#define MODE_KEYPAD
+//#define MODE_4PIN                 /* Use touch pads on TWR-K60N512 main board */
+ #define MODE_KEYPAD /**/    /* Use touch pads on TWRPI-KEYPAD daughter board */
 
-//#define CALIBRATE
+/* #define CALIBRATE */              /* Display raw TSI counts on serial port */
 
 static void delay(void)
 {
@@ -40,9 +40,16 @@ static const tsiConfig_t tsiConfig = {
     },
 };
 #elif defined(MODE_KEYPAD)
+static const uint8_t keymap[TSI_COUNT] = {
+/*   0   1   2   3   4   5   6   7 */
+     1,  0,  0,  0,  0,  8,  2,  3,
+/*   8   9  10  11  12  13  14  15 */
+     4,  9, 11, 10, 12,  5,  6,  7,
+};
+#if defined(CALIBRATE)
 static const tsiConfig_t tsiConfig = {
-    .pinEnable = BIT_0 | BIT_5 | BIT_6 | BIT_7 | BIT_8 | BIT_9 | BIT_10 | BIT_11
-        | BIT_12 | BIT_13 | BIT_14 | BIT_15 | BIT_15,
+    .pinEnable = BIT_0 | BIT_5 | BIT_6 | BIT_7 | BIT_8 | BIT_9 | BIT_10
+                          | BIT_11 | BIT_12 | BIT_13 | BIT_14 | BIT_15 | BIT_15,
     .scanc = TSI_SCANC_DEFAULT,
     .prescale = 5,
     .threshold = {
@@ -60,12 +67,7 @@ static const tsiConfig_t tsiConfig = {
         [12] =  150, /* # */
     },
 };
-static const uint8_t keymap[TSI_COUNT] = {
-/*   0   1   2   3   4   5   6   7 */
-     1,  0,  0,  0,  0,  8,  2,  3,
-/*   8   9  10  11  12  13  14  15 */
-     4,  9, 11, 10, 12,  5,  6,  7,
-};
+#endif
 #endif
 
 #if defined(CALIBRATE)
@@ -122,10 +124,10 @@ int main(void)
     }
 }
 #else
+#if defined(MODE_4PIN)
 int main(void)
 {
     uint32_t state, lastState = 0, pressed;
-    uint8_t index, key;
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -141,7 +143,6 @@ int main(void)
 
         pressed = state & ~lastState;
 
-#if defined(MODE_4PIN)
         if (pressed & TSI_ORANGE_BIT) {
             gpioToggle(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
         }
@@ -154,7 +155,51 @@ int main(void)
         if (pressed & TSI_BLUE_BIT) {
             gpioToggle(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
         }
+
+        lastState = state;
+    }
+
+    return 0;
+}
 #elif defined(MODE_KEYPAD)
+int main(void)
+{
+    uint32_t state, lastState = 0, pressed;
+    uint8_t index, key;
+    int fd, len;
+    char buf[2];
+    tsiConfigure_t tsiConfigure;
+
+    tsi_install();
+
+    gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
+    gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
+    gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_PIN,  GPIO_OUTPUT | GPIO_LOW);
+    gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_PIN,   GPIO_OUTPUT | GPIO_LOW);
+
+    fd = open("tsi0", 0, 0);
+    if (fd == -1) {
+        assert(0);
+    }
+    ioctl(fd, IO_IOCTL_TSI_SET_PRESCALE, 5);
+    for (index = 0; index < TSI_COUNT; index++) {
+        if (keymap[index] != 0) {
+            tsiConfigure.pin = index;
+            tsiConfigure.threshold = 150;
+
+            ioctl(fd, IO_IOCTL_TSI_CONFIGURE_PIN, (int)&tsiConfigure);
+        }
+    }
+
+    for (;;) {
+        delay();
+
+        len = read(fd, buf, 2);
+        assert(len == 2);
+        state = (buf[0] & 0xFF) | ((buf[1] & 0xFF) << 8);
+
+        pressed = state & ~lastState;
+
         for (index = 0; index < TSI_COUNT; index++) {
             if (pressed & (1 << index)) {
                 key = keymap[index];
@@ -187,11 +232,11 @@ int main(void)
                 }
             }
         }
-#endif
 
         lastState = state;
     }
 
     return 0;
 }
+#endif
 #endif

@@ -206,17 +206,36 @@ typedef struct {
     uint16_t threshold[TSI_COUNT];
 } tsiConfig_t;
 
-#define TSI_SCANC_DEFAULT (((12-1) << TSI_SCANC_REFCHRG_SHIFT) \
-                                                      | TSI_SCANC_CAPTRM_1p0 \
-                                       | ((12-1) << TSI_SCANC_EXTCHRG_SHIFT) \
-                                                    | TSI_SCANC_DELVOL_600mV \
-                                               | (1 << TSI_SCANC_SMOD_SHIFT) \
-                                                  | TSI_SCANC_AMCLKS_BUS_CLK \
-                                                 | (0 << TSI_SCANC_AMPSC_SHIFT))
+#define TSI_SCANC_DEFAULT                (((12-1) << TSI_SCANC_REFCHRG_SHIFT) \
+                                        |            TSI_SCANC_CAPTRM_1p0 \
+                                        | ((12-1) << TSI_SCANC_EXTCHRG_SHIFT) \
+                                        |            TSI_SCANC_DELVOL_600mV \
+                                        | (1      << TSI_SCANC_SMOD_SHIFT) \
+                                        |            TSI_SCANC_AMCLKS_BUS_CLK \
+                                        | (0      << TSI_SCANC_AMPSC_SHIFT))
 
 extern int32_t tsiInit(const tsiConfig_t *cfg);
 extern uint32_t tsiRead(const tsiConfig_t *cfg);
 extern uint32_t tsiReadRaw(uint32_t pin);
+
+extern int  tsi_install(void);
+extern int  tsi_open_r (void *reent, devoptab_t *dot, int mode, int flags);
+extern int  tsi_ioctl  (             devoptab_t *dot, int cmd,  int flags);
+extern int  tsi_close_r(void *reent, devoptab_t *dot);
+extern long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
+extern long tsi_read_r (void *reent, devoptab_t *dot,       void *buf, int len);
+
+/* IO_IOCTL_ commands */
+enum {
+    IO_IOCTL_TSI_CONFIGURE,         /* Set SCANC register. */
+    IO_IOCTL_TSI_SET_PRESCALE,      /* Set TSI prescale. */
+    IO_IOCTL_TSI_CONFIGURE_PIN,     /* Configure a TSI pin. */
+};
+
+typedef struct tsiConfigure_s {
+    uint16_t pin;
+    uint16_t threshold;
+} tsiConfigure_t;
 
 /* CRC  ***********************************************************************/
 
