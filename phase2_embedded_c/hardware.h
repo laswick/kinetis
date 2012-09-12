@@ -383,7 +383,17 @@ enum {
 #define N_SWITCH_1_PIN   19
 
 /* TSI  ***********************************************************************/
+#define TSI_ORANGE_INDEX  5
+#define TSI_ORANGE_BIT    BIT_5
 
+#define TSI_YELLOW_INDEX  8
+#define TSI_YELLOW_BIT    BIT_8
+
+#define TSI_GREEN_INDEX   7
+#define TSI_GREEN_BIT     BIT_7
+
+#define TSI_BLUE_INDEX    9
+#define TSI_BLUE_BIT      BIT_9
 
 /******************************************************************************/
 

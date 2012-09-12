@@ -14,7 +14,7 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
-static struct {
+static const struct {
     uint32_t portEnable;
     uint32_t port;
     uint32_t pin;
@@ -28,6 +28,9 @@ static struct {
 /*12*/{SIM_PORTB_ENABLE, PORTB, 19}, {SIM_PORTC_ENABLE, PORTC,  0},
 /*14*/{SIM_PORTC_ENABLE, PORTC,  1}, {SIM_PORTC_ENABLE, PORTC,  2},
 };
+
+static uint16_t minCntr[TSI_COUNT];
+
 int32_t tsiInit(const tsiConfig_t *cfg)
 {
     int pin;
@@ -42,6 +45,7 @@ int32_t tsiInit(const tsiConfig_t *cfg)
             TSI0_THRESHOLD[pin] = (1 << TSI_THRESHOLD_LTHH_SHIFT) |
                                            (0xFFFE << TSI_THRESHOLD_HTHH_SHIFT);
         }
+        minCntr[pin] = 0xFFFF;
     }
 
     TSI0_PEN = cfg->pinEnable;
@@ -58,10 +62,15 @@ uint32_t tsiRead(const tsiConfig_t *cfg)
 {
     int pin;
     uint32_t result = 0;
+    uint16_t value;
 
     for (pin=0; pin < TSI_COUNT; pin++) {
         if (cfg->pinEnable & (1 << pin)) {
-            if (TSI0_CNTR[pin] > cfg->threshold[pin]) {
+            value = TSI0_CNTR[pin];
+            if (value < minCntr[pin]) {
+                minCntr[pin] = value;
+            }
+            if (value > minCntr[pin] + cfg->threshold[pin]) {
                 result |= (1 << pin);
             }
         }
@@ -71,7 +80,13 @@ uint32_t tsiRead(const tsiConfig_t *cfg)
 
 uint32_t tsiReadRaw(uint32_t pin)
 {
+    uint16_t value;
     assert((pin < TSI_COUNT));
 
-    return TSI0_CNTR[pin];
+    value = TSI0_CNTR[pin];
+    if (value < minCntr[pin]) {
+        minCntr[pin] = value;
+    }
+
+    return value;
 }

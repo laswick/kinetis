@@ -18,7 +18,7 @@
 #define MODE_4PIN
 //#define MODE_KEYPAD
 
-#define CALIBRATE
+//#define CALIBRATE
 
 static void delay(void)
 {
@@ -28,29 +28,47 @@ static void delay(void)
 }
 
 #if defined(MODE_4PIN)
-const tsiConfig_t tsiConfig = {
+static const tsiConfig_t tsiConfig = {
     .pinEnable = BIT_5 | BIT_8 | BIT_7 | BIT_9,
     .scanc = TSI_SCANC_DEFAULT,
     .prescale = 5,
     .threshold = {
-        [5] = 500,
-        [8] = 500,
-        [7] = 500,
-        [9] = 600,
+        [TSI_ORANGE_INDEX] = 100,
+        [TSI_YELLOW_INDEX] = 100,
+        [TSI_GREEN_INDEX]  = 100,
+        [TSI_BLUE_INDEX]   = 100,
     },
 };
 #elif defined(MODE_KEYPAD)
+static const tsiConfig_t tsiConfig = {
+    .pinEnable = BIT_0 | BIT_5 | BIT_6 | BIT_7 | BIT_8 | BIT_9 | BIT_10 | BIT_11
+        | BIT_12 | BIT_13 | BIT_14 | BIT_15 | BIT_15,
+    .scanc = TSI_SCANC_DEFAULT,
+    .prescale = 5,
+    .threshold = {
+        [0]  =  150, /* 1 */
+        [6]  =  150, /* 2 */
+        [7]  =  150, /* 3 */
+        [8]  =  150, /* 4 */
+        [13] =  150, /* 5 */
+        [14] =  150, /* 6 */
+        [15] =  150, /* 7 */
+        [5]  =  150, /* 8 */
+        [9]  =  150, /* 9 */
+        [10] =  150, /* * */
+        [11] =  150, /* 0 */
+        [12] =  150, /* # */
+    },
+};
+static const uint8_t keymap[TSI_COUNT] = {
+/*   0   1   2   3   4   5   6   7 */
+     1,  0,  0,  0,  0,  8,  2,  3,
+/*   8   9  10  11  12  13  14  15 */
+     4,  9, 11, 10, 12,  5,  6,  7,
+};
 #endif
 
 #if defined(CALIBRATE)
-char hexChar(int nibble)
-{
-    if (nibble < 10) {
-        return nibble + '0';
-    } else {
-        return nibble - 10 + 'A';
-    }
-}
 int main(void)
 {
     int fd;
@@ -73,31 +91,41 @@ int main(void)
     for (;;) {
         for (pin=0; pin < TSI_COUNT; pin ++) {
             if (tsiConfig.pinEnable & (1 << pin)) {
-                delay();
                 value = tsiReadRaw(pin);
 
                 buf[0] = (pin / 10) + '0';
                 buf[1] = (pin % 10) + '0';
                 buf[2] = ':';
                 buf[3] = ' ';
-                buf[4] = hexChar((value >> 12) & 0xF);
-                buf[5] = hexChar((value >>  8) & 0xF);
-                buf[6] = hexChar((value >>  4) & 0xF);
-                buf[7] = hexChar((value      ) & 0xF);
-                buf[8] = '\r';
-                buf[9] = '\n';
+                buf[8] = (value % 10) + '0';
+                value /= 10;
+                buf[7] = (value % 10) + '0';
+                value /= 10;
+                buf[6] = (value % 10) + '0';
+                value /= 10;
+                buf[5] = (value % 10) + '0';
+                value /= 10;
+                buf[4] = (value % 10) + '0';
+                value /= 10;
+                buf[9] = ' ';
                 buf[10] = 0;
                 write(fd, buf, 10);
 
                 gpioToggle(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
             }
         }
+        buf[0] = '\r';
+        buf[1] = '\n';
+        buf[2] = 0;
+        write(fd, buf, 2);
+        delay();
     }
 }
 #else
 int main(void)
 {
     uint32_t state, lastState = 0, pressed;
+    uint8_t index, key;
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -113,18 +141,53 @@ int main(void)
 
         pressed = state & ~lastState;
 
-        if (pressed & BIT_5) {
+#if defined(MODE_4PIN)
+        if (pressed & TSI_ORANGE_BIT) {
             gpioToggle(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
         }
-        if (pressed & BIT_8) {
+        if (pressed & TSI_YELLOW_BIT) {
             gpioToggle(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
         }
-        if (pressed & BIT_7) {
+        if (pressed & TSI_GREEN_BIT) {
             gpioToggle(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
         }
-        if (pressed & BIT_9) {
+        if (pressed & TSI_BLUE_BIT) {
             gpioToggle(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
         }
+#elif defined(MODE_KEYPAD)
+        for (index = 0; index < TSI_COUNT; index++) {
+            if (pressed & (1 << index)) {
+                key = keymap[index];
+
+                if (key & BIT_0) {
+                    gpioClear(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
+                }
+                else {
+                    gpioSet(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
+                }
+
+                if (key & BIT_1) {
+                    gpioClear(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
+                }
+                else {
+                    gpioSet(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
+                }
+
+                if (key & BIT_2) {
+                    gpioClear(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
+                }
+                else {
+                    gpioSet(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
+                }
+                if (key & BIT_3) {
+                    gpioClear(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
+                }
+                else {
+                    gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
+                }
+            }
+        }
+#endif
 
         lastState = state;
     }
