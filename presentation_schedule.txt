@@ -26,44 +26,40 @@ PHASE 2: Embedded C Programming
     The deadline for _ALL_ projects to be in git is September 1 2012.
     The presentation schedule for phase 2 will be determined in September.
 
-    Start Code & Linker Scripts (3)     Rob
-    GPIO                                Rob
-    Interrupts                          Rob
+    Start Code & Linker Scripts (3)     June 21 : Rob
+    GPIO                                June 21 : Rob
 
-    UART                                James
-    ADC                                 James
+    Refocus Kickoff (p2/p3/qna/grpPrj)  Sept.20 : Rob
+    POSIX Device Driver Model           Sept.20 : Shaun/Daryl
+    UART                                Sept.20 : James
 
-    FLASH                               Greg
-    External Bus Interface (EBI)        Greg
+    Clock Options                       Sept.27 : Jan
+    Timers                              Sept.27 : Daryl
+    DAC                                 Sept.27 : Daryl
 
-    Executing out of RAM                Paul
-    Boot Loader                         Paul
-    MPU                                 Paul
+    Retargeting                         Oct.4 : Rob
+    ADC                                 Oct.4 : James
+    Watchdog                            Oct.4 : Andrew
 
-    Timers                              Daryl
-    DAC                                 Daryl
+    Executing out of RAM                Oct.11 : Paul
+    Boot Loader                         Oct.11 : Paul
+    MPU                                 Oct.11 : Paul
+    FLASH                               Oct.11 : Paul
 
-    Interfacing C & Assembly            Rob
-    I2C                                 Chris
+    SPI                                 Oct.18 : Shaun
+    CRC                                 Oct.18 : Shaun
+    SDHC                                Oct.18 : Geoff
 
-    SPI                                 Shaun
-    CRC (WSCP)                          Shaun
+    Touch Sensor Interface (TSI)        Oct.25 : David
+    USB                                 Oct.25 : Neil
 
-    SDHC                                Geoff
+    Interrupts                          Nov.1 : Rob
+    Interfacing C & Assembly            Nov.1 : Rob
+    I2C                                 Nov.1 : Chris
 
-    Touch Sensor Interface (TSI)        David
-
-    USB                                 Neil
-
-    CAN                                 Carlos
-
-    Ethernet                            Steve
-    DMA                                 Steve
-
-    Clock Options                       Jan
-
-    Watchdog                            Andrew
-    Power Modes                         Andrew
+    Ethernet                            Nov.8 : Steve
+    DMA                                 Nov.8 : Steve
+    Power Modes                         Nov.8 : Andrew
 
 
 PHASE 3: Real Time Embedded C Programing
