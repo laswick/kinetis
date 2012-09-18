@@ -14,7 +14,7 @@ ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware gpio uart util tsi demoTsi devoptab
+C_PIECES = hardware gpio demoTsi tsi devoptab uart
 
 # Define Hardware Platform
 
@@ -33,16 +33,17 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -c -g -Wall -MD -O${OPT_LEVEL} -D${PLATFORM}
+C_FLAGS = -Wall -c -g -O${OPT_LEVEL} -D${PLATFORM}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
 O_FILES = ${ASM_O_FILES} ${C_O_FILES}
 
-CPU_FLAGS = -mcpu=cortex-m4 -mthumb -mthumb-interwork -mlittle-endian
+CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
 LD_SCRIPT = linkerscript.ld
 
+# nostartfiles prevents the toolchain from including startup routines.
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
@@ -75,7 +76,6 @@ clean:
 	@echo Cleaning up...
 	@echo
 	rm -f *.o
-	rm -f *.d
 	rm -f ${TARGET}.axf
 	rm -f ${TARGET}.out.s
 	rm -f out.axf
