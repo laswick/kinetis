@@ -19,7 +19,7 @@
 
     /*
      * Before defining the vector table, we need to define "weak" symbols
-     * and default handlers for EVERY execption.
+     * and default handlers for EVERY exception.
      *
      * "weak" symbols can be overridden by user software without causing
      * conflicts.
@@ -29,7 +29,7 @@
     .weak _reset_handler
     .weak _nmi_handler
     .weak _hard_fault_handler
-    .weak _memory_managment_fault_handler
+    .weak _memory_management_fault_handler
     .weak _bus_fault_handler
     .weak _usage_fault_handler
     .weak _svc_handler
@@ -132,13 +132,13 @@
 
 
     /*
-     * Ensure all symbols are globally visable.
+     * Ensure all symbols are globally visible.
      */
 
     .global _reset_handler
     .global _nmi_handler
     .global _hard_fault_handler
-    .global _memory_managment_fault_handler
+    .global _memory_management_fault_handler
     .global _bus_fault_handler
     .global _usage_fault_handler
     .global _svc_handler
@@ -246,7 +246,7 @@
     .thumb_set _reset_handler,                  _default_reset_handler
     .thumb_set _nmi_handler,                    _default_nmi_handler
     .thumb_set _hard_fault_handler,             _default_fault_handler
-    .thumb_set _memory_managment_fault_handler, _default_fault_handler
+    .thumb_set _memory_management_fault_handler,_default_fault_handler
     .thumb_set _bus_fault_handler,              _default_fault_handler
     .thumb_set _usage_fault_handler,            _default_fault_handler
     .thumb_set _svc_handler,                    _default_irq_handler
@@ -361,7 +361,7 @@ _vector_table:
     .word _reset_handler
     .word _nmi_handler
     .word _hard_fault_handler
-    .word _memory_managment_fault_handler
+    .word _memory_management_fault_handler
     .word _bus_fault_handler
     .word _usage_fault_handler
     .word 0x00000000
@@ -509,8 +509,8 @@ disable_watchdog:
     strh r0, [r6]
 
     /*
-     * Note: The preceeding code must complete at speed before we can start
-     *       setting breakpoints and single stepping, hense the provided
+     * Note: The preceding code must complete at speed before we can start
+     *       setting breakpoints and single stepping, hence the provided
      *       label below "first_break" (i.e. (gdb) tb first_break).
      */
 
@@ -542,13 +542,13 @@ end_loop:
     /*
      * Default Exception & IRQ Handlers
      *
-     * It's a good idea, especially during early devleopment, to set a
+     * It's a good idea, especially during early development, to set a
      * breakpoint on each of the default handlers.  This way if/when an
      * unexpected exception occurs the debugger will halt immediately
      * making it obvious an exception has occurred (this can save
      * enormous amounts of time wondering why your software isn't working).
      *
-     * Knowing an execption occurred is useful ... but what caused it???
+     * Knowing an exception occurred is useful ... but what caused it???
      * Being able to identify the exact line of code that caused in the
      * exception is gold.
      *

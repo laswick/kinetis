@@ -10,11 +10,11 @@ README for Phase 2
     Make searches for "makefile" before "Makefile".
 
     .mak files can be added to the repo, but makefile (lowercase 'm') is
-    alwasy to be considered an untracked personal file, and not to be added
+    always to be considered an untracked personal file, and not to be added
     to the repo.
 
-    Typically when adding a demonstation module, you would add it, your
-    driver, and your correspoding .mak file to the repo at the same time (i.e.
+    Typically when adding a demonstration module, you would add it, your
+    driver, and your corresponding .mak file to the repo at the same time (i.e.
     uart.c, demoUart.c demoUart.mak).
 
 3.  One of the goals of Phase 2 is a common build system and driver library.
@@ -26,7 +26,7 @@ README for Phase 2
 
     Each driver file should include as much comments as needed to help the
     reader better understand what's going on.  Blog in the source file
-    instead of creating a seperate notes file.
+    instead of creating a separate notes file.
 
     At the top of each driver file in the file header comment block, the
     main/global API(s) should be clearly described.

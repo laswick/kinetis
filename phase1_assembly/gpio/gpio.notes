@@ -63,7 +63,7 @@ DIGITAL FILTER CLOCK SELECT PORT REGISTER
 
 DIGITAL FILTER WIDTH PORT REGISTER
 
-    Size of the std shift reg giltch filter (1 to 32 bits)(each bit = 1 clock)
+    Size of the std shift reg glitch filter (1 to 32 bits)(each bit = 1 clock)
 
 
 ** SIM (SYSTEM INTEGRATION MODULE) **
@@ -86,7 +86,7 @@ PORT SET OUTPUT REGISTER: Atomic sets!
 
 PORT CLEAR OUTPUT REGISTER: Atomic clears!
 
-PORT TOGGLE OUTPUT REGISTER: Atmoic toggles!
+PORT TOGGLE OUTPUT REGISTER: Atomic toggles!
 
 PORT INPUT REGISTER
 

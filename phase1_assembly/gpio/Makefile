@@ -51,6 +51,7 @@ clean:
 	rm -f *.o
 	rm -f ${TARGET}.axf
 	rm -f ${TARGET}.out.s
+	rm -f ${TARGET}.map
 	rm -f out.axf
 	rm -f out.s
 

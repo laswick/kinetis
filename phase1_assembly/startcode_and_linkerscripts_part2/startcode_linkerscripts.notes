@@ -8,7 +8,7 @@ START CODE AND LINKER SCRIPT NOTES
 
 START CODE
 
-    Typical Responsibilites of startcode:
+    Typical Responsibilities of startcode:
 
     - Perform a subsystem reset (to support a software reset).
       "Good" startcode is usually aware of whether it's a warm or cold
@@ -28,7 +28,7 @@ START CODE
       This consists of copy the 3 main sections out of FLASH into RAM.
 
       Note: In typical microcontroller applications, code is run out of FLASH
-            so only the .data and .bss sections are requied to be relocated.
+            so only the .data and .bss sections are required to be relocated.
 
       SECTIONS
 
@@ -71,7 +71,7 @@ LINKER SCRIPTS
     As mentioned above, the 3 primary sections to support are:
     ".text", ".data", and ".bss".
 
-    It's possible (and often adventagous) to define and use custom (sub)
+    It's possible (and often advantageous) to define and use custom (sub)
     sections.  This allows you to place specific pieces of code is specific
     locations in memory (i.e. high speed memory, context grouping (module
     headers, etc.)).
@@ -87,7 +87,7 @@ LINKER SCRIPTS
         - Defines and exports the initial stack pointer address(es).
 
     Typically in microcontroller based systems, the .text section is NOT
-    relocated and code is exectuted out of FLASH.  The .data section is
+    relocated and code is executed out of FLASH.  The .data section is
     relocated to the beginning of RAM, followed by the .bss section.  The
     heap usually goes next (as it allocates "up"), and the main stack pointer is
     set at the end of RAM (as it typically grows "down").

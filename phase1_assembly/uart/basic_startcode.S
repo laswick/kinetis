@@ -3,7 +3,7 @@
  *
  * Simplified startcode for the Freescale Kinetis K60 / ARM Cortex-M4.
  *
- * Geoff Chapman 
+ * Geoff Chapman
  * May 2012
  */
 
@@ -59,8 +59,8 @@ disable_watchdog:
     strh r0, [r6]
 
     /*
-     * Note: The preceeding code must complete at speed before we can start
-     *       setting breakpoints and single stepping, hense the provided
+     * Note: The preceding code must complete at speed before we can start
+     *       setting breakpoints and single stepping, hence the provided
      *       label below "first_break" (i.e. (gdb) tb first_break).
      */
 
