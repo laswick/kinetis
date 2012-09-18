@@ -31,6 +31,14 @@ LD_FLAGS = -Map=${TARGET}.map
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
+	@ln -fs ${TARGET}.out.s out.s
+	@ln -fs ${TARGET}.axf out.axf
+	@echo
+	@echo Executable: ${TARGET}.axf, sym-linked to out.axf
+	@echo
+	@echo Disassembly Listing: ${TARGET}.out.s, sym-linked to out.s
+	@echo
+	@${AS} --version
 
 ${TARGET}.axf: ${ASM_O_FILES}
 	${LD} ${ASM_O_FILES} -T ${LD_SCRIPT} ${LD_FLAGS} -o ${TARGET}.axf
