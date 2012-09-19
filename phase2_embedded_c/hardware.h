@@ -389,6 +389,11 @@ enum {
 #define SYSTEM_CLOCK_HZ  25000000
 #define    BUS_CLOCK_HZ  25000000
 #else
+/* On resest, the system cock is defaulted to FEI mode where MCGOUTCLK
+ * is derived from the FLL clock, controlled by the 32kHz IRC with a
+ * default FLL factor of 640 (=20.48MHz)  See the MCG Modes of Operation
+ * table in the device TRM.
+ */
 #define SYSTEM_CLOCK_HZ  20480000
 #define    BUS_CLOCK_HZ  20480000
 #endif
