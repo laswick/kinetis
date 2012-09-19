@@ -383,6 +383,16 @@ enum {
 *******************************************************************************/
 #if defined(FREESCALE_K60N512_TOWER_HW)
 
+/*
+ * TODO
+ *
+ * Hardware FUN FACTS.
+ *
+ * For each type of  _HW define it would be nice if there was a little
+ * summary of all its features and capacities (FLASH size, RAM size,
+ * number of UARTS, default, internal, and external clocking optins, etc.).
+ */
+
 /* CLOCKS *********************************************************************/
 
 #if defined(DICK_OUT_DAVID)
