@@ -18,8 +18,8 @@
 #include "globalDefs.h"
 
 /* TODO Move to CLOCKS section */
-#define SYSTEM_CLOCK_HZ  25000000
-#define    BUS_CLOCK_HZ  25000000
+#define SYSTEM_CLOCK_HZ  20480000
+#define    BUS_CLOCK_HZ  20480000
 
 /*******************************************************************************
 * ARM NVIC
