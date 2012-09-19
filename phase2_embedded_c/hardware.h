@@ -395,11 +395,6 @@ enum {
 
 /* CLOCKS *********************************************************************/
 
-#if defined(DICK_OUT_DAVID)
-#define SYSTEM_CLOCK_HZ  25000000
-#define    BUS_CLOCK_HZ  25000000
-#else
-
 /*
  * On resest, the system clock is defaulted to FEI mode where MCGOUTCLK
  * is derived from the FLL clock, controlled by the 32kHz IRC with a
@@ -420,7 +415,6 @@ enum {
 
 #define SYSTEM_CLOCK_HZ  20480000
 #define    BUS_CLOCK_HZ  20480000
-#endif
 
 /* LEDS ***********************************************************************/
 
