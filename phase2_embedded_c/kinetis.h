@@ -17,13 +17,10 @@
 
 #include "globalDefs.h"
 
-/* TODO Move to CLOCKS section */
-#define SYSTEM_CLOCK_HZ  20480000
-#define    BUS_CLOCK_HZ  20480000
-
 /*******************************************************************************
 * ARM NVIC
 *******************************************************************************/
+
 enum {
     _INIT_STACK_POINTER         = 0,
     ISR_RESET                   = 1,
