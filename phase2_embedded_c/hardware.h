@@ -383,6 +383,16 @@ enum {
 *******************************************************************************/
 #if defined(FREESCALE_K60N512_TOWER_HW)
 
+/* CLOCKS *********************************************************************/
+
+#if defined(DICK_OUT_DAVID)
+#define SYSTEM_CLOCK_HZ  25000000
+#define    BUS_CLOCK_HZ  25000000
+#else
+#define SYSTEM_CLOCK_HZ  20480000
+#define    BUS_CLOCK_HZ  20480000
+#endif
+
 /* LEDS ***********************************************************************/
 
 #define N_LED_ORANGE_PORT PORTA
@@ -398,10 +408,12 @@ enum {
 #define N_LED_BLUE_PIN    10
 
 /* SWITCHES *******************************************************************/
+
 #define N_SWITCH_1_PORT  PORTA
 #define N_SWITCH_1_PIN   19
 
 /* TSI  ***********************************************************************/
+
 #define TSI_ORANGE_INDEX  5
 #define TSI_ORANGE_BIT    BIT_5
 
