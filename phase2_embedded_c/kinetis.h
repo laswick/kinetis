@@ -297,6 +297,7 @@ enum {
 #define SIM_SCGC6_SPI0_ENABLE  BIT_12
 #define SIM_SCGC6_SPI1_ENABLE  BIT_13
 #define SIM_SCGC6_CRC_ENABLE   BIT_18
+#define SIM_SCGC6_PIT_ENABLE   BIT_23
 
 
 /*******************************************************************************
@@ -1039,5 +1040,74 @@ typedef struct {
 
 #define DAC0_BASE_ADDR 0x400CC000
 
+#define DAC0_DAT0L_ADDR (DAC0_BASE_ADDR + 0x0)
+#define DAC0_DAT0H_ADDR (DAC0_BASE_ADDR + 0x1)
+#define DAC0_DAT1L_ADDR (DAC0_BASE_ADDR + 0x2)
+#define DAC0_DAT1H_ADDR (DAC0_BASE_ADDR + 0x3)
+
+#define DAC0_DAT (*(volatile uint8_t *) (DAC0_BASE_ADDR)
+
+#define DAC0_SR  (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x20)
+#define DAC0_CR0 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x21)
+#define DAC0_CR1 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x22)
+#define DAC0_CR2 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x23)
+
+#define DAC_DATA_MAX 16
+
+#define DAC_SR_BFWMF  BIT_2  /* watermark flag */
+#define DAC_SR_BFRPTF BIT_1  /* read pointer top position flag */
+#define DAC_SR_BFRPBF BIT_0  /* read pointer bottom position flag */
+
+#define DAC_CR0_DACEN     BIT_7 /* Enable */
+#define DAC_CR0_DACRFS    BIT_6 /* Reference select, 0 = DACREF_1
+			    	                     1 = DACREF_2 */
+#define DAC_CR0_DACTRGSEL BIT_5 /* Trigger select, 0 = HW trigger
+				                   1 = SW trigger */
+#define DAC_CR0_DACSWTRG  BIT_4 /* Software trigger, active high, WO */
+#define DAC_CR0_LPEN      BIT_3 /* Low power control, 0 = high power
+				                      1 = low power */
+#define DAC_CR0_DACBWIEN  BIT_2 /* Buffer watermark interrupt enable */
+#define DAC_CR0_DACBTIEN  BIT_1 /* Buffer read pointer top flag enable */
+#define DAC_CR0_DACBBIEN  BIT_0 /* Buffer read pointer bottom flag enable */
+
+#define DAC_CR1_DMAEN     BIT_7 /* DMA Enabled */
+
+enum {
+    DAC_MODE_NORMAL,
+    DAC_MODE_SWING,
+    DAC_MODE_ONE_TIME,
+    DAC_MODE_RESERVED
+};
+
+#define DAC_CR0_FLAG (DAC_CR0_DACEN | DAC_CR0_DACRFS | DAC_CR0_DACTRGSEL)
+#define DAC_CR0_TRGF (DAC_CR0_FLAG | DAC_CR0_DACSWTRG)
+#define DAC_CR1_FLAG 0x01
+#define DAC_CR2_FLAG 0x0f
+
+/*******************************************************************************
+* PIT
+*******************************************************************************/
+
+#define PIT_CTRL_BASE 0x40037000
+#define PIT_CH_OFFSET 0x010
+#define PIT_LDVALN_OFFSET 0x100
+#define	PIT_CVALN_OFFSET 0x104
+#define PIT_TCTRLN_OFFSET 0x108
+#define PIT_TFLGN_OFFSET 0x10C
+
+#define PIT0_MCR (PIT_CTRL_BASE + (PIT_CH_OFFSET * 0x0))
+#define PIT0_LDVAL (PIT_CTRL_BASE + PIT_LDVALN_OFFSET)
+#define PIT0_CVAL (PIT_CTRL_BASE + PIT_CVALN_OFFSET)
+#define PIT0_TCTRL (PIT_CTRL_BASE + PIT_TCTRLN_OFFSET)
+#define PIT0_TFLG (PIT_CTRL_BASE + PIT_TFLGN_OFFSET)
+
+#define MCR_MDIS (1 << 1)
+#define MCR_FRZ (1 << 0)
+#define TCTRL_TIE (1 << 1)
+#define TCTRL_TEN (1 << 0)
+#define TFLG_TIF (1 << 0)
+
+#define PIT_ENABLE (1 << 23)
+#define	SIM_SCGC6_FLAGS (PIT_ENABLE)
 
 #endif

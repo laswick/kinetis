@@ -302,6 +302,8 @@ extern int32_t featureRead(uint8_t *buffer, int32_t len);
 #define N_LED_BLUE_PIN    10
 
 /* SWITCHES *******************************************************************/
+#define N_SWITCH_0_PORT  PORTE
+#define N_SWITCH_0_PIN   26
 #define N_SWITCH_1_PORT  PORTA
 #define N_SWITCH_1_PIN   19
 
@@ -358,5 +360,53 @@ enum {
 #else
 #error Undefined Hardware Platform
 #endif
+
+
+/* DAC*************************************************************************/
+
+typedef struct {
+    uint8_t low;
+    uint8_t high;
+} dacData_t;
+
+typedef struct {
+    dacData_t data[DAC_DATA_MAX];
+    uint8_t sr;
+    uint8_t c0;
+    uint8_t c1;
+    uint8_t c2;
+} dac_t;
+
+extern volatile dac_t * const dac0;
+
+extern void dac0Init(void);
+
+/* PIT*************************************************************************/
+
+typedef struct {
+    uint32_t loadVal;      /* value to load into pit timer */
+    uint32_t currVal;      /* current value of the down counter */
+    uint32_t ctrl;
+    uint32_t flags;
+} pit_t;
+
+enum {
+    PIT_0,
+    PIT_1,
+    PIT_2,
+    PIT_3,
+    MAX_PIT,
+};
+
+typedef struct {
+    uint32_t mcr;
+    uint32_t reserved[(0x100/4) - 1];
+    pit_t pit[4];
+} pitCtrl_t;
+
+extern volatile pitCtrl_t * const pitCtrl;
+
+extern void pitInit(int timer, void *isr, uint32_t initCount);
+
 #endif
 

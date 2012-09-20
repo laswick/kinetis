@@ -336,7 +336,7 @@ int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
     case IO_IOCTL_SPI_SET_PORT_PCRS:
         switch (spi->addr) {
         case SPI0_BASE_ADDR:
-            SIM_SCGC5 |= SIM_PORTA_ENABLE;
+            SIM_SCGC5 |= SIM_SCGC5_PORTA_ENABLE;
             PORT_PCR(SPI0_SCK_PORT, SPI0_SCK_PIN) = SPI0_SCK_MUX;
             PORT_PCR(SPI0_SIN_PORT, SPI0_SIN_PIN) = SPI0_SIN_MUX;
             PORT_PCR(SPI0_SOUT_PORT, SPI0_SOUT_PIN) = SPI0_SOUT_MUX;
@@ -351,7 +351,7 @@ int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
 #endif
         break;
         case SPI2_BASE_ADDR:
-            SIM_SCGC5 |= SIM_PORTD_ENABLE;
+            SIM_SCGC5 |= SIM_SCGC5_PORTD_ENABLE;
             PORT_PCR(SPI2_SCK_PORT, SPI2_SCK_PIN) = SPI2_SCK_MUX;
             PORT_PCR(SPI2_SIN_PORT, SPI2_SIN_PIN) = SPI2_SIN_MUX;
             PORT_PCR(SPI2_SOUT_PORT, SPI2_SOUT_PIN) = SPI2_SOUT_MUX;
