@@ -35,28 +35,31 @@ extern void assert_(const char *file, const int line);
 
 #define __RAMCODE__ __attribute__ ((long_call, section(".ramcode")))
 
-/* POSIX Interface ************************************************************/
+/* POSIX Interface ***********************************************************/
 
 extern int ioctl(int fd, int cmd, int flags);
 
-enum {
+enum {                                               /* Major Device Numbers */
     DEV_MAJ_UART,
     DEV_MAJ_SPI
 };
 
-typedef struct devoptab_s {                        /* Device Operations Table */
+typedef struct devoptab_s {                       /* Device Operations Table */
     const char *name;
     uint32_t    maj;
     uint32_t    min;
     void       *priv;
 } devoptab_t;
 
-typedef struct devlist_s {                              /* Device Driver List */
+extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
+                                                                   void *priv);
+
+typedef struct devlist_s {                             /* Device Driver List */
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags);
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags);
     int  (*close_r)(void *reent, struct devoptab_s *dot);
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
-                                                                       int len);
+                                                                      int len);
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len);
 } devlist_t;
 
@@ -66,12 +69,9 @@ extern int deviceInstall(
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags),
     int  (*close_r)(void *reent, struct devoptab_s *dot),
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
-                                                                       int len),
+                                                                      int len),
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len)
 );
-
-extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
-                                                                    void *priv);
 
 /* INTERRUPTS *****************************************************************/
 

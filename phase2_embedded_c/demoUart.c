@@ -151,7 +151,18 @@ int main(void)
     /* Install uart into the device table before using it */
     uart_install();
 
-
+    fd = open("uart3", 0, 0); /* STDIN */
+    if (fd != 0) {
+        assert(0);
+    }
+    fd = open("uart3", 0, 0); /* STDOUT */
+    if (fd != 1) {
+        assert(0);
+    }
+    fd = open("uart3", 0, 0); /* STDERR */
+    if (fd != 2) {
+        assert(0);
+    }
 
     fd = open("uart3", 0, 0);
     if (fd==-1) {
