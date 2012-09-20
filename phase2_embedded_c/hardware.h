@@ -39,27 +39,39 @@ extern void assert_(const char *file, const int line);
 
 extern int ioctl(int fd, int cmd, int flags);
 
+enum {
+    DEV_MAJ_UART,
+    DEV_MAJ_SPI
+};
+
 typedef struct devoptab_s {                        /* Device Operations Table */
     const char *name;
+    uint32_t    maj;
+    uint32_t    min;
+    void       *priv;
+} devoptab_t;
+
+typedef struct devlist_s {                              /* Device Driver List */
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags);
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags);
     int  (*close_r)(void *reent, struct devoptab_s *dot);
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
                                                                        int len);
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len);
-    void *priv;
-} devoptab_t;
+} devlist_t;
 
 extern int deviceInstall(
-    const char *name,
+    uint32_t maj,
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags),
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags),
     int  (*close_r)(void *reent, struct devoptab_s *dot),
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
                                                                        int len),
-    long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len),
-    void *priv
+    long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len)
 );
+
+extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
+                                                                    void *priv);
 
 /* INTERRUPTS *****************************************************************/
 
@@ -333,21 +345,21 @@ extern bool32_t mpuCheckFaults(void);
 #define MAX_UARTS     6
 
 #define UART5_PORT    PORTE
-#define UART5_PORT_ENABLE SIM_PORTE_ENABLE
+#define UART5_PORT_ENABLE SIM_SCGC5_PORTE_ENABLE
 #define UART5_RX_PIN  9
 #define UART5_TX_PIN  8
 #define UART5_RX_MUX  PORT_MUX_ALT3
 #define UART5_TX_MUX  PORT_MUX_ALT3
 
 #define UART4_PORT    PORTE
-#define UART4_PORT_ENABLE SIM_PORTE_ENABLE
+#define UART4_PORT_ENABLE SIM_SCGC5_PORTE_ENABLE
 #define UART4_RX_PIN  25
 #define UART4_TX_PIN  24
 #define UART4_RX_MUX  PORT_MUX_ALT3
 #define UART4_TX_MUX  PORT_MUX_ALT3
 
 #define UART3_PORT    PORTC
-#define UART3_PORT_ENABLE SIM_PORTC_ENABLE
+#define UART3_PORT_ENABLE SIM_SCGC5_PORTC_ENABLE
 #define UART3_RX_PIN  16
 #define UART3_TX_PIN  17
 #define UART3_RX_MUX  PORT_MUX_ALT3
@@ -383,20 +395,38 @@ enum {
 *******************************************************************************/
 #if defined(FREESCALE_K60N512_TOWER_HW)
 
+/*
+ * TODO
+ *
+ * Hardware FUN FACTS.
+ *
+ * For each type of  _HW define it would be nice if there was a little
+ * summary of all its features and capacities (FLASH size, RAM size,
+ * number of UARTS, default, internal, and external clocking optins, etc.).
+ */
+
 /* CLOCKS *********************************************************************/
 
-#if defined(DICK_OUT_DAVID)
-#define SYSTEM_CLOCK_HZ  25000000
-#define    BUS_CLOCK_HZ  25000000
-#else
-/* On resest, the system cock is defaulted to FEI mode where MCGOUTCLK
+/*
+ * On resest, the system clock is defaulted to FEI mode where MCGOUTCLK
  * is derived from the FLL clock, controlled by the 32kHz IRC with a
  * default FLL factor of 640 (=20.48MHz)  See the MCG Modes of Operation
  * table in the device TRM.
  */
+
+/*
+ * TODO
+ *
+ * We should define a hwGetSystemClock(), and use the result everywhere that
+ * needs it, rather then relying on a fixed define.  The default fixed
+ * define should only be the default power on clock.
+ *
+ * Jan's clock code would obviously update the hwSystemClock value if it
+ * where changed, and/or someone engaged the FLL/PLL, etc.
+ */
+
 #define SYSTEM_CLOCK_HZ  20480000
 #define    BUS_CLOCK_HZ  20480000
-#endif
 
 /* LEDS ***********************************************************************/
 
@@ -413,6 +443,9 @@ enum {
 #define N_LED_BLUE_PIN    10
 
 /* SWITCHES *******************************************************************/
+
+#define N_SWITCH_0_PORT  PORTE
+#define N_SWITCH_0_PIN   26
 
 #define N_SWITCH_1_PORT  PORTA
 #define N_SWITCH_1_PIN   19
@@ -436,5 +469,52 @@ enum {
 #else
 #error Undefined Hardware Platform
 #endif
+
+/* DAC*************************************************************************/
+
+typedef struct {
+    uint8_t low;
+    uint8_t high;
+} dacData_t;
+
+typedef struct {
+    dacData_t data[DAC_DATA_MAX];
+    uint8_t sr;
+    uint8_t c0;
+    uint8_t c1;
+    uint8_t c2;
+} dac_t;
+
+extern volatile dac_t * const dac0;
+
+extern void dac0Init(void);
+
+/* PIT*************************************************************************/
+
+typedef struct {
+    uint32_t loadVal;      /* value to load into pit timer */
+    uint32_t currVal;      /* current value of the down counter */
+    uint32_t ctrl;
+    uint32_t flags;
+} pit_t;
+
+enum {
+    PIT_0,
+    PIT_1,
+    PIT_2,
+    PIT_3,
+    MAX_PIT,
+};
+
+typedef struct {
+    uint32_t mcr;
+    uint32_t reserved[(0x100/4) - 1];
+    pit_t pit[4];
+} pitCtrl_t;
+
+extern volatile pitCtrl_t * const pitCtrl;
+
+extern void pitInit(int timer, void *isr, uint32_t initCount);
+
 
 #endif

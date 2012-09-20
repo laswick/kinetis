@@ -122,23 +122,25 @@ int spi_install(void)
 /*******************************************************************************/
 {
     int ret = TRUE;
-    if (!deviceInstall("spi0", spi_open_r,  spi_ioctl, spi_close_r,
-                                                  spi_write_r, spi_read_r, NULL))
+    if( !deviceInstall(DEV_MAJ_SPI,spi_open_r,  spi_ioctl, spi_close_r,
+                                                       spi_write_r, spi_read_r)){
         ret = FALSE;
-
-    if (!deviceInstall("spi1", spi_open_r,  spi_ioctl, spi_close_r,
-                                                  spi_write_r, spi_read_r, NULL))
-        ret = FALSE;
-
-    if (!deviceInstall("spi2", spi_open_r,  spi_ioctl, spi_close_r,
-                                                  spi_write_r, spi_read_r, NULL))
-        ret = FALSE;
+    }
+    if( !deviceRegister("spi0", DEV_MAJ_SPI, SPI_MODULE_0,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("spi1", DEV_MAJ_SPI, SPI_MODULE_1,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("spi2", DEV_MAJ_SPI, SPI_MODULE_2,  NULL) ) {
+        ret =  FALSE;
+    }
 
     return ret;
 }
 
 /*******************************************************************************/
-static int spiOpen(spiModule_t mod, devoptab_t *dot)
+static int spiOpen(devoptab_t *dot)
 /*******************************************************************************/
 {
     spi_t *spi;
@@ -152,7 +154,7 @@ static int spiOpen(spiModule_t mod, devoptab_t *dot)
     else dot->priv = spi;
 
     /* Load init & default info into private spi structure */
-    memcpy(spi, &spiList[mod], sizeof(spi_t));
+    memcpy(spi, &spiList[dot->min], sizeof(spi_t));
 
     /* Enable the SIMSCGC for the spi module being used*/
     *spi->simScgcPtr |= spi->simScgcEnBit;
@@ -286,31 +288,20 @@ static unsigned spiWriteRead(spi_t *spi, spiWriteRead_t *wr)
  ********************************************************************************/
 int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 {
-    spiModule_t mod;
 
     if (!dot || !dot->name) {
         /* errno ? */
         return FALSE;
     }
 
-    /* Determine the module instance */
-    if (strcmp(DEVOPTAB_SPI0_STR, dot->name) == 0 ) {
-        mod = SPI_MODULE_0;
-    }
-    else if (strcmp(DEVOPTAB_SPI1_STR, dot->name) == 0) {
-        mod = SPI_MODULE_1;
-    }
-    else if (strcmp(DEVOPTAB_SPI2_STR, dot->name) == 0) {
-        mod = SPI_MODULE_2;
-    }
-    else {
-        /* Device does not exist */
+    /* Verify module instance */
+    if( dot->min >= NUM_SPI_MODULES ) {
         ((struct _reent *)reent)->_errno = ENODEV;
         return FALSE;
     }
 
     /* Try to open if not already open */
-    if (spiOpen(mod,dot)) {
+    if (spiOpen(dot)) {
         return TRUE;
     } else {
         /* Device is already open, is this an issue or not? */
@@ -345,7 +336,7 @@ int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
     case IO_IOCTL_SPI_SET_PORT_PCRS:
         switch (spi->addr) {
         case SPI0_BASE_ADDR:
-            SIM_SCGC5 |= SIM_PORTA_ENABLE;
+            SIM_SCGC5 |= SIM_SCGC5_PORTA_ENABLE;
             PORT_PCR(SPI0_SCK_PORT, SPI0_SCK_PIN) = SPI0_SCK_MUX;
             PORT_PCR(SPI0_SIN_PORT, SPI0_SIN_PIN) = SPI0_SIN_MUX;
             PORT_PCR(SPI0_SOUT_PORT, SPI0_SOUT_PIN) = SPI0_SOUT_MUX;
@@ -360,7 +351,7 @@ int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
 #endif
         break;
         case SPI2_BASE_ADDR:
-            SIM_SCGC5 |= SIM_PORTD_ENABLE;
+            SIM_SCGC5 |= SIM_SCGC5_PORTD_ENABLE;
             PORT_PCR(SPI2_SCK_PORT, SPI2_SCK_PIN) = SPI2_SCK_MUX;
             PORT_PCR(SPI2_SIN_PORT, SPI2_SIN_PIN) = SPI2_SIN_MUX;
             PORT_PCR(SPI2_SOUT_PORT, SPI2_SOUT_PIN) = SPI2_SOUT_MUX;

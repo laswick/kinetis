@@ -257,44 +257,55 @@ enum {
 
 /* System Clock Gate Control Registers */
 #define SIM_SCGC1_ADDR  0x40048028
-#define SIM_SCGC1   (*(volatile uint32_t *) SIM_SCGC1_ADDR)
-#define SIM_SCGC1_PTR (volatile uint32_t *) SIM_SCGC1_ADDR
+#define SIM_SCGC1_PTR     (volatile uint32_t *) SIM_SCGC1_ADDR
+#define SIM_SCGC1       (*(volatile uint32_t *) SIM_SCGC1_ADDR)
+#define SIM_SCGC1_UART5_ENABLE  BIT_11
+#define SIM_SCGC1_UART4_ENABLE  BIT_10
+
+#define SIM_SCGC2_ADDR  0x4004802C
+#define SIM_SCGC2_PTR     (volatile uint32_t *) SIM_SCGC2_ADDR
+#define SIM_SCGC2       (*(volatile uint32_t *) SIM_SCGC2_ADDR)
+#define SIM_SCGC2_DAC0_ENABLE  BIT_12
+
+#define SIM_SCGC3_ADDR  0x40048030
+#define SIM_SCGC3_PTR     (volatile uint32_t *) SIM_SCGC3_ADDR
+#define SIM_SCGC3       (*(volatile uint32_t *) SIM_SCGC3_ADDR)
+#define SIM_SCGC3_SPI2_ENABLE  BIT_12
+
 #define SIM_SCGC4_ADDR  0x40048034
-#define SIM_SCGC4   (*(volatile uint32_t *) SIM_SCGC4_ADDR)
-#define SIM_SCGC4_PTR (volatile uint32_t *) SIM_SCGC4_ADDR
-#define SIM_UART5_ENABLE  BIT_11
-#define SIM_UART4_ENABLE  BIT_10
-#define SIM_EWM_ENABLE    BIT_1
-#define SIM_CMT_ENABLE    BIT_2
-#define SIM_I2C0_ENABLE   BIT_6
-#define SIM_I2C1_ENABLE   BIT_7
-#define SIM_UART0_ENABLE  BIT_10
-#define SIM_UART1_ENABLE  BIT_11
-#define SIM_UART2_ENABLE  BIT_12
-#define SIM_UART3_ENABLE  BIT_13
-#define SIM_USBOTG_ENABLE BIT_18
-#define SIM_CMP_ENABLE    BIT_19
-#define SIM_VREF_ENABLE   BIT_20
-#define SIM_LLWU_ENABLE   BIT_28
+#define SIM_SCGC4_PTR     (volatile uint32_t *) SIM_SCGC4_ADDR
+#define SIM_SCGC4       (*(volatile uint32_t *) SIM_SCGC4_ADDR)
+#define SIM_SCGC4_EWM_ENABLE    BIT_1
+#define SIM_SCGC4_CMT_ENABLE    BIT_2
+#define SIM_SCGC4_I2C0_ENABLE   BIT_6
+#define SIM_SCGC4_I2C1_ENABLE   BIT_7
+#define SIM_SCGC4_UART0_ENABLE  BIT_10
+#define SIM_SCGC4_UART1_ENABLE  BIT_11
+#define SIM_SCGC4_UART2_ENABLE  BIT_12
+#define SIM_SCGC4_UART3_ENABLE  BIT_13
+#define SIM_SCGC4_USBOTG_ENABLE BIT_18
+#define SIM_SCGC4_CMP_ENABLE    BIT_19
+#define SIM_SCGC4_VREF_ENABLE   BIT_20
+#define SIM_SCGC4_LLWU_ENABLE   BIT_28
+
+#define SIM_SCGC5_ADDR  0x40048038
+#define SIM_SCGC5_PTR     (volatile uint32_t *) SIM_SCGC5_ADDR
+#define SIM_SCGC5       (*(volatile uint32_t *) SIM_SCGC5_ADDR)
+#define SIM_SCGC5_PORTA_ENABLE BIT_9
+#define SIM_SCGC5_PORTB_ENABLE BIT_10
+#define SIM_SCGC5_PORTC_ENABLE BIT_11
+#define SIM_SCGC5_PORTD_ENABLE BIT_12
+#define SIM_SCGC5_PORTE_ENABLE BIT_13
+
+#define SIM_TSI_ENABLE   BIT_5
+
 #define SIM_SCGC6_ADDR  0x4004803C
-#define SIM_SCGC6_PTR (volatile uint32_t *) SIM_SCGC6_ADDR
-#define SIM_SCGC6 (*(volatile uint32_t *) SIM_SCGC6_ADDR)
+#define SIM_SCGC6_PTR     (volatile uint32_t *) SIM_SCGC6_ADDR
+#define SIM_SCGC6       (*(volatile uint32_t *) SIM_SCGC6_ADDR)
 #define SIM_SCGC6_SPI0_ENABLE  BIT_12
 #define SIM_SCGC6_SPI1_ENABLE  BIT_13
 #define SIM_SCGC6_CRC_ENABLE   BIT_18
-#define SIM_SCGC3_ADDR  0x40048030
-#define SIM_SCGC3_PTR (volatile uint32_t *) SIM_SCGC3_ADDR
-#define SIM_SCGC3 (*(volatile uint32_t *) SIM_SCGC3_ADDR)
-#define SIM_SCGC3_SPI2_ENABLE  BIT_12
-#define SIM_SCGC5_ADDR  0x40048038
-#define SIM_SCGC5_PTR (volatile uint32_t) * SIM_SCGC5_ADDR
-#define SIM_SCGC5 (*(volatile uint32_t *) SIM_SCGC5_ADDR)
-#define SIM_TSI_ENABLE   BIT_5
-#define SIM_PORTA_ENABLE BIT_9
-#define SIM_PORTB_ENABLE BIT_10
-#define SIM_PORTC_ENABLE BIT_11
-#define SIM_PORTD_ENABLE BIT_12
-#define SIM_PORTE_ENABLE BIT_13
+#define SIM_SCGC6_PIT_ENABLE   BIT_23
 
 /*******************************************************************************
 * PORT CONTROLLER
@@ -1455,4 +1466,81 @@ typedef struct {
 #define MPU_RGDAAC9  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x24))
 #define MPU_RGDAAC10 (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x28))
 #define MPU_RGDAAC11 (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x2C))
+
+/*******************************************************************************
+* DAC
+*******************************************************************************/
+
+#define DAC0_BASE_ADDR 0x400CC000
+
+#define DAC0_DAT0L_ADDR (DAC0_BASE_ADDR + 0x0)
+#define DAC0_DAT0H_ADDR (DAC0_BASE_ADDR + 0x1)
+#define DAC0_DAT1L_ADDR (DAC0_BASE_ADDR + 0x2)
+#define DAC0_DAT1H_ADDR (DAC0_BASE_ADDR + 0x3)
+
+#define DAC0_DAT (*(volatile uint8_t *) (DAC0_BASE_ADDR)
+
+#define DAC0_SR  (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x20)
+#define DAC0_CR0 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x21)
+#define DAC0_CR1 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x22)
+#define DAC0_CR2 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x23)
+
+#define DAC_DATA_MAX 16
+
+#define DAC_SR_BFWMF  BIT_2  /* watermark flag */
+#define DAC_SR_BFRPTF BIT_1  /* read pointer top position flag */
+#define DAC_SR_BFRPBF BIT_0  /* read pointer bottom position flag */
+
+#define DAC_CR0_DACEN     BIT_7 /* Enable */
+#define DAC_CR0_DACRFS    BIT_6 /* Reference select, 0 = DACREF_1
+			    	                     1 = DACREF_2 */
+#define DAC_CR0_DACTRGSEL BIT_5 /* Trigger select, 0 = HW trigger
+				                   1 = SW trigger */
+#define DAC_CR0_DACSWTRG  BIT_4 /* Software trigger, active high, WO */
+#define DAC_CR0_LPEN      BIT_3 /* Low power control, 0 = high power
+				                      1 = low power */
+#define DAC_CR0_DACBWIEN  BIT_2 /* Buffer watermark interrupt enable */
+#define DAC_CR0_DACBTIEN  BIT_1 /* Buffer read pointer top flag enable */
+#define DAC_CR0_DACBBIEN  BIT_0 /* Buffer read pointer bottom flag enable */
+
+#define DAC_CR1_DMAEN     BIT_7 /* DMA Enabled */
+
+enum {
+    DAC_MODE_NORMAL,
+    DAC_MODE_SWING,
+    DAC_MODE_ONE_TIME,
+    DAC_MODE_RESERVED
+};
+
+#define DAC_CR0_FLAG (DAC_CR0_DACEN | DAC_CR0_DACRFS | DAC_CR0_DACTRGSEL)
+#define DAC_CR0_TRGF (DAC_CR0_FLAG | DAC_CR0_DACSWTRG)
+#define DAC_CR1_FLAG 0x01
+#define DAC_CR2_FLAG 0x0f
+
+/*******************************************************************************
+* PIT
+*******************************************************************************/
+
+#define PIT_CTRL_BASE 0x40037000
+#define PIT_CH_OFFSET 0x010
+#define PIT_LDVALN_OFFSET 0x100
+#define	PIT_CVALN_OFFSET 0x104
+#define PIT_TCTRLN_OFFSET 0x108
+#define PIT_TFLGN_OFFSET 0x10C
+
+#define PIT0_MCR (PIT_CTRL_BASE + (PIT_CH_OFFSET * 0x0))
+#define PIT0_LDVAL (PIT_CTRL_BASE + PIT_LDVALN_OFFSET)
+#define PIT0_CVAL (PIT_CTRL_BASE + PIT_CVALN_OFFSET)
+#define PIT0_TCTRL (PIT_CTRL_BASE + PIT_TCTRLN_OFFSET)
+#define PIT0_TFLG (PIT_CTRL_BASE + PIT_TFLGN_OFFSET)
+
+#define MCR_MDIS (1 << 1)
+#define MCR_FRZ (1 << 0)
+#define TCTRL_TIE (1 << 1)
+#define TCTRL_TEN (1 << 0)
+#define TFLG_TIF (1 << 0)
+
+#define PIT_ENABLE (1 << 23)
+#define	SIM_SCGC6_FLAGS (PIT_ENABLE)
+
 #endif

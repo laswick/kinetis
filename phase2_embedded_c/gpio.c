@@ -73,11 +73,11 @@ void gpioConfig(uint32_t port, uint32_t pin, uint32_t opt)
      */
 
     switch (port) {
-    case PORTA: SIM_SCGC5 |= SIM_PORTA_ENABLE; break;
-    case PORTB: SIM_SCGC5 |= SIM_PORTB_ENABLE; break;
-    case PORTC: SIM_SCGC5 |= SIM_PORTC_ENABLE; break;
-    case PORTD: SIM_SCGC5 |= SIM_PORTD_ENABLE; break;
-    case PORTE: SIM_SCGC5 |= SIM_PORTE_ENABLE; break;
+    case PORTA: SIM_SCGC5 |= SIM_SCGC5_PORTA_ENABLE; break;
+    case PORTB: SIM_SCGC5 |= SIM_SCGC5_PORTB_ENABLE; break;
+    case PORTC: SIM_SCGC5 |= SIM_SCGC5_PORTC_ENABLE; break;
+    case PORTD: SIM_SCGC5 |= SIM_SCGC5_PORTD_ENABLE; break;
+    case PORTE: SIM_SCGC5 |= SIM_SCGC5_PORTE_ENABLE; break;
     default:
         assert(0);
         return;
