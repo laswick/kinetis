@@ -39,27 +39,39 @@ extern void assert_(const char *file, const int line);
 
 extern int ioctl(int fd, int cmd, int flags);
 
+enum {
+    DEV_MAJ_UART,
+    DEV_MAJ_SPI
+};
+
 typedef struct devoptab_s {                        /* Device Operations Table */
     const char *name;
+    uint32_t    maj;
+    uint32_t    min;
+    void       *priv;
+} devoptab_t;
+
+typedef struct devlist_s {                              /* Device Driver List */
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags);
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags);
     int  (*close_r)(void *reent, struct devoptab_s *dot);
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
                                                                        int len);
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len);
-    void *priv;
-} devoptab_t;
+} devlist_t;
 
 extern int deviceInstall(
-    const char *name,
+    uint32_t maj,
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags),
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags),
     int  (*close_r)(void *reent, struct devoptab_s *dot),
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
                                                                        int len),
-    long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len),
-    void *priv
+    long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len)
 );
+
+extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
+                                                                    void *priv);
 
 /* INTERRUPTS *****************************************************************/
 

@@ -146,36 +146,52 @@ static int fdTable[MAX_FD] =
 #define NUM_STDIO_POSIX_DEVICES 3
 #define MAX_DEVICE_NAME_SIZE    10
 static devoptab_t devoptab_list[MAX_POSIX_DEVICES + NUM_STDIO_POSIX_DEVICES];
+static devlist_t dev_list[MAX_POSIX_DEVICES + NUM_STDIO_POSIX_DEVICES];
 static int devoptab_size = 0;
 
 /******************************************************************************/
 int deviceInstall (
-    const char *name,
+    uint32_t maj,
     int  (*open_r )( void *reent, struct devoptab_s *dot, int mode, int flags ),
     int  (*ioctl  )(              struct devoptab_s *dot, int cmd,  int flags ),
     int  (*close_r)( void *reent, struct devoptab_s *dot ),
     long (*write_r)( void *reent, struct devoptab_s *dot, const void *buf,
                                                                       int len ),
     long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf,
-                                                                      int len ),
-    void *priv )
+                                                                      int len ))
 /******************************************************************************/
 {
-    if (name == NULL)
+    if (maj >= MAX_POSIX_DEVICES + NUM_STDIO_POSIX_DEVICES)
         return FALSE;
 
-    devoptab_list[devoptab_size].name    = name;
-    devoptab_list[devoptab_size].open_r  = open_r;
-    devoptab_list[devoptab_size].ioctl   = ioctl;
-    devoptab_list[devoptab_size].close_r = close_r;
-    devoptab_list[devoptab_size].write_r = write_r;
-    devoptab_list[devoptab_size].read_r  = read_r;
-    devoptab_list[devoptab_size].priv    = priv;
-    devoptab_size++;
+    dev_list[maj].open_r  = open_r;
+    dev_list[maj].ioctl   = ioctl;
+    dev_list[maj].close_r = close_r;
+    dev_list[maj].write_r = write_r;
+    dev_list[maj].read_r  = read_r;
 
     return TRUE;
 }
 
+/******************************************************************************/
+int deviceRegister (const char *name, uint32_t maj, uint32_t min, void *priv)
+/******************************************************************************/
+{
+    /* search for major number in list */
+    if( dev_list[maj].open_r == NULL ) {
+        return FALSE;
+    }
+
+    if( devoptab_size+1 >= MAX_POSIX_DEVICES + NUM_STDIO_POSIX_DEVICES ) {
+        return FALSE;
+    }
+    devoptab_list[devoptab_size].name    = name;
+    devoptab_list[devoptab_size].maj     = maj;
+    devoptab_list[devoptab_size].min     = min;
+    devoptab_list[devoptab_size].priv    = priv;
+    devoptab_size++;
+    return TRUE;
+}
 
 /******************************************************************************/
 int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
@@ -187,10 +203,10 @@ int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
 
     /* search for the first free FD */
     for (i = NUM_STDIO_POSIX_DEVICES; i < MAX_FD; i++) {
-        if (fdTable[i] != -1) {
+        if (fdTable[i] == -1) {
             fd = i;
-	    break;
-	}
+            break;
+        }
     }
     /* search for "file" in dotab_list[].name */
     for (i = 0; i < devoptab_size; i++) {
@@ -211,13 +227,14 @@ int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
         ptr->_errno = ENFILE;
     }
     else {
-        if (devoptab_list[dev].open_r(ptr, &devoptab_list[dev], mode, flags)) {
+        if (dev_list[devoptab_list[dev].maj].open_r
+                                     (ptr, &devoptab_list[dev], mode, flags)) {
             fdTable[fd] = dev;
-	}
-	else {
-            /* open failed, do not store device in FD table */
-            fd = -1;
-	}
+        }
+        else {
+                /* open failed, do not store device in FD table */
+                fd = -1;
+        }
     }
 
     return fd;
@@ -229,14 +246,14 @@ static int is_fd_valid( struct _reent *ptr, int fd )
 {
     if (fd < 0 || fd >= MAX_FD) {
         ptr->_errno = EBADF;
-	return(FALSE);
+    return(FALSE);
     }
     else if (fdTable[fd] == -1) {
         ptr->_errno = ENOENT;
-	return(FALSE);
+    return(FALSE);
     }
     else {
-	return(TRUE);
+    return(TRUE);
     }
 }
 /******************************************************************************/
@@ -246,10 +263,11 @@ int _close_r ( struct _reent *ptr, int fd )
     int retVal = -1;
     if (is_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
-        retVal = devoptab_list[dev].close_r(ptr, &devoptab_list[dev]);
-	if (!retVal) {
-	    fdTable[fd] = -1;
-	}
+        retVal = dev_list[devoptab_list[dev].maj].close_r
+                                                     (ptr, &devoptab_list[dev]);
+    if (!retVal) {
+        fdTable[fd] = -1;
+    }
     }
     return retVal;
 }
@@ -262,7 +280,8 @@ int ioctl ( int fd, int cmd, int flags)
     struct _reent tmp;
     if (is_fd_valid(&tmp, fd)) {
         int dev = fdTable[fd];
-        retVal = devoptab_list[dev].ioctl(&devoptab_list[dev], cmd, flags);
+        retVal = dev_list[devoptab_list[dev].maj].ioctl
+                                              (&devoptab_list[dev], cmd, flags);
     }
     return retVal;
 
@@ -275,8 +294,8 @@ long _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )
     long retVal = -1;
     if (is_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
-        retVal = devoptab_list[dev].write_r(ptr,
-                &devoptab_list[dev], buf, cnt);
+        retVal = dev_list[devoptab_list[dev].maj].write_r
+                                           (ptr, &devoptab_list[dev], buf, cnt);
     }
     return retVal;
 }
@@ -288,11 +307,10 @@ long _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt )
     long retVal = -1;
     if (is_fd_valid(ptr, fd)) {
         int dev = fdTable[fd];
-        retVal = devoptab_list[dev].read_r(ptr,
-                &devoptab_list[dev], buf, cnt);
+        retVal = dev_list[devoptab_list[dev].maj].read_r
+                                           (ptr, &devoptab_list[dev], buf, cnt);
     }
     return retVal;
-
 }
 
 /* TODO Rob - I moved this here from uart.c, but it is not getting called by
@@ -308,8 +326,10 @@ long _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt )
 *******************************************************************************/
 int _write(struct _reent *ptr, int fd, void *buf, size_t cnt )
 {
-    assert(devoptab_list[fd].write_r);  /* Ensure a STDOUT has been designated */
-    return devoptab_list[fd].write_r(ptr, &devoptab_list[fd], buf, cnt);
+    /* Ensure a STDOUT has been designated */
+    assert(dev_list[devoptab_list[fd].maj].write_r);
+    return dev_list[devoptab_list[fd].maj].write_r
+                                            (ptr, &devoptab_list[fd], buf, cnt);
 }
 
 
