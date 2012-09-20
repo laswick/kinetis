@@ -127,16 +127,28 @@ int * __errno () {
 }
 #endif
 
+/*
+ * File Descriptor Table
+ *
+ */
+
+#define MAX_FD 20
+static int fdTable[MAX_FD] =
+{
+   0,  1,  2, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
 /******************************************************************************/
 /* DEVOPTAB Section */
-/*******************************************************************************/
+/******************************************************************************/
 #define       MAX_POSIX_DEVICES 10
 #define NUM_STDIO_POSIX_DEVICES 3
 #define MAX_DEVICE_NAME_SIZE    10
 static devoptab_t devoptab_list[MAX_POSIX_DEVICES + NUM_STDIO_POSIX_DEVICES];
 static int devoptab_size = 0;
 
-/*******************************************************************************/
+/******************************************************************************/
 int deviceInstall (
     const char *name,
     int  (*open_r )( void *reent, struct devoptab_s *dot, int mode, int flags ),
@@ -147,7 +159,7 @@ int deviceInstall (
     long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf,
                                                                       int len ),
     void *priv )
-/*******************************************************************************/
+/******************************************************************************/
 {
     if (name == NULL)
         return FALSE;
@@ -165,59 +177,122 @@ int deviceInstall (
 }
 
 
-/*******************************************************************************/
-int _open_r (struct _reent *ptr, const char *file, int flags, int mode )
-/*******************************************************************************/
+/******************************************************************************/
+int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
+/******************************************************************************/
 {
     int fd = -1;
+    int dev = -1;
     int i;
 
+    /* search for the first free FD */
+    for (i = NUM_STDIO_POSIX_DEVICES; i < MAX_FD; i++) {
+        if (fdTable[i] != -1) {
+            fd = i;
+	    break;
+	}
+    }
     /* search for "file" in dotab_list[].name */
     for (i = 0; i < devoptab_size; i++) {
         if( strcmp( devoptab_list[i].name, file ) == 0 ) {
-            fd = i;
+            dev = i;
             break;
         }
     }
 
-    /* if we found the requested file/device,
+    /* if we found the requested file/device and the FD table is not full,
      *     then invoke the device's open_r() method */
-    if( fd != -1 ) {
-        devoptab_list[fd].open_r( ptr, &devoptab_list[fd], mode, flags );
-    } else {
+    if (dev == -1) {
         /* it doesn't exist in the devoptab list! */
         ptr->_errno = ENODEV;
+    }
+    else if (fd == -1) {
+        /* too many files open, no room in fdTable */
+        ptr->_errno = ENFILE;
+    }
+    else {
+        if (devoptab_list[dev].open_r(ptr, &devoptab_list[dev], mode, flags)) {
+            fdTable[fd] = dev;
+	}
+	else {
+            /* open failed, do not store device in FD table */
+            fd = -1;
+	}
     }
 
     return fd;
 }
 
-/*******************************************************************************/
+/******************************************************************************/
+static int is_fd_valid( struct _reent *ptr, int fd )
+/******************************************************************************/
+{
+    if (fd < 0 || fd >= MAX_FD) {
+        ptr->_errno = EBADF;
+	return(FALSE);
+    }
+    else if (fdTable[fd] == -1) {
+        ptr->_errno = ENOENT;
+	return(FALSE);
+    }
+    else {
+	return(TRUE);
+    }
+}
+/******************************************************************************/
 int _close_r ( struct _reent *ptr, int fd )
-/*******************************************************************************/
+/******************************************************************************/
 {
-    return devoptab_list[fd].close_r(ptr, &devoptab_list[fd]);
+    int retVal = -1;
+    if (is_fd_valid(ptr, fd)) {
+        int dev = fdTable[fd];
+        retVal = devoptab_list[dev].close_r(ptr, &devoptab_list[dev]);
+	if (!retVal) {
+	    fdTable[fd] = -1;
+	}
+    }
+    return retVal;
 }
 
-/*******************************************************************************/
-int ioctl (int fd, int cmd, int flags)
-/*******************************************************************************/
+/******************************************************************************/
+int ioctl ( int fd, int cmd, int flags)
+/******************************************************************************/
 {
-    return devoptab_list[fd].ioctl(&devoptab_list[fd], cmd, flags);
+    int retVal = -1;
+    struct _reent tmp;
+    if (is_fd_valid(&tmp, fd)) {
+        int dev = fdTable[fd];
+        retVal = devoptab_list[dev].ioctl(&devoptab_list[dev], cmd, flags);
+    }
+    return retVal;
+
 }
 
-/*******************************************************************************/
-long _write_r (struct _reent *ptr, int fd, const void *buf, size_t cnt )
-/*******************************************************************************/
+/******************************************************************************/
+long _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )
+/******************************************************************************/
 {
-    return devoptab_list[fd].write_r(ptr, &devoptab_list[fd], buf, cnt);
+    long retVal = -1;
+    if (is_fd_valid(ptr, fd)) {
+        int dev = fdTable[fd];
+        retVal = devoptab_list[dev].write_r(ptr,
+                &devoptab_list[dev], buf, cnt);
+    }
+    return retVal;
 }
 
-/*******************************************************************************/
-long _read_r (struct _reent *ptr, int fd, void *buf, size_t cnt )
-/*******************************************************************************/
+/******************************************************************************/
+long _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt )
+/******************************************************************************/
 {
-    return devoptab_list[fd].read_r(ptr, &devoptab_list[fd], buf, cnt);
+    long retVal = -1;
+    if (is_fd_valid(ptr, fd)) {
+        int dev = fdTable[fd];
+        retVal = devoptab_list[dev].read_r(ptr,
+                &devoptab_list[dev], buf, cnt);
+    }
+    return retVal;
+
 }
 
 /* TODO Rob - I moved this here from uart.c, but it is not getting called by

@@ -6,7 +6,7 @@
 
 # Name of project/output file:
 
-TARGET = spi_demo
+TARGET = dac_demo
 
 # List your asm files here (minus the .s):
 
@@ -14,7 +14,7 @@ ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware spi demoSpi gpio devoptab
+C_PIECES = hardware pit dac demoDac gpio devoptab
 
 # Define Hardware Platform
 
@@ -75,7 +75,7 @@ clean:
 	@echo Cleaning up...
 	@echo
 	rm -f *.o
-	rm -f *.d
+	rm -r *.d
 	rm -f ${TARGET}.axf
 	rm -f ${TARGET}.out.s
 	rm -f out.axf
