@@ -1,0 +1,12 @@
+*.o
+*.d
+*.map
+*.hex
+*.bin
+makefile
+.gdbinit
+*.pdf
+*.jpg
+*.zip
+*.a
+
