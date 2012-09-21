@@ -1,3 +1,15 @@
+#
+# Sample gdb init script
+#
+# Rob Laswick
+# Sept 20 2012
+#
+# To use this file, simply copy it as .gdbinit
+# in your local phase2 directory.
+#
+# Similar to how we treat "makefile" (re: phase 2 README file), .gdbinit
+# is _not_ to considered a git controlled file.
+#
 target remote localhost:3333
 b assert_
 define reset
