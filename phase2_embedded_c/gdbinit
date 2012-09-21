@@ -15,3 +15,8 @@ b assert_
 define reset
 monitor reset init
 end
+define load
+reset
+load
+reset
+end
