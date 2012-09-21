@@ -34,18 +34,11 @@ int main(void)
     uart_install();
 
     int fd = open("uart3", 0, 0);
+    assert(fd != -1);
 
-    if (fd == -1)
-        assert(0);
+    ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
 
-    //ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
-
-    //printf("The start of something good...\r\n"); /* StdOut is uart3 */
-
-    char str[] = "laswick";
-
-    for (;;)
-        write(fd, str, strlen(str));
+    char str[] = "laswick\n";
 
     int i;
     volatile uartPort_t *uart = UART3_REG_PTR;
@@ -53,6 +46,15 @@ int main(void)
         delay();
         uart->d = str[i];
     }
+
+    write(fd, str, strlen(str));
+    write(fd, "\nWRITE!\n", 8);
+
+    write(fd, "puts:\n", 6);
+    puts("PUTS!");
+
+    write(fd, "printf:\n", 8);
+    printf("PRINTF!\n");
 
     close(fd);
 

@@ -33,7 +33,7 @@
 
     /*
      * Before defining the vector table, we need to define "weak" symbols
-     * and default handlers for EVERY execption.
+     * and default handlers for EVERY exception.
      *
      * "weak" symbols can be overridden by user software without causing
      * conflicts.
@@ -43,7 +43,7 @@
     .weak _reset_handler
     .weak _nmi_handler
     .weak _hard_fault_handler
-    .weak _memory_managment_fault_handler
+    .weak _memory_management_fault_handler
     .weak _bus_fault_handler
     .weak _usage_fault_handler
     .weak _svc_handler
@@ -146,13 +146,13 @@
 
 
     /*
-     * Ensure all symbols are globally visable.
+     * Ensure all symbols are globally visible.
      */
 
     .global _reset_handler
     .global _nmi_handler
     .global _hard_fault_handler
-    .global _memory_managment_fault_handler
+    .global _memory_management_fault_handler
     .global _bus_fault_handler
     .global _usage_fault_handler
     .global _svc_handler
@@ -260,7 +260,7 @@
     .thumb_set _reset_handler,                  _default_reset_handler
     .thumb_set _nmi_handler,                    _default_nmi_handler
     .thumb_set _hard_fault_handler,             _default_fault_handler
-    .thumb_set _memory_managment_fault_handler, _default_fault_handler
+    .thumb_set _memory_management_fault_handler,_default_fault_handler
     .thumb_set _bus_fault_handler,              _default_fault_handler
     .thumb_set _usage_fault_handler,            _default_fault_handler
     .thumb_set _svc_handler,                    _default_irq_handler
@@ -375,7 +375,7 @@ _vector_table:
     .word _reset_handler
     .word _nmi_handler
     .word _hard_fault_handler
-    .word _memory_managment_fault_handler
+    .word _memory_management_fault_handler
     .word _bus_fault_handler
     .word _usage_fault_handler
     .word 0x00000000
@@ -523,8 +523,8 @@ disable_watchdog:
     strh r0, [r6]
 
     /*
-     * Note: The preceeding code must complete at speed before we can start
-     *       setting breakpoints and single stepping, hense the provided
+     * Note: The preceding code must complete at speed before we can start
+     *       setting breakpoints and single stepping, hence the provided
      *       label below "first_break" (i.e. (gdb) tb first_break).
      */
 
@@ -536,7 +536,7 @@ set_stack_pointer:
      * The main stack pointer is automatically set to the value stored in
      * address 0x00000000 (which is the first element in the vector_table) by
      * the hardware. The next three lines are required in case this image
-     * is not located at 0x0 (i.e. it is being launched from a bootloader)
+     * is not located at 0x0 (i.e. it is being launched from a bootloader).
      */
 
     ldr r1, =_vector_table
@@ -546,8 +546,9 @@ set_stack_pointer:
     /*
      * Relocate the .text section from FLASH to SRAM only if the load
      * address and the start address are not the same. This code supports
-     * running an entire image out of SRAM
+     * running an entire image out of SRAM.
      */
+
     ldr r0, =_text_start
     ldr r1, =_text_end
     ldr r2, =_text_load
@@ -564,8 +565,9 @@ end_text_loop:
 
 
     /*
-     * Relocate the .ramcode section from FLASH to SRAM
+     * Relocate the .ramcode section from FLASH to SRAM.
      */
+
     ldr r0, =_ramcode_start
     ldr r1, =_ramcode_end
     ldr r2, =_ramcode_load
@@ -578,8 +580,9 @@ ramcode_loop:
     blt     ramcode_loop
 
     /*
-     * Relocate vector table to SRAM
+     * Relocate vector table to SRAM.
      */
+
      ldr r0, =_vector_ram_start
      ldr r1, =_vector_ram_end
      ldr r2, =_vector_rom
@@ -590,7 +593,10 @@ vector_loop:
     strlt   r3, [r0], #4
     blt     vector_loop
 
-    /* Point to the SRAM vector table */
+    /*
+     * Point to the SRAM vector table.
+     */
+
     ldr r1,=0xe000ed08
     ldr r0,=_vector_ram_start
     str r0,[r1]
@@ -604,14 +610,14 @@ c_runtime_setup:
      * section in RAM.
      *
      * Typically in microcontroller based applications, like this one,
-     * the .text section is not relocated and the code exectues from FLASH.
+     * the .text section is not relocated and the code executes from FLASH.
      */
 
     /*
      * Relocate the .data section from FLASH to SRAM
      *
      * Note: _data_start contains the SRAM (destination) address and
-     *       _text_end contains the (source) address of the the .data section
+     *       _text_end contains the (source) address of the .data section
      *       in FLASH.
      */
 
@@ -627,7 +633,7 @@ data_loop:
     blt     data_loop
 
     /*
-     * Zero out the .bss section in SRAM
+     * Zero out the .bss section in SRAM.
      */
 
     ldr r0, =_bss_start
@@ -641,7 +647,7 @@ bss_loop:
     blt     bss_loop
 
     /*
-     * Zero out heap
+     * Zero out heap.
      */
 
     ldr r0, =_heap_start
@@ -654,7 +660,7 @@ heap_loop:
     blt     heap_loop
 
     /*
-     * Watermark the stack
+     * Watermark the stack.
      */
 
 /*
@@ -688,13 +694,13 @@ end_loop:
     /*
      * Default Exception & IRQ Handlers
      *
-     * It's a good idea, especially during early devleopment, to set a
+     * It's a good idea, especially during early development, to set a
      * breakpoint on each of the default handlers.  This way if/when an
      * unexpected exception occurs the debugger will halt immediately
      * making it obvious an exception has occurred (this can save
      * enormous amounts of time wondering why your software isn't working).
      *
-     * Knowing an execption occurred is useful ... but what caused it???
+     * Knowing an exception occurred is useful ... but what caused it???
      * Being able to identify the exact line of code that caused in the
      * exception is gold.
      *
@@ -707,9 +713,9 @@ end_loop:
      * If/when the debugger breaks on one of the exceptions below examine the
      * registers to determine the current address of the stack pointer
      * (i.e. (gdb) info reg).  Display 8 words of memory starting at the
-     * stack pointer address to view the stacked exception context (i.e.
-     * (gdb) x/8x <addr>).  The 7th word is the stacked PC, the offending
-     * instruction address.
+     * stack pointer address to view the stacked exception context
+     * (i.e. (gdb) x/8x <addr>, or more simply (gdb) x/8x $sp).
+     * The 7th word is the stacked PC, the offending instruction address.
      */
 
     .align 2
