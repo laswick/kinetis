@@ -183,36 +183,6 @@ static uartDev_t uartDev[NUM_UART_MODULES] = {
     },
 };
 
-int uart_install(void)
-{
-    int ret = TRUE;
-
-    if( !deviceInstall(DEV_MAJ_UART,uart_open_r, uart_ioctl, uart_close_r,
-                                                 uart_write_r, uart_read_r) ){
-        ret = FALSE;
-    }
-    if( !deviceRegister("uart0", DEV_MAJ_UART, UART_MODULE_0,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("uart1", DEV_MAJ_UART, UART_MODULE_1,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("uart2", DEV_MAJ_UART, UART_MODULE_2,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("uart3", DEV_MAJ_UART, UART_MODULE_3,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("uart4", DEV_MAJ_UART, UART_MODULE_4,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("uart5", DEV_MAJ_UART, UART_MODULE_5,  NULL) ) {
-        ret =  FALSE;
-    }
-
-    return ret;
-}
-
 
 static void rxMsgNotify(uart_t *uart, uartBuffer_t *bufferPtr)
 {
@@ -500,7 +470,7 @@ return 0;
  *      Enable the SIM SCGC for the device
  *      Initialize the device with a default configuration
  ********************************************************************************/
-int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
+static int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 {
     if (!dot || !dot->name) {
         /* errno ? */
@@ -524,7 +494,7 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 }
 
 /*******************************************************************************/
-/* uart_ioctl_r                                                                 */
+/* uart_ioctl                                                                  */
 /*******************************************************************************/
 /* Jobs of the 'ioctl' syscall:
  *      Implement any device specific commands.
@@ -537,7 +507,7 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
  *              Set device registers to specific values
  *              Configure I/O pins
  *******************************************************************************/
-int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
+static int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
 /* TODO: return errors if flags or cmd is bad */
 {
     uart_t *uart;
@@ -596,7 +566,7 @@ int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
  *      Disable the SIM SCGC for the device
  *      Free the device 'state' structure, unhook it to the devoptab private ptr
  *******************************************************************************/
-int uart_close_r (void *reent, devoptab_t *dot )
+static int uart_close_r (void *reent, devoptab_t *dot )
 {
     uart_t *uart = dot->priv;
 
@@ -620,7 +590,7 @@ int uart_close_r (void *reent, devoptab_t *dot )
  *      Write data to the device.
  *      Return the number of bytes written
  *******************************************************************************/
-long uart_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
+static long uart_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
 {
     /* You could just put your write function here, but I want switch between
      * polled & interupt functions here at a later point.*/
@@ -634,11 +604,41 @@ long uart_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
  *      Read data from the device
  *      Return the number of bytes read
  *******************************************************************************/
-long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
+static long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 {
     /* You could just put your read function here, but I want switch between
      * polled & interupt functions here at a later point.*/
     return uartRead(dot, buf, len);
 }
 
+
+int uart_install(void)
+{
+    int ret = TRUE;
+
+    if( !deviceInstall(DEV_MAJ_UART,uart_open_r, uart_ioctl, uart_close_r,
+                                                 uart_write_r, uart_read_r) ){
+        ret = FALSE;
+    }
+    if( !deviceRegister("uart0", DEV_MAJ_UART, UART_MODULE_0,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart1", DEV_MAJ_UART, UART_MODULE_1,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart2", DEV_MAJ_UART, UART_MODULE_2,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart3", DEV_MAJ_UART, UART_MODULE_3,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart4", DEV_MAJ_UART, UART_MODULE_4,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart5", DEV_MAJ_UART, UART_MODULE_5,  NULL) ) {
+        ret =  FALSE;
+    }
+
+    return ret;
+}
 

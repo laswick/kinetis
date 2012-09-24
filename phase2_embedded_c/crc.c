@@ -45,17 +45,6 @@ crc_t crcDflt = {
     .simScgcEnBit = SIM_SCGC6_CRC_ENABLE,
 };
 
-/******************************************************************************/
-int crc_install(void)
-/******************************************************************************/
-{
-    if (!deviceInstall("crc", crc_open_r,  crc_ioctl, crc_close_r,
-                                                  crc_write_r, crc_read_r, NULL))
-        return FALSE;
-    else
-        return TRUE;
-}
-
 /*******************************************************************************/
 static int crcOpen(devoptab_t *dot)
 /*******************************************************************************/
@@ -141,7 +130,7 @@ static unsigned crcRead(devoptab_t *dot, void *data, unsigned len)
  *******************************************************************************/
 
 /*******************************************************************************/
-int crc_open_r (void *reent, devoptab_t *dot, int mode, int flags )
+static int crc_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 /*******************************************************************************/
 {
     if (!dot || !dot->name) {
@@ -169,7 +158,7 @@ int crc_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 }
 
 /*******************************************************************************/
-int crc_ioctl(devoptab_t *dot, int cmd,  int flags)
+static int crc_ioctl(devoptab_t *dot, int cmd,  int flags)
 /*******************************************************************************/
 /* TODO: return errors if flags or cmd is bad */
 {
@@ -268,7 +257,7 @@ int crc_ioctl(devoptab_t *dot, int cmd,  int flags)
 }
 
 /*******************************************************************************/
-int crc_close_r (void *reent, devoptab_t *dot )
+static int crc_close_r (void *reent, devoptab_t *dot )
 /*******************************************************************************/
 {
     crc_t *crc = dot->priv;
@@ -286,7 +275,7 @@ int crc_close_r (void *reent, devoptab_t *dot )
     }
 }
 /*******************************************************************************/
-long crc_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
+static long crc_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
 /*******************************************************************************/
 {
     /* You could just put your write function here, but I want switch between
@@ -294,10 +283,23 @@ long crc_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
     return crcWrite(dot, buf, len);
 }
 /*******************************************************************************/
-long crc_read_r (void *reent, devoptab_t *dot, void *buf, int len )
+static long crc_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 /*******************************************************************************/
 {
     /* You could just put your read function here, but I want switch between
      * polled & interupt functions here */
     return crcRead(dot, buf, len);
 }
+
+/******************************************************************************/
+int crc_install(void)
+/******************************************************************************/
+{
+    if (!(deviceInstall(DEV_MAJ_CRC, crc_open_r,  crc_ioctl, crc_close_r,
+                                                        crc_write_r, crc_read_r)
+                                && deviceRegister("crc", DEV_MAJ_CRC, 0, NULL)))
+        return FALSE;
+    else
+        return TRUE;
+}
+

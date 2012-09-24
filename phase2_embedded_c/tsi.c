@@ -143,22 +143,8 @@ typedef struct tsiPriv_s {
 
 static tsiPriv_t tsiPriv;
 
-int tsi_install(void)
-{
-    int ret = TRUE;
-    tsiPriv.open = FALSE;
-    if (!deviceInstall(DEV_MAJ_TSI, tsi_open_r, tsi_ioctl, tsi_close_r,
-                                           tsi_write_r, tsi_read_r)) {
-        ret = FALSE;
-    }
-    if (!deviceRegister("tsi0", DEV_MAJ_TSI, 0, &tsiPriv)) {
-        ret = FALSE;
-    }
-    return ret;
-}
-
 /******************************************************************************/
-int tsi_open_r(void *reent, devoptab_t *dot, int mode, int flags)
+static int tsi_open_r(void *reent, devoptab_t *dot, int mode, int flags)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
     int tsi;
@@ -182,7 +168,7 @@ int tsi_open_r(void *reent, devoptab_t *dot, int mode, int flags)
 }
 
 /******************************************************************************/
-int tsi_ioctl(devoptab_t *dot, int cmd, int flags)
+static int tsi_ioctl(devoptab_t *dot, int cmd, int flags)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
 
@@ -229,7 +215,7 @@ int tsi_ioctl(devoptab_t *dot, int cmd, int flags)
 }
 
 /******************************************************************************/
-int tsi_close_r(void *reent, devoptab_t *dot)
+static int tsi_close_r(void *reent, devoptab_t *dot)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
 
@@ -243,7 +229,7 @@ int tsi_close_r(void *reent, devoptab_t *dot)
 }
 
 /******************************************************************************/
-long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len)
+static long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
     (void)priv;
@@ -252,7 +238,7 @@ long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len)
 }
 
 /******************************************************************************/
-long tsi_read_r(void *reent, devoptab_t *dot, void *buf, int len)
+static long tsi_read_r(void *reent, devoptab_t *dot, void *buf, int len)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
     uint16_t data;
@@ -280,3 +266,19 @@ long tsi_read_r(void *reent, devoptab_t *dot, void *buf, int len)
     }
     return actual;
 }
+
+/******************************************************************************/
+int tsi_install(void)
+{
+    int ret = TRUE;
+    tsiPriv.open = FALSE;
+    if (!deviceInstall(DEV_MAJ_TSI, tsi_open_r, tsi_ioctl, tsi_close_r,
+                                           tsi_write_r, tsi_read_r)) {
+        ret = FALSE;
+    }
+    if (!deviceRegister("tsi0", DEV_MAJ_TSI, 0, &tsiPriv)) {
+        ret = FALSE;
+    }
+    return ret;
+}
+
