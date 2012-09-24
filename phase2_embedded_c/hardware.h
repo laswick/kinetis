@@ -41,7 +41,8 @@ extern int ioctl(int fd, int cmd, int flags);
 
 enum {                                               /* Major Device Numbers */
     DEV_MAJ_UART,
-    DEV_MAJ_SPI
+    DEV_MAJ_SPI,
+    DEV_MAJ_TSI,
 };
 
 typedef struct devoptab_s {                       /* Device Operations Table */

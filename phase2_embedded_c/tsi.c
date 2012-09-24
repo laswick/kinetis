@@ -70,7 +70,7 @@ static void tsiSetScanc(uint32_t scanc)
 
 static void tsiSetPrescale(uint16_t prescale)
 {
-    TSI0_GENCS = TSI0_GENCS & ~TSI_GENCS_PS_MASK
+    TSI0_GENCS = (TSI0_GENCS & ~TSI_GENCS_PS_MASK)
                        | ((prescale << TSI_GENCS_PS_SHIFT) & TSI_GENCS_PS_MASK);
 }
 
@@ -147,8 +147,11 @@ int tsi_install(void)
 {
     int ret = TRUE;
     tsiPriv.open = FALSE;
-    if (!deviceInstall("tsi0", tsi_open_r, tsi_ioctl, tsi_close_r, tsi_write_r,
-                                                        tsi_read_r, &tsiPriv)) {
+    if (!deviceInstall(DEV_MAJ_TSI, tsi_open_r, tsi_ioctl, tsi_close_r,
+                                           tsi_write_r, tsi_read_r)) {
+        ret = FALSE;
+    }
+    if (!deviceRegister("tsi0", DEV_MAJ_TSI, 0, &tsiPriv)) {
         ret = FALSE;
     }
     return ret;
