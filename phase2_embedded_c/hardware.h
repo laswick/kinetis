@@ -35,28 +35,31 @@ extern void assert_(const char *file, const int line);
 
 #define __RAMCODE__ __attribute__ ((long_call, section(".ramcode")))
 
-/* POSIX Interface ************************************************************/
+/* POSIX Interface ***********************************************************/
 
 extern int ioctl(int fd, int cmd, int flags);
 
-enum {
+enum {                                               /* Major Device Numbers */
     DEV_MAJ_UART,
     DEV_MAJ_SPI
 };
 
-typedef struct devoptab_s {                        /* Device Operations Table */
+typedef struct devoptab_s {                       /* Device Operations Table */
     const char *name;
     uint32_t    maj;
     uint32_t    min;
     void       *priv;
 } devoptab_t;
 
-typedef struct devlist_s {                              /* Device Driver List */
+extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
+                                                                   void *priv);
+
+typedef struct devlist_s {                             /* Device Driver List */
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags);
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags);
     int  (*close_r)(void *reent, struct devoptab_s *dot);
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
-                                                                       int len);
+                                                                      int len);
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len);
 } devlist_t;
 
@@ -66,12 +69,9 @@ extern int deviceInstall(
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags),
     int  (*close_r)(void *reent, struct devoptab_s *dot),
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
-                                                                       int len),
+                                                                      int len),
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len)
 );
-
-extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
-                                                                    void *priv);
 
 /* INTERRUPTS *****************************************************************/
 
@@ -209,6 +209,7 @@ extern int32_t flashErase(uint32_t addr, uint32_t numBytes);
 extern int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords);
 
 /* TSI ************************************************************************/
+
 #define TSI_COUNT 16
 
 typedef struct {
@@ -388,6 +389,52 @@ enum {
     IO_IOCTL_UART_BAUD_SET,         /* Set the baud rate */
 };
 
+/* DAC ************************************************************************/
+
+typedef struct {
+    uint8_t low;
+    uint8_t high;
+} dacData_t;
+
+typedef struct {
+    dacData_t data[DAC_DATA_MAX];
+    uint8_t sr;
+    uint8_t c0;
+    uint8_t c1;
+    uint8_t c2;
+} dac_t;
+
+extern volatile dac_t * const dac0;
+
+extern void dac0Init(void);
+
+/* PIT ************************************************************************/
+
+typedef struct {
+    uint32_t loadVal;      /* value to load into pit timer */
+    uint32_t currVal;      /* current value of the down counter */
+    uint32_t ctrl;
+    uint32_t flags;
+} pit_t;
+
+enum {
+    PIT_0,
+    PIT_1,
+    PIT_2,
+    PIT_3,
+    MAX_PIT,
+};
+
+typedef struct {
+    uint32_t mcr;
+    uint32_t reserved[(0x100/4) - 1];
+    pit_t pit[4];
+} pitCtrl_t;
+
+extern volatile pitCtrl_t * const pitCtrl;
+
+extern void pitInit(int timer, void *isr, uint32_t initCount);
+
 /*******************************************************************************
 *
 * CCA Hardware Defines
@@ -414,6 +461,9 @@ enum {
  * table in the device TRM.
  */
 
+#define SYSTEM_CLOCK_HZ  20480000                   /* Default power-on clock */
+#define    BUS_CLOCK_HZ  20480000
+
 /*
  * TODO
  *
@@ -424,9 +474,6 @@ enum {
  * Jan's clock code would obviously update the hwSystemClock value if it
  * where changed, and/or someone engaged the FLL/PLL, etc.
  */
-
-#define SYSTEM_CLOCK_HZ  20480000
-#define    BUS_CLOCK_HZ  20480000
 
 /* LEDS ***********************************************************************/
 
@@ -470,51 +517,5 @@ enum {
 #error Undefined Hardware Platform
 #endif
 
-/* DAC*************************************************************************/
-
-typedef struct {
-    uint8_t low;
-    uint8_t high;
-} dacData_t;
-
-typedef struct {
-    dacData_t data[DAC_DATA_MAX];
-    uint8_t sr;
-    uint8_t c0;
-    uint8_t c1;
-    uint8_t c2;
-} dac_t;
-
-extern volatile dac_t * const dac0;
-
-extern void dac0Init(void);
-
-/* PIT*************************************************************************/
-
-typedef struct {
-    uint32_t loadVal;      /* value to load into pit timer */
-    uint32_t currVal;      /* current value of the down counter */
-    uint32_t ctrl;
-    uint32_t flags;
-} pit_t;
-
-enum {
-    PIT_0,
-    PIT_1,
-    PIT_2,
-    PIT_3,
-    MAX_PIT,
-};
-
-typedef struct {
-    uint32_t mcr;
-    uint32_t reserved[(0x100/4) - 1];
-    pit_t pit[4];
-} pitCtrl_t;
-
-extern volatile pitCtrl_t * const pitCtrl;
-
-extern void pitInit(int timer, void *isr, uint32_t initCount);
-
-
 #endif
+

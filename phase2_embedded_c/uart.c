@@ -191,17 +191,6 @@ int uart_install(void)
                                                  uart_write_r, uart_read_r) ){
         ret = FALSE;
     }
-    /* Std  In, Out, Err use uart3 */
-    if( !deviceRegister("uart3", DEV_MAJ_UART, UART_MODULE_3,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("uart3", DEV_MAJ_UART, UART_MODULE_3,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("uart3", DEV_MAJ_UART, UART_MODULE_3,  NULL) ) {
-        ret =  FALSE;
-    }
-
     if( !deviceRegister("uart0", DEV_MAJ_UART, UART_MODULE_0,  NULL) ) {
         ret =  FALSE;
     }
@@ -359,7 +348,7 @@ static int uartOpen(devoptab_t *dot)
     uart_t *uart;
     void   *isrPtr;
 
-    if (dot->priv) return FALSE; /* Device is already open */
+    if (dot->priv) return TRUE; /* Device is already open */
 
     /* Create 'private' uart structure and point devoptab's
      * private pointer to it */
@@ -525,12 +514,11 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
         return FALSE;
     }
 
-    /* Try to open if not already open */
+    /* Try to open */
     if (uartOpen(dot)) {
         return TRUE;
     } else {
-        /* Device is already open, is this an issue or not? */
-        ((struct _reent *)reent)->_errno = EPERM;
+        /* Could not allocate memory */
         return FALSE;
     }
 }
