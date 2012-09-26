@@ -41,7 +41,9 @@ extern int ioctl(int fd, int cmd, int flags);
 
 enum {                                               /* Major Device Numbers */
     DEV_MAJ_UART,
-    DEV_MAJ_SPI
+    DEV_MAJ_SPI,
+    DEV_MAJ_TSI,
+    DEV_MAJ_CRC,
 };
 
 typedef struct devoptab_s {                       /* Device Operations Table */
@@ -193,11 +195,6 @@ typedef struct spiWriteRead_s {
 #define DEVOPTAB_SPI2_STR "spi2"
 
 int  spi_install (void);
-int  spi_open_r  (void *reent, devoptab_t *dot,  int mode,  int flags);
-int  spi_ioctl   (             devoptab_t *dot,  int cmd,   int flags);
-int  spi_close_r (void *reent, devoptab_t *dot);
-long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len);
-long spi_read_r  (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* FLASH **********************************************************************/
 
@@ -232,11 +229,6 @@ extern uint32_t tsiRead(const tsiConfig_t *cfg);
 extern uint32_t tsiReadRaw(uint32_t pin);
 
 extern int  tsi_install(void);
-extern int  tsi_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-extern int  tsi_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-extern int  tsi_close_r(void *reent, devoptab_t *dot);
-extern long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-extern long tsi_read_r (void *reent, devoptab_t *dot,       void *buf, int len);
 
 /* IO_IOCTL_ commands */
 enum {
@@ -304,11 +296,6 @@ typedef enum {
 #define DEVOPTAB_CRC_STR    "crc"
 
 int  crc_install(void);
-int  crc_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-int  crc_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-int  crc_close_r(void *reent, devoptab_t *dot);
-long crc_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-long crc_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* MPU ************************************************************************/
 
@@ -374,11 +361,6 @@ extern bool32_t mpuCheckFaults(void);
 #define DEVOPTAB_UART5_STR "uart5"
 
 int  uart_install(void);
-int  uart_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-int  uart_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-int  uart_close_r(void *reent, devoptab_t *dot);
-long uart_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-long uart_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
                                                         /* IO_IOCTL_ commands */
 enum {
