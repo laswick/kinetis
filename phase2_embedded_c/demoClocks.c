@@ -52,9 +52,14 @@ int main(void) {
          * clock locked with a PLL at the maximum frequency of 100MHZ
          *
          * For PLL, the dividers must be set first.
+         *
+         * System:  100 MHz
+         * Bus:      50 MHz
+         * Flexbus:  50 MHz
+         * Flash:    25 MHz
          */
-        setClockDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_4, DIVIDE_BY_4);
-        mcgOutClockConfig(MCG_PLL_EXTERNAL_100MHZ);
+        clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_4, DIVIDE_BY_4);
+        clockConfigMcgOut(MCG_PLL_EXTERNAL_100MHZ);
         flashLed(N_LED_BLUE_PORT, N_LED_BLUE_PIN, numBlinks);
 
 
@@ -65,17 +70,27 @@ int main(void) {
          *
          * For FLL, the clock dividers be set before or after. (but not before 
          * PLL)
+         *
+         * System:   24 MHz
+         * Bus:       3 MHz
+         * Flexbus:   3 MHz
+         * Flash:     3 MHz
          */
-        mcgOutClockConfig(MCG_FLL_INTERNAL_24MHZ);
-        setClockDividers(DIVIDE_BY_1, DIVIDE_BY_8, DIVIDE_BY_8, DIVIDE_BY_8);
+        clockConfigMcgOut(MCG_FLL_INTERNAL_24MHZ);
+        clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_8, DIVIDE_BY_8, DIVIDE_BY_8);
         flashLed(N_LED_GREEN_PORT, N_LED_GREEN_PIN, numBlinks);
         
 
         /* --------  6 MHz (slow internal clock) -----------
          * With the output still at 24MHz, the dividers are quartered. Therefore,
          * the new output will be 6MHz.
+         *
+         * System:    6 MHz
+         * Bus:       1.5 MHz
+         * Flexbus:   1.5 MHz
+         * Flash:     1.5 MHz
          */
-        setClockDividers(DIVIDE_BY_4, DIVIDE_BY_16, DIVIDE_BY_16, DIVIDE_BY_16);
+        clockSetDividers(DIVIDE_BY_4, DIVIDE_BY_16, DIVIDE_BY_16, DIVIDE_BY_16);
         flashLed(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, numBlinks);
     }
 

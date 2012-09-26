@@ -443,8 +443,14 @@ extern void pitInit(int timer, void *isr, uint32_t initCount);
  * table in the device TRM.
  */
 
-#define SYSTEM_CLOCK_HZ  20480000                   /* Default power-on clock */
 #define    BUS_CLOCK_HZ  20480000
+
+#define SYSTEM_CLOCK_HZ_DFLT    20480000            /* Default power-on clock */
+#define SYSTEM_DIVIDER_DFLT     DIVIDE_BY_1
+#define BUS_DIVIDER_DFLT        DIVIDE_BY_1
+#define FLEXBUS_DIVIDER_DFLT    DIVIDE_BY_2
+#define FLASH_DIVIDER_DFLT      DIVIDE_BY_2
+
 
 /*
  * TODO
@@ -456,7 +462,7 @@ extern void pitInit(int timer, void *isr, uint32_t initCount);
  * Jan's clock code would obviously update the hwSystemClock value if it
  * where changed, and/or someone engaged the FLL/PLL, etc.
  *
- * JBM: Added getClockHz(SYSTEM);
+ * JBM: Added clockGetFreq(SYSTEM);
  */
 
 #define MAX_SYSTEM_FREQ  100000000
@@ -485,31 +491,32 @@ typedef enum {
     MAX_DIVIDER,
 } divider_t;
 
+
 typedef enum {
     MCG_PLL_EXTERNAL_100MHZ,
     MCG_FLL_INTERNAL_24MHZ,
     MAX_MCG_CLOCK_OPTIONS,
 } clockConfig_t;
 
-extern void setClockDividers(divider_t systemDiv, divider_t busDiv, 
+extern void clockSetDividers(divider_t systemDiv, divider_t busDiv, 
                                       divider_t flexBusDiv, divider_t flashDiv);
-extern uint32_t getClockHz(clockSource_t cs);
+extern uint32_t clockGetFreq(clockSource_t cs);
 
-extern void mcgOutClockConfig(clockConfig_t cc);
-extern void mcgIrClockConfig();
-extern void mcgFfClockConfig();
-extern void mcgFllClockConfig();
-extern void mcgPllClockConfig();
+extern void clockConfigMcgOut(clockConfig_t cc);
+extern void clockConfigMcgIr();
+extern void clockConfigMcgFf();
+extern void clockConfigMcgFll();
+extern void clockConfigMcgPll();
 
-extern void oscClockConfig();
-extern void osc32kClockConfig();
-extern void oscErClockConfig();
+extern void clockConfigOsc();
+extern void clockConfigOsc32k();
+extern void clockConfigOscEr();
 
-extern void erClockConfig();
+extern void clockConfigEr();
 
-extern void rtcClockConfig();
+extern void clockConfigRtc();
 
-extern void lpoClockConfig();
+extern void clockConfigLpo();
 
 /* LEDS ***********************************************************************/
 

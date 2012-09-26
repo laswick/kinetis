@@ -158,11 +158,11 @@ typedef struct {
 
 static uartDev_t uartDev[NUM_UART_MODULES] = {
     [UART_MODULE_0] = {
-        .clockHz    = SYSTEM_CLOCK_HZ,
+        .clockHz    = SYSTEM_CLOCK_HZ_DFLT,
         .baud       = 9600,
     },
     [UART_MODULE_1] = {
-        .clockHz    = SYSTEM_CLOCK_HZ,
+        .clockHz    = SYSTEM_CLOCK_HZ_DFLT,
         .baud       = 9600,
     },
     [UART_MODULE_2] = {

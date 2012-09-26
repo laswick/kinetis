@@ -6,14 +6,14 @@
 *
 * Low level driver for the Kinetis Clock module.
 *
-* API:  setClockDividers(), getClockHz()
+* API:  clockSetDividers(), clockGetFreq()
 *       
-*       mcgOutClockConfig(), mcgIrClockConfig(), mcgFfClockConfig(), 
-*       mcgFllClockConfig(), mcgPllClockConfig()
+*       clockConfigMcgOut(), clockConfigMcgIr(), clockConfigMcgFf(), 
+*       clockConfigMcgFll(), clockConfigMcgPll()
 *       
-*       oscClockConfig(), osc32kClockConfig(), oscErClockConfig()
+*       clockConfigOsc(), clockConfigOsc32k(), clockConfigOscEr()
 *
-*       erClockConfig(), rtcClockConfig(), lpoClockConfig()
+*       clockConfigEr(), clockConfigRtc(), clockConfigLpo()
 *
 *
 * Copyright (C) 2012 www.laswick.net
@@ -135,92 +135,12 @@ static clockFreq_t clockFreq = {
      * For the fast clock state, the dividers are 1/1/2/2 for the
      * system/bus/flexbus/flash.
      */
-    .mcgClockFreq = 20480000,
-    .systemDiv    = DIVIDE_BY_1,
-    .busDiv       = DIVIDE_BY_1,
-    .flexBusDiv   = DIVIDE_BY_2,
-    .flashDiv     = DIVIDE_BY_2,
+    .mcgClockFreq = SYSTEM_CLOCK_HZ_DFLT,
+    .systemDiv    = SYSTEM_DIVIDER_DFLT,
+    .busDiv       = BUS_DIVIDER_DFLT,
+    .flexBusDiv   = FLEXBUS_DIVIDER_DFLT,
+    .flashDiv     = FLASH_DIVIDER_DFLT,
 };
-
-
-/* Function prototypes for all possible mode transitions */
-static void fei2fee(clockConfig_t cc);
-static void fei2pee(clockConfig_t cc); 
-static void fei2blpi(clockConfig_t cc);
-static void fei2blpe(clockConfig_t cc);
-
-static void fee2fei(clockConfig_t cc);
-static void fee2pee(clockConfig_t cc);
-static void fee2blpi(clockConfig_t cc);
-static void fee2blpe(clockConfig_t cc);
-
-static void pee2fei(clockConfig_t cc);
-static void pee2fee(clockConfig_t cc);
-static void pee2blpi(clockConfig_t cc);
-static void pee2blpe(clockConfig_t cc);
-
-static void blpi2fei(clockConfig_t cc);
-static void blpi2fee(clockConfig_t cc);
-static void blpi2pee(clockConfig_t cc);
-static void blpi2blpe(clockConfig_t cc);
-
-static void blpe2fei(clockConfig_t cc);
-static void blpe2fee(clockConfig_t cc);
-static void blpe2pee(clockConfig_t cc);
-static void blpe2blpi(clockConfig_t cc);
-
-
-
-/*******************************************************************************
-*
-* mcgOutClockConfig
-*
-* This configures the clock frequency for the SYSTEM/CORE, BUS, FLASH, and
-* FLEXBUS. 
-* 
-* State Machine
-*
-* All modes can move to any other mode on the same line. 
-*
-*  RESET 
-*      \___ FEI ____ FBI ____ BLPI  (Internal source branch)
-*                |    
-*                |  (External source branch)
-*                |
-*                |__ FEE
-*                |    
-*                |__ FBE ____ BLPE
-*                         |
-*                         |__ PBE ____ PEE
-*
-*        ____ STOP ____ (Entered when MCU enters stop mode, and returns to
-*                        previous active mode when exits stop mode )
-*
-*******************************************************************************/
-void mcgOutClockConfig(clockConfig_t clockConfig)
-{
-
-    /*
-     * This is the jump table. Depending on the current state, and the desired
-     * state, the appropriate function handler is called.
-     */
-    static void (* const jumpTable[5][5])(clockConfig_t cc) = { 
-        {     NULL,  fei2fee,  fei2pee,  fei2blpi,  fei2blpe, },
-        {  fee2fei,     NULL,  fee2pee,  fee2blpi,  fee2blpe, },
-        {  pee2fei,  pee2fee,     NULL,  pee2blpi,  pee2blpe, },
-        { blpi2fei, blpi2fee, blpi2pee,      NULL, blpi2blpe, },
-        { blpe2fei, blpe2fee, blpe2pee, blpe2blpi,      NULL, },
-    };
-
-    assert(clockConfig < MAX_MCG_CLOCK_OPTIONS);
-
-    mcgState.nextMode = clockConfigParam[clockConfig].clockMode;
-
-    jumpTable[mcgState.currentMode][mcgState.nextMode](clockConfig);
-
-    /* Store the new clock frequency for getClockHz() */
-    clockFreq.mcgClockFreq = clockConfigParam[clockConfig].clockHz;
-}
 
 
 static void fei2fee(clockConfig_t cc)
@@ -434,7 +354,7 @@ static void blpe2blpi(clockConfig_t cc)
 * system, bus, flexbus, and flash clock frequencies. 
 *
 *******************************************************************************/
-void setClockDividers(divider_t systemDiv, divider_t busDiv, 
+void clockSetDividers(divider_t systemDiv, divider_t busDiv, 
                                        divider_t flexBusDiv, divider_t flashDiv)
 {
     int mcgClock = clockFreq.mcgClockFreq;
@@ -472,7 +392,7 @@ void setClockDividers(divider_t systemDiv, divider_t busDiv,
 * Grab the clock frequency for a particular clock source in Hz.
 *
 *******************************************************************************/
-uint32_t getClockHz(clockSource_t cs)
+uint32_t clockGetFreq(clockSource_t cs)
 {
     uint32_t clock;
 
@@ -497,9 +417,60 @@ uint32_t getClockHz(clockSource_t cs)
 }
 
 /*******************************************************************************
+*
+* mcgOutClockConfig
+*
+* This configures the clock frequency for the SYSTEM/CORE, BUS, FLASH, and
+* FLEXBUS. 
+* 
+* State Machine
+*
+* All modes can move to any other mode on the same line. 
+*
+*  RESET 
+*      \___ FEI ____ FBI ____ BLPI  (Internal source branch)
+*                |    
+*                |  (External source branch)
+*                |
+*                |__ FEE
+*                |    
+*                |__ FBE ____ BLPE
+*                         |
+*                         |__ PBE ____ PEE
+*
+*        ____ STOP ____ (Entered when MCU enters stop mode, and returns to
+*                        previous active mode when exits stop mode )
+*
+*******************************************************************************/
+void clockConfigMcgOut(clockConfig_t clockConfig)
+{
+
+    /*
+     * This is the jump table. Depending on the current state, and the desired
+     * state, the appropriate function handler is called.
+     */
+    static void (* const jumpTable[5][5])(clockConfig_t cc) = { 
+        {     NULL,  fei2fee,  fei2pee,  fei2blpi,  fei2blpe, },
+        {  fee2fei,     NULL,  fee2pee,  fee2blpi,  fee2blpe, },
+        {  pee2fei,  pee2fee,     NULL,  pee2blpi,  pee2blpe, },
+        { blpi2fei, blpi2fee, blpi2pee,      NULL, blpi2blpe, },
+        { blpe2fei, blpe2fee, blpe2pee, blpe2blpi,      NULL, },
+    };
+
+    assert(clockConfig < MAX_MCG_CLOCK_OPTIONS);
+
+    mcgState.nextMode = clockConfigParam[clockConfig].clockMode;
+
+    jumpTable[mcgState.currentMode][mcgState.nextMode](clockConfig);
+
+    /* Store the new clock frequency for getClockHz() */
+    clockFreq.mcgClockFreq = clockConfigParam[clockConfig].clockHz;
+}
+
+/*******************************************************************************
 * mcgIrClockConfig
 *******************************************************************************/
-void mcgIrClockConfig() 
+void clockConfigMcgIr() 
 {
                                                             /* Not configured */
 }
@@ -507,7 +478,7 @@ void mcgIrClockConfig()
 /*******************************************************************************
 * mcgFfClockConfig
 *******************************************************************************/
-void mcgFfClockConfig() 
+void clockConfigMcgFf() 
 {
                                                             /* Not configured */
 }
@@ -515,7 +486,7 @@ void mcgFfClockConfig()
 /*******************************************************************************
 * mcgFllClockConfig
 *******************************************************************************/
-void mcgFllClockConfig() 
+void clockConfigMcgFll() 
 {
                                                             /* Not configured */
 }
@@ -523,7 +494,7 @@ void mcgFllClockConfig()
 /*******************************************************************************
 * mcgPllClockConfig
 *******************************************************************************/
-void mcgPllClockConfig() 
+void clockConfigMcgPll() 
 {
                                                             /* Not configured */
 }
@@ -531,7 +502,7 @@ void mcgPllClockConfig()
 /*******************************************************************************
 * oscClockConfig
 *******************************************************************************/
-void oscClockConfig() 
+void clockConfigOsc() 
 {
                                                             /* Not configured */
 }
@@ -539,7 +510,7 @@ void oscClockConfig()
 /*******************************************************************************
 * osc32kClockConfig
 *******************************************************************************/
-void osc32kClockConfig() 
+void clockConfigOsc32k() 
 {
                                                             /* Not configured */
 }
@@ -547,7 +518,7 @@ void osc32kClockConfig()
 /*******************************************************************************
 * erClockConfig
 *******************************************************************************/
-void erClockConfig() 
+void clockConfigEr() 
 {
                                                             /* Not configured */
 }
@@ -555,7 +526,7 @@ void erClockConfig()
 /*******************************************************************************
 * rtcClockConfig
 *******************************************************************************/
-void rtcClockConfig() 
+void clockConfigRtc() 
 {
                                                             /* Not configured */
 }
@@ -563,7 +534,7 @@ void rtcClockConfig()
 /*******************************************************************************
 * lpoClockConfig
 *******************************************************************************/
-void lpoClockConfig() 
+void clockConfigLpo() 
 {
                                                             /* Not configured */
 }
