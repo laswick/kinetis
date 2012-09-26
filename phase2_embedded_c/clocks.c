@@ -348,7 +348,7 @@ static void blpe2blpi(clockConfig_t cc)
 
 /*******************************************************************************
 *
-* setClockDividers
+* clockSetDividers
 *
 * The clock dividers divide the MCGOUTCLK frequency to produce the resultant
 * system, bus, flexbus, and flash clock frequencies. 
@@ -387,7 +387,8 @@ void clockSetDividers(divider_t systemDiv, divider_t busDiv,
 }
 
 /*******************************************************************************
-* getClockHz()
+*
+* clockGetFreq
 *
 * Grab the clock frequency for a particular clock source in Hz.
 *
@@ -418,7 +419,7 @@ uint32_t clockGetFreq(clockSource_t cs)
 
 /*******************************************************************************
 *
-* mcgOutClockConfig
+* clockConfigMcgOut
 *
 * This configures the clock frequency for the SYSTEM/CORE, BUS, FLASH, and
 * FLEXBUS. 
@@ -468,7 +469,7 @@ void clockConfigMcgOut(clockConfig_t clockConfig)
 }
 
 /*******************************************************************************
-* mcgIrClockConfig
+* clockConfigMcgIr
 *******************************************************************************/
 void clockConfigMcgIr() 
 {
@@ -476,7 +477,7 @@ void clockConfigMcgIr()
 }
 
 /*******************************************************************************
-* mcgFfClockConfig
+* clockConfigMcgFf
 *******************************************************************************/
 void clockConfigMcgFf() 
 {
@@ -484,7 +485,7 @@ void clockConfigMcgFf()
 }
 
 /*******************************************************************************
-* mcgFllClockConfig
+* clockConfigMcgFll
 *******************************************************************************/
 void clockConfigMcgFll() 
 {
@@ -492,7 +493,7 @@ void clockConfigMcgFll()
 }
 
 /*******************************************************************************
-* mcgPllClockConfig
+* clockConfigMcgPll
 *******************************************************************************/
 void clockConfigMcgPll() 
 {
@@ -500,7 +501,7 @@ void clockConfigMcgPll()
 }
 
 /*******************************************************************************
-* oscClockConfig
+* clockConfigOsc
 *******************************************************************************/
 void clockConfigOsc() 
 {
@@ -508,7 +509,7 @@ void clockConfigOsc()
 }
 
 /*******************************************************************************
-* osc32kClockConfig
+* clockConfigOsc32k
 *******************************************************************************/
 void clockConfigOsc32k() 
 {
@@ -516,7 +517,7 @@ void clockConfigOsc32k()
 }
 
 /*******************************************************************************
-* erClockConfig
+* clockConfigEr
 *******************************************************************************/
 void clockConfigEr() 
 {
@@ -524,7 +525,7 @@ void clockConfigEr()
 }
 
 /*******************************************************************************
-* rtcClockConfig
+* clockConfigRtc
 *******************************************************************************/
 void clockConfigRtc() 
 {
@@ -532,7 +533,7 @@ void clockConfigRtc()
 }
 
 /*******************************************************************************
-* lpoClockConfig
+* clockConfigLpo
 *******************************************************************************/
 void clockConfigLpo() 
 {
