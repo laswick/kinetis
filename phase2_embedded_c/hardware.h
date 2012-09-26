@@ -41,9 +41,7 @@ extern int ioctl(int fd, int cmd, int flags);
 
 enum {                                               /* Major Device Numbers */
     DEV_MAJ_UART,
-    DEV_MAJ_SPI,
-    DEV_MAJ_TSI,
-    DEV_MAJ_CRC,
+    DEV_MAJ_SPI
 };
 
 typedef struct devoptab_s {                       /* Device Operations Table */
@@ -195,6 +193,11 @@ typedef struct spiWriteRead_s {
 #define DEVOPTAB_SPI2_STR "spi2"
 
 int  spi_install (void);
+int  spi_open_r  (void *reent, devoptab_t *dot,  int mode,  int flags);
+int  spi_ioctl   (             devoptab_t *dot,  int cmd,   int flags);
+int  spi_close_r (void *reent, devoptab_t *dot);
+long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len);
+long spi_read_r  (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* FLASH **********************************************************************/
 
@@ -229,6 +232,11 @@ extern uint32_t tsiRead(const tsiConfig_t *cfg);
 extern uint32_t tsiReadRaw(uint32_t pin);
 
 extern int  tsi_install(void);
+extern int  tsi_open_r (void *reent, devoptab_t *dot, int mode, int flags);
+extern int  tsi_ioctl  (             devoptab_t *dot, int cmd,  int flags);
+extern int  tsi_close_r(void *reent, devoptab_t *dot);
+extern long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
+extern long tsi_read_r (void *reent, devoptab_t *dot,       void *buf, int len);
 
 /* IO_IOCTL_ commands */
 enum {
@@ -296,6 +304,11 @@ typedef enum {
 #define DEVOPTAB_CRC_STR    "crc"
 
 int  crc_install(void);
+int  crc_open_r (void *reent, devoptab_t *dot, int mode, int flags);
+int  crc_ioctl  (             devoptab_t *dot, int cmd,  int flags);
+int  crc_close_r(void *reent, devoptab_t *dot);
+long crc_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
+long crc_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* MPU ************************************************************************/
 
@@ -361,6 +374,11 @@ extern bool32_t mpuCheckFaults(void);
 #define DEVOPTAB_UART5_STR "uart5"
 
 int  uart_install(void);
+int  uart_open_r (void *reent, devoptab_t *dot, int mode, int flags);
+int  uart_ioctl  (             devoptab_t *dot, int cmd,  int flags);
+int  uart_close_r(void *reent, devoptab_t *dot);
+long uart_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
+long uart_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
                                                         /* IO_IOCTL_ commands */
 enum {
@@ -455,7 +473,61 @@ extern void pitInit(int timer, void *isr, uint32_t initCount);
  *
  * Jan's clock code would obviously update the hwSystemClock value if it
  * where changed, and/or someone engaged the FLL/PLL, etc.
+ *
+ * JBM: Added getClockHz(SYSTEM);
  */
+
+#define MAX_SYSTEM_FREQ  100000000
+#define MAX_BUS_FREQ      50000000
+#define MAX_FLEXBUS_FREQ  MAX_BUS_FREQ
+#define MAX_FLASH_FREQ    25000000
+
+        /* Dividers are used to configure the system/bus/flexbus/flash clocks */
+typedef enum {
+    DIVIDE_BY_1 = 0,
+    DIVIDE_BY_2,
+    DIVIDE_BY_3,
+    DIVIDE_BY_4,
+    DIVIDE_BY_5,
+    DIVIDE_BY_6,
+    DIVIDE_BY_7,
+    DIVIDE_BY_8,
+    DIVIDE_BY_9,
+    DIVIDE_BY_10,
+    DIVIDE_BY_11,
+    DIVIDE_BY_12,
+    DIVIDE_BY_13,
+    DIVIDE_BY_14,
+    DIVIDE_BY_15,
+    DIVIDE_BY_16,
+    MAX_DIVIDER,
+} divider_t;
+
+typedef enum {
+    MCG_PLL_EXTERNAL_100MHZ,
+    MCG_FLL_INTERNAL_24MHZ,
+    MAX_MCG_CLOCK_OPTIONS,
+} clockConfig_t;
+
+extern void setClockDividers(divider_t systemDiv, divider_t busDiv, 
+                                      divider_t flexBusDiv, divider_t flashDiv);
+extern uint32_t getClockHz(clockSource_t cs);
+
+extern void mcgOutClockConfig(clockConfig_t cc);
+extern void mcgIrClockConfig();
+extern void mcgFfClockConfig();
+extern void mcgFllClockConfig();
+extern void mcgPllClockConfig();
+
+extern void oscClockConfig();
+extern void osc32kClockConfig();
+extern void oscErClockConfig();
+
+extern void erClockConfig();
+
+extern void rtcClockConfig();
+
+extern void lpoClockConfig();
 
 /* LEDS ***********************************************************************/
 
