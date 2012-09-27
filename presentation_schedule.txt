@@ -37,14 +37,14 @@ PHASE 2: Embedded C Programming
     Timers                              Sept.27 : Daryl
     DAC                                 Sept.27 : Daryl
 
-    Retargeting                         Oct.4 : Rob
-    ADC                                 Oct.4 : James
-    Watchdog                            Oct.4 : Andrew
+    Executing out of RAM                Oct.4 : Paul
+    Boot Loader                         Oct.4 : Paul
+    MPU                                 Oct.4 : Paul
+    FLASH                               Oct.4 : Paul
 
-    Executing out of RAM                Oct.11 : Paul
-    Boot Loader                         Oct.11 : Paul
-    MPU                                 Oct.11 : Paul
-    FLASH                               Oct.11 : Paul
+    Retargeting                         Oct.11 : Rob
+    ADC                                 Oct.11 : James
+    Watchdog                            Oct.11 : Andrew
 
     SPI                                 Oct.18 : Shaun
     CRC                                 Oct.18 : Shaun
