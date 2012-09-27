@@ -35,28 +35,33 @@ extern void assert_(const char *file, const int line);
 
 #define __RAMCODE__ __attribute__ ((long_call, section(".ramcode")))
 
-/* POSIX Interface ************************************************************/
+/* POSIX Interface ***********************************************************/
 
 extern int ioctl(int fd, int cmd, int flags);
 
-enum {
+enum {                                               /* Major Device Numbers */
     DEV_MAJ_UART,
-    DEV_MAJ_SPI
+    DEV_MAJ_SPI,
+    DEV_MAJ_TSI,
+    DEV_MAJ_CRC,
 };
 
-typedef struct devoptab_s {                        /* Device Operations Table */
+typedef struct devoptab_s {                       /* Device Operations Table */
     const char *name;
     uint32_t    maj;
     uint32_t    min;
     void       *priv;
 } devoptab_t;
 
-typedef struct devlist_s {                              /* Device Driver List */
+extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
+                                                                   void *priv);
+
+typedef struct devlist_s {                             /* Device Driver List */
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags);
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags);
     int  (*close_r)(void *reent, struct devoptab_s *dot);
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
-                                                                       int len);
+                                                                      int len);
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len);
 } devlist_t;
 
@@ -66,12 +71,9 @@ extern int deviceInstall(
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags),
     int  (*close_r)(void *reent, struct devoptab_s *dot),
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
-                                                                       int len),
+                                                                      int len),
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len)
 );
-
-extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
-                                                                    void *priv);
 
 /* INTERRUPTS *****************************************************************/
 
@@ -193,11 +195,6 @@ typedef struct spiWriteRead_s {
 #define DEVOPTAB_SPI2_STR "spi2"
 
 int  spi_install (void);
-int  spi_open_r  (void *reent, devoptab_t *dot,  int mode,  int flags);
-int  spi_ioctl   (             devoptab_t *dot,  int cmd,   int flags);
-int  spi_close_r (void *reent, devoptab_t *dot);
-long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len);
-long spi_read_r  (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* FLASH **********************************************************************/
 
@@ -232,11 +229,6 @@ extern uint32_t tsiRead(const tsiConfig_t *cfg);
 extern uint32_t tsiReadRaw(uint32_t pin);
 
 extern int  tsi_install(void);
-extern int  tsi_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-extern int  tsi_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-extern int  tsi_close_r(void *reent, devoptab_t *dot);
-extern long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-extern long tsi_read_r (void *reent, devoptab_t *dot,       void *buf, int len);
 
 /* IO_IOCTL_ commands */
 enum {
@@ -304,11 +296,6 @@ typedef enum {
 #define DEVOPTAB_CRC_STR    "crc"
 
 int  crc_install(void);
-int  crc_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-int  crc_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-int  crc_close_r(void *reent, devoptab_t *dot);
-long crc_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-long crc_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* MPU ************************************************************************/
 
@@ -374,11 +361,6 @@ extern bool32_t mpuCheckFaults(void);
 #define DEVOPTAB_UART5_STR "uart5"
 
 int  uart_install(void);
-int  uart_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-int  uart_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-int  uart_close_r(void *reent, devoptab_t *dot);
-long uart_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-long uart_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
                                                         /* IO_IOCTL_ commands */
 enum {
@@ -461,19 +443,66 @@ extern void pitInit(int timer, void *isr, uint32_t initCount);
  * table in the device TRM.
  */
 
-#define SYSTEM_CLOCK_HZ  20480000                   /* Default power-on clock */
-#define    BUS_CLOCK_HZ  20480000
+#define BUS_CLOCK_HZ            20480000
 
-/*
- * TODO
- *
- * We should define a hwGetSystemClock(), and use the result everywhere that
- * needs it, rather then relying on a fixed define.  The default fixed
- * define should only be the default power on clock.
- *
- * Jan's clock code would obviously update the hwSystemClock value if it
- * where changed, and/or someone engaged the FLL/PLL, etc.
- */
+#define SYSTEM_CLOCK_HZ_DFLT    BUS_CLOCK_HZ        /* Default power-on clock */
+#define SYSTEM_DIVIDER_DFLT     DIVIDE_BY_1
+#define BUS_DIVIDER_DFLT        DIVIDE_BY_1
+#define FLEXBUS_DIVIDER_DFLT    DIVIDE_BY_2
+#define FLASH_DIVIDER_DFLT      DIVIDE_BY_2
+
+#define MAX_SYSTEM_FREQ         100000000
+#define MAX_BUS_FREQ            50000000
+#define MAX_FLEXBUS_FREQ        MAX_BUS_FREQ
+#define MAX_FLASH_FREQ          25000000
+
+        /* Dividers are used to configure the system/bus/flexbus/flash clocks */
+typedef enum {
+    DIVIDE_BY_1 = 0,
+    DIVIDE_BY_2,
+    DIVIDE_BY_3,
+    DIVIDE_BY_4,
+    DIVIDE_BY_5,
+    DIVIDE_BY_6,
+    DIVIDE_BY_7,
+    DIVIDE_BY_8,
+    DIVIDE_BY_9,
+    DIVIDE_BY_10,
+    DIVIDE_BY_11,
+    DIVIDE_BY_12,
+    DIVIDE_BY_13,
+    DIVIDE_BY_14,
+    DIVIDE_BY_15,
+    DIVIDE_BY_16,
+    MAX_DIVIDER,
+} divider_t;
+
+
+typedef enum {
+    MCG_PLL_EXTERNAL_100MHZ,
+    MCG_FLL_INTERNAL_24MHZ,
+    MAX_MCG_CLOCK_OPTIONS,
+} clockConfig_t;
+
+extern void clockSetDividers(divider_t systemDiv, divider_t busDiv,
+                                      divider_t flexBusDiv, divider_t flashDiv);
+extern uint32_t clockGetFreq(clockSource_t cs);
+
+extern void clockConfigMcgOut(clockConfig_t cc);
+extern void clockConfigMcgIr();
+extern void clockConfigMcgFf();
+extern void clockConfigMcgFll();
+extern void clockConfigMcgPll();
+
+extern void clockConfigOsc();
+extern void clockConfigOsc32k();
+extern void clockConfigOscEr();
+
+extern void clockConfigEr();
+
+extern void clockConfigRtc();
+
+extern void clockConfigLpo();
 
 /* LEDS ***********************************************************************/
 

@@ -118,28 +118,6 @@ spi_t spiList[NUM_SPI_MODULES] = {
 };
 
 /*******************************************************************************/
-int spi_install(void)
-/*******************************************************************************/
-{
-    int ret = TRUE;
-    if( !deviceInstall(DEV_MAJ_SPI,spi_open_r,  spi_ioctl, spi_close_r,
-                                                       spi_write_r, spi_read_r)){
-        ret = FALSE;
-    }
-    if( !deviceRegister("spi0", DEV_MAJ_SPI, SPI_MODULE_0,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("spi1", DEV_MAJ_SPI, SPI_MODULE_1,  NULL) ) {
-        ret =  FALSE;
-    }
-    if( !deviceRegister("spi2", DEV_MAJ_SPI, SPI_MODULE_2,  NULL) ) {
-        ret =  FALSE;
-    }
-
-    return ret;
-}
-
-/*******************************************************************************/
 static int spiOpen(devoptab_t *dot)
 /*******************************************************************************/
 {
@@ -286,7 +264,7 @@ static unsigned spiWriteRead(spi_t *spi, spiWriteRead_t *wr)
  *      Enable the SIM SCGC for the device
  *      Initialize the device with a default configuration
  ********************************************************************************/
-int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
+static int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 {
 
     if (!dot || !dot->name) {
@@ -324,7 +302,7 @@ int spi_open_r (void *reent, devoptab_t *dot, int mode, int flags )
  *              Set device registers to specific values
  *              Configure I/O pins
  *******************************************************************************/
-int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
+static int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
 /* TODO: return errors if flags or cmd is bad */
 {
     spi_t *spi;
@@ -458,7 +436,7 @@ int spi_ioctl(devoptab_t *dot, int cmd,  int flags)
  *      Disable the SIM SCGC for the device
  *      Free the device 'state' structure, unhook it to the devoptab private ptr
  *******************************************************************************/
-int spi_close_r (void *reent, devoptab_t *dot )
+static int spi_close_r (void *reent, devoptab_t *dot )
 {
     spi_t *spi = dot->priv;
 
@@ -482,7 +460,7 @@ int spi_close_r (void *reent, devoptab_t *dot )
  *      Write data to the device.
  *      Return the number of bytes written
  *******************************************************************************/
-long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
+static long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
 {
     /* You could just put your write function here, but I want switch between
      * polled & interupt functions here at a later point.*/
@@ -496,9 +474,32 @@ long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
  *      Read data from the device
  *      Return the number of bytes read
  *******************************************************************************/
-long spi_read_r (void *reent, devoptab_t *dot, void *buf, int len )
+static long spi_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 {
     /* You could just put your read function here, but I want switch between
      * polled & interupt functions here at a later point.*/
     return spiRead(dot, buf, len);
 }
+
+/*******************************************************************************/
+int spi_install(void)
+/*******************************************************************************/
+{
+    int ret = TRUE;
+    if( !deviceInstall(DEV_MAJ_SPI,spi_open_r,  spi_ioctl, spi_close_r,
+                                                       spi_write_r, spi_read_r)){
+        ret = FALSE;
+    }
+    if( !deviceRegister("spi0", DEV_MAJ_SPI, SPI_MODULE_0,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("spi1", DEV_MAJ_SPI, SPI_MODULE_1,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("spi2", DEV_MAJ_SPI, SPI_MODULE_2,  NULL) ) {
+        ret =  FALSE;
+    }
+
+    return ret;
+}
+
