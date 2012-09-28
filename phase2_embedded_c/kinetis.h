@@ -283,6 +283,7 @@ enum {
 #define SIM_SCGC3_PTR     (volatile uint32_t *) SIM_SCGC3_ADDR
 #define SIM_SCGC3       (*(volatile uint32_t *) SIM_SCGC3_ADDR)
 #define SIM_SCGC3_SPI2_ENABLE  BIT_12
+#define SIM_SCGC3_ADC1_ENABLE  BIT_27
 
 #define SIM_SCGC4_ADDR  0x40048034
 #define SIM_SCGC4_PTR     (volatile uint32_t *) SIM_SCGC4_ADDR
@@ -318,6 +319,7 @@ enum {
 #define SIM_SCGC6_SPI1_ENABLE  BIT_13
 #define SIM_SCGC6_CRC_ENABLE   BIT_18
 #define SIM_SCGC6_PIT_ENABLE   BIT_23
+#define SIM_SCGC6_ADC0_ENABLE  BIT_27
 #define SIM_SCGC6_FTFL_ENABLE  BIT_0
 #define SIM_SCGC7_ADDR  0x40048040
 #define SIM_SCGC7_PTR (volatile uint32_t *) SIM_SCGC7_ADDR
@@ -464,7 +466,7 @@ typedef struct {
 #define ADC0_BASE_ADDR 0x4003b000
 #define ADC0_REG_PTR   (volatile adc_t *) ADC0_BASE_ADDR
 #define ADC1_BASE_ADDR 0x400bb000
-#define ADC1_REG_PTR   (volatile adc_t *) ADC0_BASE_ADDR
+#define ADC1_REG_PTR   (volatile adc_t *) ADC1_BASE_ADDR
 
 
 #define ADC0 UART0_BASE_ADDR
@@ -501,6 +503,10 @@ typedef struct {
     uint32_t clm0;    /* Minus-side general cal. value  , R/W, 0x00000020 */
 } adc_t; /* Memmapped registers */
 
+enum {
+    ADC_REGISTERS_A,
+    ADC_REGISTERS_B
+};
 
 /* SC1n */
 typedef enum {
@@ -1576,7 +1582,7 @@ enum {
 * MCG     = Multipurpose Clock Generator
 * OSC     = Oscillator
 * RTC     = Real Time Clock
-* 
+*
 *******************************************************************************/
 
 typedef enum {

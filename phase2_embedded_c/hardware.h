@@ -44,6 +44,7 @@ enum {                                               /* Major Device Numbers */
     DEV_MAJ_SPI,
     DEV_MAJ_TSI,
     DEV_MAJ_CRC,
+    DEV_MAJ_ADC,
 };
 
 typedef struct devoptab_s {                       /* Device Operations Table */
@@ -416,6 +417,178 @@ typedef struct {
 extern volatile pitCtrl_t * const pitCtrl;
 
 extern void pitInit(int timer, void *isr, uint32_t initCount);
+
+/* ADC ***********************************************************************/
+
+#define MAX_ADCS     2
+
+/* TODO is there a port enable required for ADC? */
+#define ADC0_PORT    PORTA
+#define ADC0_PORT_ENABLE SIM_SCGC5_PORTA_ENABLE
+
+#define ADC1_PORT    PORTA
+#define ADC1_PORT_ENABLE SIM_SCGC5_PORTA_ENABLE
+
+
+#if defined(FREESCALE_K60N512_TOWER_HW)
+#define ADC_POT_ADC_INPUT ADC_SC1_ADCH_CH20
+#endif
+
+#define DEVOPTAB_ADC0_STR "adc0"
+#define DEVOPTAB_ADC1_STR "adc1"
+int  adc_install(void);
+#if 0
+int  adc_open_r (void *reent, devoptab_t *dot, int mode, int flags);
+int  adc_ioctl  (             devoptab_t *dot, int cmd,  int flags);
+int  adc_close_r(void *reent, devoptab_t *dot);
+long adc_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
+#endif
+                                                        /* IO_IOCTL_ commands */
+enum {
+    IO_IOCTL_ADC_CALIBRATE,
+    IO_IOCTL_ADC_OFFSET_SET,
+    IO_IOCTL_ADC_PGASET,
+    IO_IOCTL_ADC_CLOCK_SELECT,
+    IO_IOCTL_ADC_RESOLUTION_SELECT,
+    IO_IOCTL_ADC_VREF_SELECT,
+    IO_IOCTL_ADC_TRIGGER_SELECT,
+    IO_IOCTL_ADC_CHANNEL_SELECT,
+    IO_IOCTL_ADC_CONVERSION_CONTINUOUS,
+    IO_IOCTL_ADC_CONVERSION_TIME_SELECT,
+    IO_IOCTL_ADC_AVERAGE_SELECT,
+    IO_IOCTL_ADC_COMPARE_SELECT,
+    IO_IOCTL_ADC_CALL_BACK_SET,     /* Register a call back function. */
+    IO_IOCTL_ADC_SAMPLE_SIZE_SET,   /* Specify number of samples.*/
+    IO_IOCTL_ADC_FLUSH_FIFO,       /* Flush driver's FIFO */
+};
+
+enum {
+    IO_IOCTL_ADC_RESOLUTION_FLAGS_8BIT,
+    IO_IOCTL_ADC_RESOLUTION_FLAGS_12BIT,
+    IO_IOCTL_ADC_RESOLUTION_FLAGS_10BIT,
+    IO_IOCTL_ADC_RESOLUTION_FLAGS_16BIT,
+};
+
+#define IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_B (1 << 31)
+#define IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A (0 << 31)
+#define IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK  0x1F
+/* TODO Wrap in hardware define - this is for the 144-pin pacakge */
+enum {
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP0        = 0,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP1        = 1,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_PGA0_DP1        = 2,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP3        = 3,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED1       = 4,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED2       = 5,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED3       = 6,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED4       = 7,
+
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE4B       = 4,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE5B       = 5,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE6B       = 6,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE7B       = 7,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE8        = 8,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE9        = 9,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE10       = 10,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE11       = 11,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE12       = 12,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE13       = 13,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE14       = 14,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE15       = 15,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE16       = 16,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE17       = 17,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE18       = 18,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DM0        = 19,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DM1        = 20,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED5       = 21,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED6       = 22,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_12_BIT_DAC0     = 23,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED7       = 24,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED8       = 25,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_TEMP_SENSOR     = 26,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_BANDGAP         = 27,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED9       = 28,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_VREFH           = 29,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_VREFL           = 30,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_MODULE_DISABLED = 31,
+};
+
+enum {
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DP0        = 0,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DP1        = 1,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_PGA1_DP1        = 2,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DP3        = 3,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE4A       = 4,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE5A       = 5,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE6A       = 6,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE7A       = 7,
+
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE4B       = 4,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE5B       = 5,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE6B       = 6,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE7B       = 7,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE8        = 8,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE9        = 9,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE10       = 10,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE11       = 11,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE12       = 12,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE13       = 13,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE14       = 14,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE15       = 15,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE16       = 16,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE17       = 17,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_VREF       = 18,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DM0        = 19,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DM1        = 20,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED1       = 21,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED2       = 22,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_12_BIT_DAC0     = 23,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED3       = 24,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED4       = 25,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_TEMP_SENSOR     = 26,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_BANDGAP         = 27,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED5       = 28,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_VREFH           = 29,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_VREFL           = 30,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_MODULE_DISABLED = 31,
+};
+enum {
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_SHORT_SAMPLE   = -1,
+
+    /* These map 1:1 with the ADLSTS reg value.  If you change them:
+    * 1. Shame on you.
+    * 2. You will need to set up a switch LUT in adc.c
+    */
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_20 =  0,
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_12,
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_6,
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_2,
+};
+
+enum {
+    /* These map 1:1 with the reg value.  If you change them:
+    * 1. Shame on you.
+    * 2. You will need to set up a switch LUT in adc.c
+    */
+
+    IO_IOCTL_ADC_FLAGS_AVGS_4,
+    IO_IOCTL_ADC_FLAGS_AVGS_8,
+    IO_IOCTL_ADC_FLAGS_AVGS_16,
+    IO_IOCTL_ADC_FLAGS_AVGS_32,
+};
+
+enum {
+    /* These map 1:1 with the reg value. */
+    IO_IOCTL_ADC_RES_FLAGS_8_BIT,  /* 2's complitment 9-bit output in DIFF */
+    IO_IOCTL_ADC_RES_FLAGS_12_BIT, /* 2's complitment 13-bit output in DIFF */
+    IO_IOCTL_ADC_RES_FLAGS_10_BIT, /* 2's complitment 11-bit output in DIFF */
+    IO_IOCTL_ADC_RES_FLAGS_16_BIT, /* 2's complitment 16-bit output in DIFF */
+};
+
+enum {
+     IO_IOCTL_ADC_TRIGGER_SELECT_SW,
+     IO_IOCTL_ADC_TRIGGER_SELECT_HW,
+};
 
 /*******************************************************************************
 *

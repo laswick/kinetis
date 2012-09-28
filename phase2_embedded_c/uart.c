@@ -29,6 +29,11 @@
 #include "globalDefs.h"
 
 
+/* TODO refactor into a dev dependent portion (uartDev_t) and a
+ * multiple instance (uart_t) structure.  There is no need
+ * to malloc and memcpy stuff that will be constant to all
+ * instances of uart accessors.
+ */
 
 typedef struct {
     int32_t              minor;
@@ -359,27 +364,27 @@ static int uartOpen(devoptab_t *dot)
     uart->reg->pfifo |= UART_PFIFO_RXFE;
 
     switch (uart->minor) {
-        case UART_MODULE_0:
-            isrPtr = isrUart0;
-            break;
-        case UART_MODULE_1:
-            isrPtr = isrUart1;
-            break;
-        case UART_MODULE_2:
-            isrPtr = isrUart2;
-            break;
-        case UART_MODULE_3:
-            isrPtr = isrUart3;
-            break;
-        case UART_MODULE_4:
-            isrPtr = isrUart4;
-            break;
-        case UART_MODULE_5:
-            isrPtr = isrUart5;
-            break;
-        default:
-            assert(0);
-            return FALSE;
+    case UART_MODULE_0:
+        isrPtr = isrUart0;
+        break;
+    case UART_MODULE_1:
+        isrPtr = isrUart1;
+        break;
+    case UART_MODULE_2:
+        isrPtr = isrUart2;
+        break;
+    case UART_MODULE_3:
+        isrPtr = isrUart3;
+        break;
+    case UART_MODULE_4:
+        isrPtr = isrUart4;
+        break;
+    case UART_MODULE_5:
+        isrPtr = isrUart5;
+        break;
+    default:
+        assert(0);
+        return FALSE;
     }
 
     hwInstallISRHandler(ISR_UART0_STATUS_SOURCES + 2 * uart->minor,
@@ -439,8 +444,6 @@ int32_t uartRead(devoptab_t *dot, const void *data, unsigned len)
     if (!dot || !dot->priv) return FALSE;
     else uart = (uart_t *) dot->priv;
 
-
-return 0;
     for (i = 0; i < len; i++) {
         int readyRetry = 1000;
 
@@ -590,7 +593,8 @@ static int uart_close_r (void *reent, devoptab_t *dot )
  *      Write data to the device.
  *      Return the number of bytes written
  *******************************************************************************/
-static long uart_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
+static long uart_write_r (void *reent, devoptab_t *dot,
+                                       const void *buf, int len)
 {
     /* You could just put your write function here, but I want switch between
      * polled & interupt functions here at a later point.*/
