@@ -221,6 +221,97 @@ static int calAdc (adcDev_t *adc)
 
     return retVal;
 }
+
+ /******************************************************************************
+ *  calClockCfg
+ *
+ *  Attempts to use the provided source and setups of appropriate dividers
+ *  to get f_ADCK to be 2-12 MHz.  If the bus clock is too hight to hight this
+ *  range, this function will automatically change to the bus/2 source.
+ *
+ * NOTE: The analog clock (f_ADCK) must be between  1-18MHz
+ * unless in the 16bit mode, when it must be between 2-12MHz.
+ * (See K60P144M100SF.pdf pg 42).
+ *
+ ******************************************************************************/
+
+static void adcClockCfg(adcDev_t *adc, int inputClock)
+{
+    uint32_t value;
+    int divider = ADC_CFG1_ADIV_1;
+    int clockHz;
+
+    switch (inputClock) {
+    case ADC_CFG1_ADICLK_BUS:
+        clockHz = clockGetFreq(BUS);
+        if (clockHz > 12 * 8 * 1000000) {
+            /* Need to use bus/2 */
+            inputClock = ADC_CFG1_ADICLK_BUS_DIV_2;
+            clockHz /= 2;
+        }
+        break;
+    case ADC_CFG1_ADICLK_BUS_DIV_2:
+        clockHz = clockGetFreq(BUS) / 2;
+        break;
+    case ADC_CFG1_ADICLK_ADACK:
+        /* Do nothing */
+        break;
+    case ADC_CFG1_ADICLK_ALTCLK:
+#if 0
+        /* TODO:Jan add OSCERCLK to clockGetFreq */
+        clockHz = clockGetFreq(ADC_ALTCLK_SOURCE);
+        break;
+#endif
+    default:
+        assert(0);
+        return;
+    }
+
+    if (inputClock != ADC_CFG1_ADICLK_ADACK) {
+        if (clockHz > 12000000) {
+            divider = ADC_CFG1_ADIV_2;
+            clockHz /= 2;
+        }
+        if (clockHz > 12000000) {
+            divider = ADC_CFG1_ADIV_4;
+            clockHz /= 2;
+        }
+        if (clockHz > 12000000) {
+            divider = ADC_CFG1_ADIV_8;
+            clockHz /= 2;
+        }
+        if (clockHz > 12000000) {
+            assert(0);
+            /* Clock source is too fast */
+        }
+    }
+
+    if (clockHz < 1000000) {
+        assert(0);
+        /* Clock source is too slow */
+    }
+
+
+    value  = adc->reg->cfg1;
+
+    /*  Unless you are running high sample rates, feel free to
+     *  use the low power and keep a little ice at the poles...
+     */
+    value |= ADC_CFG1_ADLPC_BIT;
+    value |= ADC_CFG1_ADLSMP_BIT;
+
+    /* Clear ADIV and ADICLK */
+    value &= ~(ADC_CFG1_ADIV_MASK << ADC_CFG1_ADIV_SHIFT);
+    value &= ~ADC_CFG1_ADICLK_MASK;
+
+    value |= (divider & ADC_CFG1_ADIV_MASK) << ADC_CFG1_ADIV_SHIFT;
+    value |= inputClock & ADC_CFG1_ADICLK_MASK;
+
+
+    adc->reg->cfg1 = value;
+    return;
+}
+
 static int adcOpen(devoptab_t *dot)
 {
     adcDev_t *adc;
@@ -261,24 +352,14 @@ static int adcOpen(devoptab_t *dot)
      * Select input clock source CFG
      */
 
-    /* NOTE: The analog clock (f_ADCK) must be between  1-18MHz
-     * unless in the 16bit mode, when it must be between 2-12MHz.
-     * (See K60P144M100SF.pdf pg 42).
-     */
-
-
-
-    /*  Unless you are running high sample rates, feel free to
-     *  use the low power and keep a little ice at the poles...
-     */
-    value = ADC_CFG1_ADLPC_BIT;
-                                               /* Divide the input clock by 1 */
-    value |= (ADC_CFG1_ADIV_1 & ADC_CFG1_ADIV_MASK) << ADC_CFG1_ADIV_SHIFT;
-                                               /* 12 Bit resolution */
-    value |= (ADC_CFG1_MODE_12_BIT & ADC_CFG1_MODE_MASK) << ADC_CFG1_MODE_SHIFT;
 
                                                        /* Input the bus clock */
-    value |= ADC_CFG1_ADICLK_BUS;
+    adcClockCfg(adc, ADC_CFG1_ADICLK_BUS);
+
+                                               /* 12 Bit resolution */
+    value = adc->reg->cfg1;
+    value &= ~(ADC_CFG1_MODE_MASK << ADC_CFG1_MODE_SHIFT);
+    value |= (ADC_CFG1_MODE_12_BIT & ADC_CFG1_MODE_MASK) << ADC_CFG1_MODE_SHIFT;
     adc->reg->cfg1 = value;
 
     /*
@@ -560,12 +641,15 @@ int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
     case IO_IOCTL_ADC_SAMPLE_SIZE_SET:
         adcList[adc->minor].numSamples = flags;
         break;
+    case IO_IOCTL_ADC_CLOCK_SELECT:
+        adcClockCfg(adc, flags);
+        break;
+
     default:
 #if 0
             /*TODO Add cmds */
         IO_IOCTL_ADC_OFFSET_SET,
         IO_IOCTL_ADC_PGASET,
-        IO_IOCTL_ADC_CLOCK_SELECT,
         IO_IOCTL_ADC_VREF_SELECT,
         IO_IOCTL_ADC_COMPARE_SELECT,
 #endif

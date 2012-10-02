@@ -14,7 +14,7 @@ ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware gpio uart util demoUart devoptab
+C_PIECES = hardware gpio uart util demoUart devoptab clocks
 
 # Define Hardware Platform
 

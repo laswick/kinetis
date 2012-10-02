@@ -109,10 +109,35 @@ static void hex2HexStr(char *string, uint32_t value, int addLFCR)
     return;
 }
 
+static void setClock(void)
+{
+    /* -------- 100 MHz (external clock) -----------
+     * Configure the Multipurpose Clock Generator output to use the external
+     * clock locked with a PLL at the maximum frequency of 100MHZ
+     *
+     * For PLL, the dividers must be set first.
+     *
+     * System:  100 MHz
+     * Bus:      50 MHz
+     * Flexbus:  50 MHz
+     * Flash:    25 MHz
+     */
+    clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_4, DIVIDE_BY_4);
+    clockConfigMcgOut(MCG_PLL_EXTERNAL_100MHZ);
+
+    return;
+
+
+}
+
+
 int main(void)
 {
     int blink = TRUE;
     int quit  = FALSE;
+
+
+    setClock();
 
     /* Install uart and adc into the device table before using them */
     uart_install();
@@ -139,7 +164,8 @@ int main(void)
     ioctl(fdAdc, IO_IOCTL_ADC_CONVERSION_TIME_SELECT,
                  IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_20);
     ioctl(fdAdc, IO_IOCTL_ADC_AVERAGE_SELECT, IO_IOCTL_ADC_FLAGS_AVGS_4);
-    ioctl(fdAdc, IO_IOCTL_ADC_RESOLUTION_SELECT, IO_IOCTL_ADC_RES_FLAGS_16_BIT);
+    ioctl(fdAdc, IO_IOCTL_ADC_RESOLUTION_SELECT, IO_IOCTL_ADC_RES_FLAGS_12_BIT);
+    ioctl(fdAdc, IO_IOCTL_ADC_CLOCK_SELECT, IO_IOCTL_ADC_FLAGS_ADICLK_BUS);
 
     ioctl(fdAdc, IO_IOCTL_ADC_CHANNEL_SELECT,
                  (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
@@ -168,59 +194,11 @@ int main(void)
             write(fdUart, "\r\n",
                     strlen("\r\n"));
             for (i = 0; i < msg.len; i++) {
+                /* Vararg not working? printf(">%x \r\n", msg.data[i]); */
                 hex2HexStr(string, msg.data[i], TRUE);
                 write(fdUart, string, strlen(string));
             }
         }
-#if 0
-        else {
-            uint32_t buf[256];
-            int len = read(fdAdc, buf, 10);
-            char string[256];
-            uint8_t printChar[4];
-            int i;
-            int k = 0;
-
-            string[k++] = '0';
-            string[k++] = 'x';
-            for (i = 3; i >= 0; i--) {
-                char charVal = (buf[0] >> 4 * i) & 0xf;
-                if (charVal < 0xa){
-                    string[k++] = '0' + charVal;
-                }
-                else {
-                    switch (charVal) {
-                        case 0xa:
-                            string[k++] = 'a';
-                            break;
-                        case 0xb:
-                            string[k++] = 'b';
-                            break;
-                        case 0xc:
-                            string[k++] = 'c';
-                            break;
-                        case 0xd:
-                            string[k++] = 'd';
-                            break;
-                        case 0xe:
-                            string[k++] = 'e';
-                            break;
-                        case 0xf:
-                            string[k++] = 'f';
-                            break;
-                    }
-                }
-            }
-            string[k++] = '\r';
-            string[k++] = '\n';
-            string[k++] = '\0';
-            write(fdUart, string, strlen(string));
-
-            //                write(fdUart, "\r\n",
-            //                      strlen("\r\n"));
-
-        }
-#endif
 
 
     }
