@@ -153,8 +153,13 @@ typedef struct {
     volatile uint8_t length;
 } uartBuffer_t;
 
+enum {
+    UART_CLOCK_SOURCE_SYSTEM,
+    UART_CLOCK_SOURCE_BUS,
+};
+
 typedef struct {
-    int32_t      clockHz;
+    int32_t      clockSource;
     int32_t      baud;
     int32_t      (*callBack)(uint8_t const *buf, int len);
     char         terminator;
@@ -163,27 +168,27 @@ typedef struct {
 
 static uartDev_t uartDev[NUM_UART_MODULES] = {
     [UART_MODULE_0] = {
-        .clockHz    = SYSTEM_CLOCK_HZ_DFLT,
+        .clockSource    = UART_CLOCK_SOURCE_SYSTEM,
         .baud       = 9600,
     },
     [UART_MODULE_1] = {
-        .clockHz    = SYSTEM_CLOCK_HZ_DFLT,
+        .clockSource    = UART_CLOCK_SOURCE_SYSTEM,
         .baud       = 9600,
     },
     [UART_MODULE_2] = {
-        .clockHz    = BUS_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_BUS,
         .baud       = 9600,
     },
     [UART_MODULE_3] = {
-        .clockHz    = BUS_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_BUS,
         .baud       = 9600,
     },
     [UART_MODULE_4] = {
-        .clockHz    = BUS_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_BUS,
         .baud       = 9600,
     },
     [UART_MODULE_5] = {
-        .clockHz    = BUS_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_BUS,
         .baud       = 9600,
     },
 };
@@ -295,8 +300,18 @@ static void setBaud(uart_t *uart)
     uint16_t baudFineAdjust;
 
     int32_t minor = uart->minor;
-    int32_t clockHz = uartDev[minor].clockHz;
+    int32_t clockHz;
     int32_t baud    = uartDev[minor].baud;
+
+
+    switch (uartDev[minor].clockSource) {
+    case UART_CLOCK_SOURCE_SYSTEM:
+        clockHz = clockGetFreq(SYSTEM);
+        break;
+    case UART_CLOCK_SOURCE_BUS:
+        clockHz = clockGetFreq(BUS);
+        break;
+    }
 
 
     uart->reg->c2 &= ~(UART_C2_RX_ENABLE | UART_C2_TX_ENABLE);
