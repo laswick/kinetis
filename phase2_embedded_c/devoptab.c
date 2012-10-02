@@ -109,6 +109,7 @@
         see demoSpi.c for an example of how to use the spi POSIX driver.
 
 *******************************************************************************/
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -189,8 +190,20 @@ int deviceRegister (const char *name, uint32_t maj, uint32_t min, void *priv)
     return TRUE;
 }
 
+#if defined(PRO_TOOLS)
+#define USE_REENT 0
+static struct _reent reentDummy;
+static struct _reent *ptr = &reentDummy;
+#else
+#define USE_REENT 1
+#endif
+
 /******************************************************************************/
+#if USE_REENT
 int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
+#else
+int _open   ( const char *file, int flags, int mode )
+#endif
 /******************************************************************************/
 {
     int fd = -1;
@@ -253,7 +266,11 @@ static int is_fd_valid( struct _reent *ptr, int fd )
     }
 }
 /******************************************************************************/
+#if USE_REENT
 int _close_r ( struct _reent *ptr, int fd )
+#else
+int _close   ( int fd )
+#endif
 /******************************************************************************/
 {
     int retVal = -1;
@@ -282,7 +299,11 @@ int ioctl ( int fd, int cmd, int flags )
 }
 
 /******************************************************************************/
+#if USE_REENT
 long _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )
+#else
+long _write   ( int fd, const void *buf, size_t cnt )
+#endif
 /******************************************************************************/
 {
     long retVal = -1;
@@ -295,7 +316,11 @@ long _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )
 }
 
 /******************************************************************************/
+#if USE_REENT
 long _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt )
+#else
+long _read   ( int fd, void *buf, size_t cnt )
+#endif
 /******************************************************************************/
 {
     long retVal = -1;

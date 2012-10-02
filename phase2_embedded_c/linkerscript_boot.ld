@@ -10,7 +10,8 @@
 
 MEMORY
 {
-    FLASH  (rx) : ORIGIN = 0x00000000, LENGTH = 16K
+    CODE   (rx) : ORIGIN = 0x00000000, LENGTH = 14K
+    FLASH  (rx) : ORIGIN = 0x00003800, LENGTH =  2K
     SRAM_L(rwx) : ORIGIN = 0x1FFF0000, LENGTH = 64K
     SRAM  (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
@@ -26,7 +27,7 @@ SECTIONS
         *(.kinetis_flash_config_field)
 
         *(.default_handlers)
-    } > FLASH
+    } > CODE
 
     .text :
     {
@@ -37,7 +38,7 @@ SECTIONS
         *(.rodata*)
         . = ALIGN(4);
         _text_end = .;
-    } >SRAM_L AT>FLASH
+    } >SRAM_L AT>CODE
 
     .ramcode :
     {
@@ -47,7 +48,7 @@ SECTIONS
         *(.ramcode*)
         . = ALIGN(4);
         _ramcode_end = .;
-    } > SRAM_L AT>FLASH
+    } > SRAM_L AT>CODE
 
     .ramvect :
     {
@@ -65,7 +66,7 @@ SECTIONS
         *(.data*)
         . = ALIGN(4);
         _data_end = .;
-    }  > SRAM AT>FLASH
+    }  > SRAM AT>CODE
 
     .bss :
     {
@@ -84,8 +85,6 @@ SECTIONS
      */
     .nvStorage :
     {
-        . = ORIGIN(FLASH) + LENGTH(FLASH) - 0x800;
-        . = ALIGN(4);
         _nvStorage_start = .;
         *(.nvStorage*)
     } > FLASH
@@ -102,5 +101,6 @@ SECTIONS
     _stack_start = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM), 8);
     _stack_end = _stack_start - STACK_SIZE;
     _app_code_start = ORIGIN(FLASH) + LENGTH(FLASH);
+    _flash_swap_addr = 0xffffffff;  /* Not Supported */
 }
 

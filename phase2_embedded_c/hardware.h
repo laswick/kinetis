@@ -199,12 +199,25 @@ int  spi_install (void);
 
 /* FLASH **********************************************************************/
 
+enum {
+    FLASH_BLOCK_0,
+    FLASH_BLOCK_1,
+
+    MAX_FLASH_BLOCKS,
+};
+
 typedef struct {
 } flashConfig_t;
 
 extern int32_t flashInit(const flashConfig_t *cfg);
 extern int32_t flashErase(uint32_t addr, uint32_t numBytes);
+extern int32_t flashEraseBlock(uint32_t blockNum);
 extern int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords);
+extern int32_t flashSwapInit(void);
+extern int32_t flashSwap(void);
+
+/* APPLICATION LOADER *********************************************************/
+extern int32_t loader(void);
 
 /* TSI ************************************************************************/
 

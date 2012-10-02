@@ -1125,11 +1125,13 @@ typedef enum {
     FTFL_CMD_PRGRM_ONCE         = 0x43,
     FTFL_CMD_ERASE_ALL_BLOCKS   = 0x44,
     FTFL_CMD_VERIFY_BACKDOOR    = 0x45,
+    FTFL_CMD_SWAP               = 0x46,
     FTFL_CMD_PRGRM_PARTITION    = 0x80,
     FTFL_CMD_SET_FLEXRAM_FN     = 0x81,
 } ftflFCMD_t;
 
-#define FTFL_FLASH_SECTOR_SIZE 0x800 /* Bytes */
+#define FTFL_FLASH_SECTOR_SIZE 0x800   /* 2   KBytes */
+#define FTFL_FLASH_BLOCK_SIZE  0x40000 /* 256 KBytes */
 
 #define FTFL_BASE_ADDR 0x40020000
 #define FTFL_FSTAT  (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x0))
@@ -1154,7 +1156,7 @@ typedef enum {
 #define FTFL_FPROT0 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x13))
 
 /* Flash Memory Controller */
-enum {
+typedef enum {
     FMC_CINV_WAY = BIT_20 | BIT_21 | BIT_22 | BIT_23, /* W - 0 */
     FMC_S_B_INV  = BIT_19,                            /* W - 0 */
 } fmcPFBCR_t;
@@ -1403,7 +1405,7 @@ typedef enum {
 * MPU
 *******************************************************************************/
 
-enum {
+typedef enum {
     MPU_VLD     = BIT_0,                             /* R/W - 1 */
     MPU_NGRD    = BIT_8  | BIT_9  | BIT_10 | BIT_11, /* R   - 1 */
     MPU_NSP     = BIT_12 | BIT_13 | BIT_14 | BIT_15, /* R   - 5 */

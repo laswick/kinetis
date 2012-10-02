@@ -6,22 +6,29 @@
 
 # Name of project/output file:
 
-TARGET = loader_demo
+TARGET = demoLoader
 
 # List your asm files here (minus the .s):
 
-ASM_PIECES = startcode
+ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware gpio demoGpio
+C_PIECES  = hardware devoptab gpio util flash
+C_PIECES += loaderUart xmodem loader
+C_PIECES += demoLoader
 
 # Define Hardware Platform
 
 PLATFORM = FREESCALE_K60N512_TOWER_HW
+PRO_TOOLS = FALSE
 
+ifeq ($(PRO_TOOLS), TRUE)
+PATH :=/opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/bin:${PATH}
+else
 PATH :=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin:${PATH}
-#PATH :=/opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/bin:${PATH}
+endif
+
 CC = arm-none-eabi-gcc
 AS = arm-none-eabi-as
 LD = arm-none-eabi-ld
@@ -36,6 +43,9 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 OPT_LEVEL = 0
 
 C_FLAGS = -Wall -MD -c -g -O${OPT_LEVEL} -D${PLATFORM}
+ifeq ($(PRO_TOOLS), TRUE)
+C_FLAGS += -DPRO_TOOLS
+endif
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
@@ -43,17 +53,15 @@ O_FILES = ${ASM_O_FILES} ${C_O_FILES}
 
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
-TYPE = ROM
-ifeq ($(TYPE),RAM)
-LD_SCRIPT = linkerscript_ram.ld
-else
-LD_SCRIPT = linkerscript_rom.ld
-endif
+LD_SCRIPT = linkerscript.ld
 
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
+ifeq ($(PRO_TOOLS), TRUE)
+LIBPATH = /opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/arm-none-eabi/lib/thumb2
+else
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
-#LIBPATH = /opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/arm-none-eabi/lib/thumb2
+endif
 
 LIBS  = ${LIBPATH}/libc.a
 

@@ -19,6 +19,7 @@
 * Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
 *
 *******************************************************************************/
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
