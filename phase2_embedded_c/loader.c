@@ -4,7 +4,7 @@
 *
 * Paul Quevedo
 *
-* UART bootloader for the Kinetis K60 chip.
+* UART bootloader for the Kinetis K60 chip:
 * Module resides in the first 16Kbytes of flash memory. On powerup the
 * loader checks to see if application code exists at the start of the next
 * memory location (0x4000). If it doesn't or the user is pressing switch 1
@@ -17,6 +17,13 @@
 * space.
 *
 * Read the note under NVIC_VTOR_SET regarding the application codes vectors
+*
+* UART Application Loader:
+* For systems with two flash blocks that support the flash swap feature.
+* Application code resides entirely in one flash block. Call loader() to
+* erase the other flash block and program it with new application code via
+* uart XMODEM transfer. Loader will then logically remap the other flash
+* block to address 0x0 effective after power cycling.
 *
 * Copyright (C) 2012 www.laswick.net
 *

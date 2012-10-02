@@ -53,17 +53,10 @@ static int32_t checkErrors(void)
 {
     uint32_t error = (FTFL_FSTAT & (FTFL_FPVIOL   | FTFL_ACCERR
                    |  FTFL_RDCOLERR | FTFL_MGSTAT0));
-#if 0
-    if ((FTFL_FSTAT & (FTFL_FPVIOL   | FTFL_ACCERR
-                    |  FTFL_RDCOLERR | FTFL_MGSTAT0))) {
-        return ERROR;
-    }
-#else
     if (error) {
         FTFL_FSTAT |= (FTFL_FPVIOL | FTFL_ACCERR | FTFL_RDCOLERR);
         return ERROR;
     }
-#endif
     else {
         return OK;
     }
@@ -82,31 +75,13 @@ static inline void flashInvalidateCache(void)
     FMC_PFB1CR |= FMC_S_B_INV;
 }
 
-static int32_t flashSwapCmd(uint32_t swapCmd)
+int32_t flashInit(const flashConfig_t *cfg)
 {
-    int32_t swapState;
-    uint32_t flash_swap_addr = (uint32_t)&_flash_swap_addr;
+    /* TODO: Clocking. By Default clkdiv is 2
+     * and mcg is 50MHz giving max clock
+     * of 25MHz */
 
-    if (flash_swap_addr == 0xffffffff)
-        return ERROR;
-
-    while(!(FTFL_FSTAT & FTFL_CCIF))
-        ;
-
-    FTFL_FCCOB0 = FTFL_CMD_SWAP;
-    FTFL_FCCOB1 = (uint8_t)(flash_swap_addr >> 16);
-    FTFL_FCCOB2 = (uint8_t)(flash_swap_addr >>  8);
-    FTFL_FCCOB3 = (uint8_t)(flash_swap_addr);
-    FTFL_FCCOB4 = swapCmd;
-
-    executeFlashCmd();
-
-    if (checkErrors() == ERROR)
-        swapState = ERROR;
-    else
-        swapState = FTFL_FCCOB5;
-
-    return swapState;
+    return checkErrors();
 }
 
 static __RAMCODE__ int32_t flashEraseCmd(uint32_t addr, uint32_t numBytes)
@@ -148,8 +123,12 @@ static __RAMCODE__ int32_t flashEraseCmd(uint32_t addr, uint32_t numBytes)
 
     return OK;
 }
+int32_t flashErase(uint32_t addr, uint32_t numBytes)
+{
+    return flashEraseCmd(addr, numBytes);
+}
 
-static int32_t flashEraseBlockCmd(uint32_t blockNum)
+int32_t flashEraseBlock(uint32_t blockNum)
 {
     uint32_t addr = blockNum * FTFL_FLASH_BLOCK_SIZE;
 
@@ -174,8 +153,7 @@ static int32_t flashEraseBlockCmd(uint32_t blockNum)
     return OK;
 }
 
-static int32_t flashWriteCmd(uint32_t addr, uint32_t *dataPtr,
-                                                              uint32_t numWords)
+int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords)
 {
     uint32_t value;
 
@@ -210,28 +188,33 @@ static int32_t flashWriteCmd(uint32_t addr, uint32_t *dataPtr,
     return OK;
 }
 
-int32_t flashInit(const flashConfig_t *cfg)
+static int32_t flashSwapCmd(uint32_t swapCmd)
 {
-    /* TODO: Clocking. By Default clkdiv is 2
-     * and mcg is 50MHz giving max clock
-     * of 25MHz */
+    int32_t swapState;
+    uint32_t flash_swap_addr = (uint32_t)&_flash_swap_addr;
 
-    return checkErrors();
-}
-int32_t flashErase(uint32_t addr, uint32_t numBytes)
-{
-    return flashEraseCmd(addr, numBytes);
+    if (flash_swap_addr == 0xffffffff)
+        return ERROR;
+
+    while(!(FTFL_FSTAT & FTFL_CCIF))
+        ;
+
+    FTFL_FCCOB0 = FTFL_CMD_SWAP;
+    FTFL_FCCOB1 = (uint8_t)(flash_swap_addr >> 16);
+    FTFL_FCCOB2 = (uint8_t)(flash_swap_addr >>  8);
+    FTFL_FCCOB3 = (uint8_t)(flash_swap_addr);
+    FTFL_FCCOB4 = swapCmd;
+
+    executeFlashCmd();
+
+    if (checkErrors() == ERROR)
+        swapState = ERROR;
+    else
+        swapState = FTFL_FCCOB5;
+
+    return swapState;
 }
 
-int32_t flashEraseBlock(uint32_t blockNum)
-{
-    return flashEraseBlockCmd(blockNum);
-}
-
-int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords)
-{
-    return flashWriteCmd(addr, dataPtr, numWords);
-}
 int32_t flashSwapInit(void)
 {
     int swapState = flashSwapCmd(SWAP_CMD_STATUS);
@@ -259,6 +242,7 @@ int32_t flashSwapInit(void)
     }
     return OK;
 }
+
 int32_t flashSwap(void)
 {
     if (flashSwapCmd(SWAP_CMD_STATUS) != SWAP_STATE_UPDATE_ERASED)
