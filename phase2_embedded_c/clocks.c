@@ -401,16 +401,16 @@ uint32_t clockGetFreq(clockSource_t cs)
     uint32_t clock;
 
     switch (cs) {
-    case SYSTEM:
+    case CLOCK_SYSTEM:
         clock = clockFreq.mcgClockFreq / (clockFreq.systemDiv + 1);
         break;
-    case BUS:
+    case CLOCK_BUS:
         clock = clockFreq.mcgClockFreq / (clockFreq.busDiv + 1);
         break;
-    case FLEXBUS:
+    case CLOCK_FLEXBUS:
         clock = clockFreq.mcgClockFreq / (clockFreq.flexBusDiv + 1);
         break;
-    case FLASH:
+    case CLOCK_FLASH:
         clock = clockFreq.mcgClockFreq / (clockFreq.flashDiv + 1);
         break;
     default:
