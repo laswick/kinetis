@@ -243,7 +243,7 @@ static void adcClockCfg(adcDev_t *adc, int inputClock)
 
     switch (inputClock) {
     case ADC_CFG1_ADICLK_BUS:
-        clockHz = clockGetFreq(BUS);
+        clockHz = clockGetFreq(CLOCK_BUS);
         if (clockHz > 12 * 8 * 1000000) {
             /* Need to use bus/2 */
             inputClock = ADC_CFG1_ADICLK_BUS_DIV_2;
@@ -251,7 +251,7 @@ static void adcClockCfg(adcDev_t *adc, int inputClock)
         }
         break;
     case ADC_CFG1_ADICLK_BUS_DIV_2:
-        clockHz = clockGetFreq(BUS) / 2;
+        clockHz = clockGetFreq(CLOCK_BUS) / 2;
         break;
     case ADC_CFG1_ADICLK_ADACK:
         /* Do nothing */

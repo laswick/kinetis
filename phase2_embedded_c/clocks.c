@@ -13,7 +13,7 @@
 *       
 *       clockConfigOsc(), clockConfigOsc32k(), clockConfigOscEr()
 *
-*       clockConfigEr(), clockConfigRtc(), clockConfigLpo()
+*       clockConfigEr32k(), clockConfigRtc(), clockConfigLpo()
 *
 *
 * Copyright (C) 2012 www.laswick.net
@@ -163,6 +163,9 @@ static void fei2fee(clockConfig_t cc)
 static void fei2pee(clockConfig_t cc) 
 {
                                                     /* External crystal setup */
+    /* Select the OSCCLK */
+    SIM_SOPT2 &= ~SIM_SOPT2_MCGCLKSEL;
+
     /* 
      * Enabling the XTAL for 50MHz
      * RANGE=1, match the frequency of the crystal being used
@@ -464,7 +467,7 @@ void clockConfigMcgOut(clockConfig_t clockConfig)
 
     jumpTable[mcgState.currentMode][mcgState.nextMode](clockConfig);
 
-    /* Store the new clock frequency for getClockHz() */
+    /* Store the new clock frequency for clockGetFreq() */
     clockFreq.mcgClockFreq = clockConfigParam[clockConfig].clockHz;
 }
 
@@ -517,9 +520,9 @@ void clockConfigOsc32k()
 }
 
 /*******************************************************************************
-* clockConfigEr
+* clockConfigEr32k
 *******************************************************************************/
-void clockConfigEr() 
+void clockConfigEr32k() 
 {
                                                             /* Not configured */
 }

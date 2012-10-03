@@ -1588,18 +1588,18 @@ enum {
 *******************************************************************************/
 
 typedef enum {
-    MCGIRCLK,
-    MCGFFCLK,
-    SYSTEM,                              /* Clocks the ARM Cortex M4 core */
-    CORE = SYSTEM,
-    BUS,
-    FLEXBUS,
-    FLASH,
-    MCGPLLCLK,
-    MCGFLLCLK,
-    OSCERCLK,
-    ERCLK32K,
-    LPO,
+    CLOCK_MCGIRCLK,
+    CLOCK_MCGFFCLK,
+    CLOCK_SYSTEM,                              /* Clocks the ARM Cortex M4 core */
+    CLOCK_CORE = CLOCK_SYSTEM,
+    CLOCK_BUS,
+    CLOCK_FLEXBUS,
+    CLOCK_FLASH,
+    CLOCK_MCGPLLCLK,
+    CLOCK_MCGFLLCLK,
+    CLOCK_OSCERCLK,
+    CLOCK_ERCLK32K,
+    CLOCK_LPO,
 } clockSource_t;
 
                                         /* Multipurpose Clock Generator (MCG) */

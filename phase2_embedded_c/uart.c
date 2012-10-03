@@ -307,10 +307,10 @@ static void setBaud(uart_t *uart)
 
     switch (uartDev[minor].clockSource) {
     case UART_CLOCK_SOURCE_SYSTEM:
-        clockHz = clockGetFreq(SYSTEM);
+        clockHz = clockGetFreq(CLOCK_SYSTEM);
         break;
     case UART_CLOCK_SOURCE_BUS:
-        clockHz = clockGetFreq(BUS);
+        clockHz = clockGetFreq(CLOCK_BUS);
         break;
     }
 

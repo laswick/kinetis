@@ -612,7 +612,7 @@ extern void clockConfigOsc();
 extern void clockConfigOsc32k();
 extern void clockConfigOscEr();
 
-extern void clockConfigEr();
+extern void clockConfigEr32k();
 
 extern void clockConfigRtc();
 
