@@ -594,6 +594,7 @@ typedef enum {
 
 typedef enum {
     MCG_PLL_EXTERNAL_100MHZ,
+    MCG_PLL_EXTERNAL_48MHZ,
     MCG_FLL_INTERNAL_24MHZ,
     MAX_MCG_CLOCK_OPTIONS,
 } clockConfig_t;

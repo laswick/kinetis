@@ -86,6 +86,14 @@ clockConfigParam_t clockConfigParam[MAX_MCG_CLOCK_OPTIONS] = {
         .clockHz     = 100000000,        /* The resulting MCGOUTCLK frequency */
     },
 
+    [MCG_PLL_EXTERNAL_48MHZ] = {
+        .clockMode   = MODE_PEE,
+        .divider     = MCG_C5_PRDIV_MASK & 0x18,  /* divide 50MHz by 25 = 2MHz*/
+        .multiplier  = MCG_C6_VDIV_MASK & 0x00, /* multiply 2MHz by 24 = 48MHz*/
+        .freqSource  = EXTERNAL_OSC_50MHZ,
+        .clockHz     = 48000000,        /* The resulting MCGOUTCLK frequency */
+    },
+
     [MCG_FLL_INTERNAL_24MHZ] = {
         .clockMode   = MODE_FEI,
         .divider     = NULL,  /* Dividers are only for externally engaged (EE)*/
