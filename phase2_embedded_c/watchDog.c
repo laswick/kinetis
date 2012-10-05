@@ -5,6 +5,8 @@
 * Andrew Krajewski
 *
 * Low level driver for the Kinetis Watchdog module.
+* There is mention of watchdogs triggering an ISR however in the assembly
+* stage in phase 1 it was discovered that it did not work.
 *
 * API: watchDogConfig(), watchDogInit(), watchDogKick(), watchDogDisable()
 *

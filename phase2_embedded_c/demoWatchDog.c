@@ -34,6 +34,7 @@ int main(void)
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_PIN,  GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_PIN,   GPIO_OUTPUT | GPIO_LOW);
+    gpioConfig(N_SWITCH_1_PORT,   N_SWITCH_1_PIN,   GPIO_INPUT);
 
     for (;;) {
         delay();
@@ -55,15 +56,13 @@ int main(void)
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
 
 	/* While no button pressed smack the watchdog around */
-/*
-	if (!sw1 pressed) {	
+	if (gpioRead(N_SWITCH_1_PORT, N_SWITCH_1_PIN) != 0) {
 		watchDogKick(); 
 	}
-
+/*
 	if (sw2 pressed) {
 		watchDogDisable();
 	}
-	
 */
     }
 
