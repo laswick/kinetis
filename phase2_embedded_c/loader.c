@@ -4,7 +4,7 @@
 *
 * Paul Quevedo
 *
-* UART bootloader for the Kinetis K60 chip.
+* UART bootloader for the Kinetis K60 chip:
 * Module resides in the first 16Kbytes of flash memory. On powerup the
 * loader checks to see if application code exists at the start of the next
 * memory location (0x4000). If it doesn't or the user is pressing switch 1
@@ -17,6 +17,13 @@
 * space.
 *
 * Read the note under NVIC_VTOR_SET regarding the application codes vectors
+*
+* UART Application Loader:
+* For systems with two flash blocks that support the flash swap feature.
+* Application code resides entirely in one flash block. Call loader() to
+* erase the other flash block and program it with new application code via
+* uart XMODEM transfer. Loader will then logically remap the other flash
+* block to address 0x0 effective after power cycling.
 *
 * Copyright (C) 2012 www.laswick.net
 *
@@ -37,6 +44,14 @@
 #include "globalDefs.h"
 #include "util.h"
 #include "xmodem.h"
+
+#define CODE_INFO_SIGNATURE 0x12344321
+typedef struct {
+    uint32_t signature;
+    uint32_t codeAddr;
+    uint32_t codeSize;
+    uint32_t codeChecksum;
+} codeInfo_t;
 
 static flashConfig_t flashConfig;
 
@@ -238,88 +253,37 @@ static void errorLED(void)
 }
 
 /*****************************************************************************
- * setBootOptions
  *
- * This structure is retained at the end of the flash memory allocated for
- * boot space (defined in linkerscript_boot.ld). It retains the address of
- * where the application image was loaded to and a checksum of the code used
- * to verify image integrity on powerup
- ****************************************************************************/
-typedef struct {
-    uint32_t signature;
-    uint32_t codeAddr;
-    uint32_t codeSize;
-    uint32_t codeChecksum;
-} bootOptions_t;
-
-#define BOOT_OPTS_SIGNATURE 0x12344321
-static const volatile
-__attribute__ ((section(".nvStorage"))) bootOptions_t bootOptions = {
-    .signature    = BOOT_OPTS_SIGNATURE,
-    .codeAddr     = 0x4000,
-    .codeSize     = 0x20000,
-    .codeChecksum = 0xffffffff,
-};
-
-static void setBootOptions(bootOptions_t *bootOptsPtr)
-{
-    extern uint32_t _nvStorage_start;
-    flashErase((uint32_t)&_nvStorage_start, FTFL_FLASH_SECTOR_SIZE);
-    flashWrite((uint32_t)&_nvStorage_start, (uint32_t *)bootOptsPtr,
-                                            sizeof(bootOptions_t) / 4);
-}
-
-/*****************************************************************************
  * validateCode
  *
  * This routine checks if an application image is present in flash.
- * It uses the data stored in the bootOptions structure. It also performs
+ * It uses the data stored in the codeInfo structure. It also performs
  * a checksum on the application code to verify data integrity
  ****************************************************************************/
-static bool32_t validateCode(void)
+static bool32_t validateCode(const volatile codeInfo_t *codeInfoPtr,
+                                                            uint32_t codeOffset)
 {
-    volatile uint8_t *codePtr = (volatile uint8_t *)bootOptions.codeAddr;
+    volatile uint8_t *codePtr;
     uint32_t checksum = 0;
     int i;
 
-    if (bootOptions.signature != BOOT_OPTS_SIGNATURE)
+    codePtr = (volatile uint8_t *)(codeInfoPtr->codeAddr + codeOffset);
+
+    if (codeInfoPtr->signature != CODE_INFO_SIGNATURE)
         return FALSE;
 
-    if (bootOptions.codeChecksum == 0xffffffff)
+    if (codeInfoPtr->codeChecksum == 0xffffffff)
         return FALSE;
 
-    for (i = 0; i < bootOptions.codeSize; i++)
+    for (i = 0; i < codeInfoPtr->codeSize; i++)
         checksum += *codePtr++;
 
-    return (checksum == bootOptions.codeChecksum);
-}
-
-/****************************************************************************
- * jumpToApp
- *      Jumps to the application code.
- ***************************************************************************/
-static void jumpToApp(void)
-{
-    uint32_t codeAddr = *(uint32_t *)(bootOptions.codeAddr + 0x4);
-
-    gpioSet(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
-    /* NVIC offset register has to be 64bit word aligned as per the ARM TRM
-     * in order to support a maximum of 128 vectors. Rather then waste flash
-     * space implementing the application code address to start at this
-     * boundary use the flash IRQ's from this loader. It is up to
-     * the applications startup code to remap its vector map into
-     * SRAM and update VTOR */
-    NVIC_VTOR_SET(0);
-    asm volatile  ("bx %[addr]" : : [addr] "r" (codeAddr));
-    /* Should be running in application land now.
-     * Getting here is bad news bears */
-    assert(FALSE);
-    errorLED();
+    return (checksum == codeInfoPtr->codeChecksum);
 }
 
 
 /*****************************************************************************
- * UART Loader Menu
+ * UART Transfer
  *
  *      Erases flash and receives a new SREC image to parse and program
  *  over UART3. Supports CRC XMODEM 128Byte/1K interface only
@@ -334,23 +298,19 @@ static xmodemCfg_t xmodemConfig = {
     .numRetries = 50,
 };
 
-static void uartLoader(void)
+static int uartTransfer(codeInfo_t *codeInfoPtr, uint32_t codeOffset)
 {
     static uint8_t rxBuffer[1024];
     static srecData_t srecData;
 
-    bootOptions_t newBootOpts = {
-        .signature    = BOOT_OPTS_SIGNATURE,
-        .codeAddr     = -1,
-        .codeSize     =  0,
-        .codeChecksum =  0,
-    };
-
-    if (flashErase(bootOptions.codeAddr, bootOptions.codeSize) == ERROR) {
-        print("Flash Failed to erase\r\n");
-        errorLED();
+    if (codeInfoPtr) {
+        codeInfoPtr->signature    = CODE_INFO_SIGNATURE;
+        codeInfoPtr->codeAddr     = -1;
+        codeInfoPtr->codeSize     =  0;
+        codeInfoPtr->codeChecksum =  0;
     }
-    print("Flash Erased. Waiting for XMODEM Transfer\r\n");
+
+    print("Waiting for XMODEM Transfer\r\n");
     gpioSet(N_LED_GREEN_PORT,  N_LED_GREEN_PIN);
     gpioSet(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
 
@@ -376,19 +336,21 @@ static void uartLoader(void)
                 }
                 else {
                     if (srecData.numBytes) {
-                        int i;
+                        if (codeInfoPtr) {
+                            int i;
+                            /* Calculate checkum for the image being loaded */
+                            codeInfoPtr->codeSize += srecData.numBytes;
+                            for (i = 0; i < srecData.numBytes; i++)
+                                codeInfoPtr->codeChecksum += srecData.data[i];
 
-                        /* Calculate checkum for the image being loaded */
-                        newBootOpts.codeSize += srecData.numBytes;
-                        for (i = 0; i < srecData.numBytes; i++)
-                            newBootOpts.codeChecksum += srecData.data[i];
+                            /* Record the address of where the image is loaded */
+                            if (codeInfoPtr->codeAddr == -1)
+                                codeInfoPtr->codeAddr  = srecData.address;
+                        }
 
-                        /* Record the address of where the image is loaded */
-                        if (newBootOpts.codeAddr == -1)
-                            newBootOpts.codeAddr  = srecData.address;
-
-                        flashWrite(srecData.address, (uint32_t *)srecData.data,
-                                                         srecData.numBytes / 4);
+                        flashWrite(srecData.address + codeOffset,
+                                                    (uint32_t *)srecData.data,
+                                                    srecData.numBytes / 4);
                     }
                     offset += value;
                     len -= value;
@@ -402,20 +364,72 @@ static void uartLoader(void)
         gpioToggle(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
     }
 
-    setBootOptions(&newBootOpts);
-
     gpioSet  (N_LED_BLUE_PORT,   N_LED_BLUE_PIN);
     gpioSet  (N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
     gpioClear(N_LED_GREEN_PORT,  N_LED_GREEN_PIN);
+
+    return OK;
+}
+
+#if defined(BOOTLOADER)
+/*****************************************************************************
+ * BOOT Loader
+ * writeCodeInfo
+ *
+ * This structure is retained at the end of the flash memory allocated for
+ * boot space (defined in linkerscript_boot.ld). It retains the address of
+ * where the application image was loaded to and a checksum of the code used
+ * to verify image integrity on powerup
+ ****************************************************************************/
+static const volatile
+__attribute__ ((section(".nvStorage"))) codeInfo_t codeInfo = {
+    .signature    = CODE_INFO_SIGNATURE,
+    .codeAddr     = 0x4000,
+    .codeSize     = 0x20000,
+    .codeChecksum = 0xffffffff,
+};
+
+static void writeCodeInfo(codeInfo_t *codeInfoPtr)
+{
+    extern uint32_t _nvStorage_start;
+    flashErase((uint32_t)&_nvStorage_start, FTFL_FLASH_SECTOR_SIZE);
+    flashWrite((uint32_t)&_nvStorage_start, (uint32_t *)codeInfoPtr,
+                                            sizeof(codeInfo_t) / 4);
+}
+
+/****************************************************************************
+ * BOOT Loader
+ * jumpToApp
+ *      Jumps to the application code.
+ ***************************************************************************/
+static void jumpToApp(void)
+{
+    uint32_t codeAddr = *(uint32_t *)(codeInfo.codeAddr + 0x4);
+
+    gpioSet(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
+
+    /* NVIC offset register has to be 64bit word aligned as per the ARM TRM
+     * in order to support a maximum of 128 vectors. Rather then waste flash
+     * space implementing the application code address to start at this
+     * boundary use the flash IRQ's from this loader. It is up to
+     * the applications startup code to remap its vector map into
+     * SRAM and update VTOR */
+    NVIC_VTOR_SET(0);
+    asm volatile  ("bx %[addr]" : : [addr] "r" (codeAddr));
+    /* Should be running in application land now.
+     * Getting here is bad news bears */
+    assert(FALSE);
+    errorLED();
 }
 
 /*****************************************************************************
- * Loader Menu
+ * BOOT Loader Menu
  ****************************************************************************/
 extern uint32_t _app_code_start;
 int main(void)
 {
-    bool32_t codePresent = validateCode();
+    static codeInfo_t newCodeInfo;
+    bool32_t codePresent = validateCode(&codeInfo, 0);
     uint8_t menuSel = 0;
 
     gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_PIN,   GPIO_OUTPUT | GPIO_LOW);
@@ -432,7 +446,11 @@ int main(void)
 
     /* Initialize peripherals */
     uart_install();
+    fd = open("uart3", 0, 0); /* STDIN  */
+    fd = open("uart3", 0, 0); /* STDOUT */
+    fd = open("uart3", 0, 0); /* STDERR */
     fd = open("uart3", 0, 0);
+    ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
     xmodemConfig.uartFd = fd;
 
     if (fd == -1 || xmodemInit(&xmodemConfig) == ERROR
@@ -441,14 +459,15 @@ int main(void)
     }
 
     /* Loader Menu
-     * TODO: Add options to display bootOptions. Requires varg print */
+     * TODO: Add options to display codeInfo. Requires varg print */
     while (1) {
-        codePresent = validateCode();
+        codePresent = validateCode(&codeInfo, 0);
 
         print("\r\nLoader Menu\r\n");
-        print("1. Load new SREC image from UART\r\n");
+        print("1. Erase Flash\r\n");
+        print("2. Load new SREC image from UART\r\n");
         if (codePresent) {
-            print("2. Jump to application\r\n");
+            print("3. Jump to application\r\n");
         }
 
         while (read(fd, &menuSel, 1) < 1)
@@ -458,11 +477,25 @@ int main(void)
 
         switch (menuSel) {
         case '1':
-            uartLoader();
+            if (flashErase(codeInfo.codeAddr, codeInfo.codeSize) == ERROR){
+                print("Flash Failed to erase\r\n");
+                errorLED();
+            }
+            else {
+                print("Done\r\n");
+            }
             break;
         case '2':
+            if ((*(uint32_t *)codeInfo.codeAddr) != 0xffffffff) {
+                print("Flash not erased\r\b");
+                break;
+            }
+            uartTransfer(&newCodeInfo, 0);
+            writeCodeInfo(&newCodeInfo);
+            break;
+        case '3':
             if (codePresent) {
-                print("Jumping to application. Bye Bye\r\n");
+                print("Jumping to app. Bye Bye\r\n");
                 jumpToApp();
                 assert(FALSE);
                 errorLED();
@@ -476,3 +509,108 @@ int main(void)
 
     return 0;
 }
+
+#else
+/*****************************************************************************
+ * APPLICATION Loader Menu
+ * Loader FSM as defined by Freescale App Note AN4533 Rev 0, 06/2012
+ ****************************************************************************/
+int loader(void)
+{
+    enum {
+        STATE_INIT,
+        STATE_SWAP_INIT,
+        STATE_CODE_ERASED,
+        STATE_CODE_LOADED,
+        STATE_DONE,
+    };
+    static codeInfo_t codeInfo;
+    uint32_t state = STATE_INIT;
+    uint32_t menuSel = 0;
+
+    fd = open("uart3", 0, 0);
+    ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
+    xmodemConfig.uartFd = fd;
+
+    if (fd == -1 || xmodemInit(&xmodemConfig) == ERROR
+                 || flashInit(&flashConfig)   == ERROR) {
+        errorLED();
+    }
+
+    /* Loader Menu */
+    while (state != STATE_DONE) {
+        print("\r\nLoader Menu\r\n");
+        print("1. Return to Calling Code\r\n");
+        switch (state) {
+        case STATE_INIT:
+        case STATE_SWAP_INIT:
+            print("2. Erase Flash\r\n");
+            break;
+        case STATE_CODE_ERASED:
+            print("2. Load new SREC image from UART\r\n");
+            break;
+        case STATE_CODE_LOADED:
+            print("2. Remap Code\r\n");
+            break;
+        default:
+            print("?????");
+            break;
+        }
+
+        while (read(fd, &menuSel, 1) < 1)
+            ;
+        write(fd, &menuSel, 1);
+        print("\r\n");
+
+        switch (menuSel) {
+        case '1':
+            state = STATE_DONE;
+            break;
+        case '2':
+            switch (state) {
+            case STATE_INIT:
+                if (flashSwapInit() == ERROR) {
+                    print("Failed to Init Flash Swap\r\n");
+                    break;
+                }
+                state = STATE_SWAP_INIT;
+                /* No Break */
+            case STATE_SWAP_INIT:
+                if (flashEraseBlock(FLASH_BLOCK_1) == ERROR) {
+                    print("Failed to Erase Flash Block\r\n");
+                    break;
+                }
+                state = STATE_CODE_ERASED;
+                break;
+            case STATE_CODE_ERASED:
+                uartTransfer(&codeInfo,     FTFL_FLASH_BLOCK_SIZE);
+                if (validateCode(&codeInfo, FTFL_FLASH_BLOCK_SIZE) == FALSE) {
+                    print("Programming Checksum Error\r\n");
+                    break;
+                }
+                state = STATE_CODE_LOADED;
+                break;
+            case STATE_CODE_LOADED:
+                if (flashSwap() == ERROR) {
+                    print("Failed to remap flash\r\n");
+                    break;
+                }
+                print("Flash remapped. Safe to Power Cycle\r\n");
+                state = STATE_DONE;
+                break;
+            }
+            break;
+        default:
+            print("Invalid Selection\r\n");
+            break;
+        }
+
+        delay();
+        delay();
+        delay();
+    }
+
+    /* Return to calling function */
+    return 0;
+}
+#endif

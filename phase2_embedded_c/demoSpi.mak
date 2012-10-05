@@ -39,7 +39,7 @@ C_O_FILES = ${C_FILES:%.c=%.o}
 
 O_FILES = ${ASM_O_FILES} ${C_O_FILES}
 
-CPU_FLAGS = -mcpu=cortex-m4 -mthumb -mthumb-interwork -mlittle-endian
+CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
 LD_SCRIPT = linkerscript.ld
 

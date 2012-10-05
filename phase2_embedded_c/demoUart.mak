@@ -14,7 +14,7 @@ ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware gpio uart util demoUart devoptab
+C_PIECES = hardware gpio uart util demoUart devoptab clocks
 
 # Define Hardware Platform
 
@@ -39,7 +39,7 @@ C_O_FILES = ${C_FILES:%.c=%.o}
 
 O_FILES = ${ASM_O_FILES} ${C_O_FILES}
 
-CPU_FLAGS = -mcpu=cortex-m4 -mthumb -mthumb-interwork -mlittle-endian
+CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
 LD_SCRIPT = linkerscript.ld
 

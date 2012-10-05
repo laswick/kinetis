@@ -139,11 +139,35 @@ static void uartCallBackHandler(uint8_t const *buf, int len)
 }
 
 
+static void setClock(void)
+{
+    /* -------- 100 MHz (external clock) -----------
+     * Configure the Multipurpose Clock Generator output to use the external
+     * clock locked with a PLL at the maximum frequency of 100MHZ
+     *
+     * For PLL, the dividers must be set first.
+     *
+     * System:  100 MHz
+     * Bus:      50 MHz
+     * Flexbus:  50 MHz
+     * Flash:    25 MHz
+     */
+    clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_4, DIVIDE_BY_4);
+    clockConfigMcgOut(MCG_PLL_EXTERNAL_100MHZ);
+
+    return;
+
+
+}
+
 int main(void)
 {
     static char *colourStrings[] = { COLOUR_STRINGS };
     int quit  = FALSE;
     int blink = FALSE;
+
+    setClock();
+
 
     updateFlags = UPDATE_CMD; /* Launch w help msg */
 
@@ -151,7 +175,18 @@ int main(void)
     /* Install uart into the device table before using it */
     uart_install();
 
-
+    fd = open("uart3", 0, 0); /* STDIN */
+    if (fd != 0) {
+        assert(0);
+    }
+    fd = open("uart3", 0, 0); /* STDOUT */
+    if (fd != 1) {
+        assert(0);
+    }
+    fd = open("uart3", 0, 0); /* STDERR */
+    if (fd != 2) {
+        assert(0);
+    }
 
     fd = open("uart3", 0, 0);
     if (fd==-1) {
@@ -169,7 +204,6 @@ int main(void)
     ioctl(fd, IO_IOCTL_UART_TERMINATOR_SET, '\r');
     ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
 
-    /* TODO Shaun printf is broken w the uart_install() changeds. */
     printf("The start of something good...\r\n"); /* StdOut is uart3 */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -247,7 +281,10 @@ int main(void)
     for (;;) {
         delay();
         gpioClear(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
-        printf("Shaun.\n\n"); /* Shaun likes seeing his name. */
+        printf("Whoop...\n\n");
+        printf("\tWhoop...\n\n");
+        printf("\t\tWhoop...\n\n");
+        printf("\t\t\t  Gangnam Style!\n\n");
 
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);

@@ -57,6 +57,15 @@ _sbrk_r:
     ldr r0, =_stack_end
     bx lr
 
+    /* For older tools that dont support reent */
+    .global _sbrk
+    .weak   _sbrk
+    .thumb_func
+    .align 2
+_sbrk:
+    ldr r0, =_stack_end
+    bx lr
+
 /*******************************************************************************
 * kill
 *******************************************************************************/

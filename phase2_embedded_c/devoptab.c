@@ -6,6 +6,8 @@
 *
 * POSIX Interface
 *
+* TODO: Shaun, Must update this mini-tutorial
+*
 * This was based on an excellent article by bill gatliff. It can be found at:
 *   http://neptune.billgatliff.com/newlib.html2
 *
@@ -63,7 +65,7 @@
         devoptab_t devoptab_xxx   = { "xxx", xxx_open_r,  xxx_ioctl, xxx_close_r,
                                              xxx_write_r, xxx_read_r, NULL     };
 
-    3) In devoptab.c, place you devoptab_t entry into the devoptab_List. By doing
+    3) In devoptab.c, place you devoptab_t entry into the devoptab. By doing
         this you are 'assigning' it a file descriptor, or an entry index the
         table.
 
@@ -107,6 +109,7 @@
         see demoSpi.c for an example of how to use the spi POSIX driver.
 
 *******************************************************************************/
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -127,114 +130,204 @@ int * __errno () {
 }
 #endif
 
+/*
+ * File Descriptor Table
+ *
+ */
+
+#define MAX_FD 20
+static int fdTable[MAX_FD] =
+{
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
 /******************************************************************************/
 /* DEVOPTAB Section */
-/*******************************************************************************/
-#define       MAX_POSIX_DEVICES 10
-#define NUM_STDIO_POSIX_DEVICES 3
+/******************************************************************************/
+#define MAX_POSIX_DEVICES       10
 #define MAX_DEVICE_NAME_SIZE    10
-static devoptab_t devoptab_list[MAX_POSIX_DEVICES + NUM_STDIO_POSIX_DEVICES];
+static devoptab_t devoptab[MAX_POSIX_DEVICES];
+static devlist_t devlist[MAX_POSIX_DEVICES];
 static int devoptab_size = 0;
 
-/*******************************************************************************/
+/******************************************************************************/
 int deviceInstall (
-    const char *name,
+    uint32_t maj,
     int  (*open_r )( void *reent, struct devoptab_s *dot, int mode, int flags ),
     int  (*ioctl  )(              struct devoptab_s *dot, int cmd,  int flags ),
     int  (*close_r)( void *reent, struct devoptab_s *dot ),
     long (*write_r)( void *reent, struct devoptab_s *dot, const void *buf,
                                                                       int len ),
     long (*read_r )( void *reent, struct devoptab_s *dot,       void *buf,
-                                                                      int len ),
-    void *priv )
-/*******************************************************************************/
+                                                                      int len ))
+/******************************************************************************/
 {
-    if (name == NULL)
+    if (maj >= MAX_POSIX_DEVICES)
         return FALSE;
 
-    devoptab_list[devoptab_size].name    = name;
-    devoptab_list[devoptab_size].open_r  = open_r;
-    devoptab_list[devoptab_size].ioctl   = ioctl;
-    devoptab_list[devoptab_size].close_r = close_r;
-    devoptab_list[devoptab_size].write_r = write_r;
-    devoptab_list[devoptab_size].read_r  = read_r;
-    devoptab_list[devoptab_size].priv    = priv;
-    devoptab_size++;
+    devlist[maj].open_r  = open_r;
+    devlist[maj].ioctl   = ioctl;
+    devlist[maj].close_r = close_r;
+    devlist[maj].write_r = write_r;
+    devlist[maj].read_r  = read_r;
 
     return TRUE;
 }
 
+/******************************************************************************/
+int deviceRegister (const char *name, uint32_t maj, uint32_t min, void *priv)
+/******************************************************************************/
+{
+    if (devoptab_size+1 >= MAX_POSIX_DEVICES) {
+        return FALSE;
+    }
+    devoptab[devoptab_size].name    = name;
+    devoptab[devoptab_size].maj     = maj;
+    devoptab[devoptab_size].min     = min;
+    devoptab[devoptab_size].priv    = priv;
+    devoptab_size++;
+    return TRUE;
+}
 
-/*******************************************************************************/
-int _open_r (struct _reent *ptr, const char *file, int flags, int mode )
-/*******************************************************************************/
+#if defined(PRO_TOOLS)
+#define USE_REENT 0
+static struct _reent reentDummy;
+static struct _reent *ptr = &reentDummy;
+#else
+#define USE_REENT 1
+#endif
+
+/******************************************************************************/
+#if USE_REENT
+int _open_r ( struct _reent *ptr, const char *file, int flags, int mode )
+#else
+int _open   ( const char *file, int flags, int mode )
+#endif
+/******************************************************************************/
 {
     int fd = -1;
+    int devop = -1;
     int i;
 
-    /* search for "file" in dotab_list[].name */
-    for (i = 0; i < devoptab_size; i++) {
-        if( strcmp( devoptab_list[i].name, file ) == 0 ) {
+    /* search for the first free FD */
+    for (i = 0; i < MAX_FD; i++) {
+        if (fdTable[i] == -1) {
             fd = i;
             break;
         }
     }
+    /* search for "file" in dotab_list[].name */
+    for (i = 0; i < devoptab_size; i++) {
+        if( strcmp( devoptab[i].name, file ) == 0 ) {
+            devop = i;
+            break;
+        }
+    }
 
-    /* if we found the requested file/device,
+    /* if we found the requested file/device and the FD table is not full,
      *     then invoke the device's open_r() method */
-    if( fd != -1 ) {
-        devoptab_list[fd].open_r( ptr, &devoptab_list[fd], mode, flags );
-    } else {
+    if (devop == -1) {
         /* it doesn't exist in the devoptab list! */
         ptr->_errno = ENODEV;
+    }
+    else if (fd == -1) {
+        /* too many files open, no room in fdTable */
+        ptr->_errno = ENFILE;
+    }
+    else {
+        if (devlist[devoptab[devop].maj].open_r
+                                         (ptr, &devoptab[devop], mode, flags)) {
+            fdTable[fd] = devop;
+        }
+        else {
+            /* open failed, do not store device in FD table */
+            fd = -1;
+        }
     }
 
     return fd;
 }
 
-/*******************************************************************************/
+/******************************************************************************/
+static int is_fd_valid( struct _reent *ptr, int fd )
+/******************************************************************************/
+{
+    if (fd < 0 || fd >= MAX_FD) {
+        ptr->_errno = EBADF;
+    return(FALSE);
+    }
+    else if (fdTable[fd] == -1) {
+        ptr->_errno = ENOENT;
+    return(FALSE);
+    }
+    else {
+    return(TRUE);
+    }
+}
+/******************************************************************************/
+#if USE_REENT
 int _close_r ( struct _reent *ptr, int fd )
-/*******************************************************************************/
+#else
+int _close   ( int fd )
+#endif
+/******************************************************************************/
 {
-    return devoptab_list[fd].close_r(ptr, &devoptab_list[fd]);
+    int retVal = -1;
+    if (is_fd_valid(ptr, fd)) {
+        int devop = fdTable[fd];
+        retVal = devlist[devoptab[devop].maj].close_r(ptr, &devoptab[devop]);
+        if (!retVal) {
+            fdTable[fd] = -1;
+        }
+    }
+    return retVal;
 }
 
-/*******************************************************************************/
-int ioctl (int fd, int cmd, int flags)
-/*******************************************************************************/
+/******************************************************************************/
+int ioctl ( int fd, int cmd, int flags )
+/******************************************************************************/
 {
-    return devoptab_list[fd].ioctl(&devoptab_list[fd], cmd, flags);
+    int retVal = -1;
+    struct _reent tmp;
+    if (is_fd_valid(&tmp, fd)) {
+        int devop = fdTable[fd];
+        retVal = devlist[devoptab[devop].maj].ioctl(&devoptab[devop],cmd,flags);
+    }
+    return retVal;
+
 }
 
-/*******************************************************************************/
-long _write_r (struct _reent *ptr, int fd, const void *buf, size_t cnt )
-/*******************************************************************************/
+/******************************************************************************/
+#if USE_REENT
+long _write_r ( struct _reent *ptr, int fd, const void *buf, size_t cnt )
+#else
+long _write   ( int fd, const void *buf, size_t cnt )
+#endif
+/******************************************************************************/
 {
-    return devoptab_list[fd].write_r(ptr, &devoptab_list[fd], buf, cnt);
+    long retVal = -1;
+    if (is_fd_valid(ptr, fd)) {
+        int devop = fdTable[fd];
+        retVal = devlist[devoptab[devop].maj].write_r
+                                              (ptr, &devoptab[devop], buf, cnt);
+    }
+    return retVal;
 }
 
-/*******************************************************************************/
-long _read_r (struct _reent *ptr, int fd, void *buf, size_t cnt )
-/*******************************************************************************/
+/******************************************************************************/
+#if USE_REENT
+long _read_r ( struct _reent *ptr, int fd, void *buf, size_t cnt )
+#else
+long _read   ( int fd, void *buf, size_t cnt )
+#endif
+/******************************************************************************/
 {
-    return devoptab_list[fd].read_r(ptr, &devoptab_list[fd], buf, cnt);
+    long retVal = -1;
+    if (is_fd_valid(ptr, fd)) {
+        int devop = fdTable[fd];
+        retVal = devlist[devoptab[devop].maj].read_r
+                                           (ptr, &devoptab[devop], buf, cnt);
+    }
+    return retVal;
 }
-
-/* TODO Rob - I moved this here from uart.c, but it is not getting called by
- * printf.  Don't know why */
-/*******************************************************************************
-*
-* _write
-*
-* This routine retargets STDOUT to devoptab[1]
-*
-* RETURNS: Number of bytes written.
-*
-*******************************************************************************/
-int _write(struct _reent *ptr, int fd, void *buf, size_t cnt )
-{
-    assert(devoptab_list[fd].write_r);  /* Ensure a STDOUT has been designated */
-    return devoptab_list[fd].write_r(ptr, &devoptab_list[fd], buf, cnt);
-}
-
-

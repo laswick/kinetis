@@ -8,6 +8,14 @@
 *
 * David Kennedy
 * August 27 2012
+*
+* Copyright (C) 2012 www.laswick.net
+*
+* This program is free software.  It comes without any warranty, to the extent
+* permitted by applicable law.  You can redistribute it and/or modify it under
+* the terms of the WTF Public License (WTFPL), Version 2, as published by
+* Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
+*
 *******************************************************************************/
 #include "kinetis.h"
 
@@ -19,14 +27,14 @@ static const struct {
     uint32_t port;
     uint32_t pin;
 } tsiMap[TSI_COUNT] = {
-/* 0*/{SIM_PORTB_ENABLE, PORTB,  0}, {SIM_PORTA_ENABLE, PORTA,  0},
-/* 2*/{SIM_PORTA_ENABLE, PORTA,  1}, {SIM_PORTA_ENABLE, PORTA,  2},
-/* 4*/{SIM_PORTA_ENABLE, PORTA,  3}, {SIM_PORTA_ENABLE, PORTA,  4},
-/* 6*/{SIM_PORTB_ENABLE, PORTB,  1}, {SIM_PORTB_ENABLE, PORTB,  2},
-/* 8*/{SIM_PORTB_ENABLE, PORTB,  3}, {SIM_PORTB_ENABLE, PORTB, 16},
-/*10*/{SIM_PORTB_ENABLE, PORTB, 17}, {SIM_PORTB_ENABLE, PORTB, 18},
-/*12*/{SIM_PORTB_ENABLE, PORTB, 19}, {SIM_PORTC_ENABLE, PORTC,  0},
-/*14*/{SIM_PORTC_ENABLE, PORTC,  1}, {SIM_PORTC_ENABLE, PORTC,  2},
+/* 0*/{SIM_SCGC5_PORTB_ENABLE, PORTB,  0}, {SIM_SCGC5_PORTA_ENABLE, PORTA,  0},
+/* 2*/{SIM_SCGC5_PORTA_ENABLE, PORTA,  1}, {SIM_SCGC5_PORTA_ENABLE, PORTA,  2},
+/* 4*/{SIM_SCGC5_PORTA_ENABLE, PORTA,  3}, {SIM_SCGC5_PORTA_ENABLE, PORTA,  4},
+/* 6*/{SIM_SCGC5_PORTB_ENABLE, PORTB,  1}, {SIM_SCGC5_PORTB_ENABLE, PORTB,  2},
+/* 8*/{SIM_SCGC5_PORTB_ENABLE, PORTB,  3}, {SIM_SCGC5_PORTB_ENABLE, PORTB, 16},
+/*10*/{SIM_SCGC5_PORTB_ENABLE, PORTB, 17}, {SIM_SCGC5_PORTB_ENABLE, PORTB, 18},
+/*12*/{SIM_SCGC5_PORTB_ENABLE, PORTB, 19}, {SIM_SCGC5_PORTC_ENABLE, PORTC,  0},
+/*14*/{SIM_SCGC5_PORTC_ENABLE, PORTC,  1}, {SIM_SCGC5_PORTC_ENABLE, PORTC,  2},
 };
 
 static uint16_t minCntr[TSI_COUNT];
@@ -62,7 +70,7 @@ static void tsiSetScanc(uint32_t scanc)
 
 static void tsiSetPrescale(uint16_t prescale)
 {
-    TSI0_GENCS = TSI0_GENCS & ~TSI_GENCS_PS_MASK
+    TSI0_GENCS = (TSI0_GENCS & ~TSI_GENCS_PS_MASK)
                        | ((prescale << TSI_GENCS_PS_SHIFT) & TSI_GENCS_PS_MASK);
 }
 
@@ -135,19 +143,8 @@ typedef struct tsiPriv_s {
 
 static tsiPriv_t tsiPriv;
 
-int tsi_install(void)
-{
-    int ret = TRUE;
-    tsiPriv.open = FALSE;
-    if (!deviceInstall("tsi0", tsi_open_r, tsi_ioctl, tsi_close_r, tsi_write_r,
-                                                        tsi_read_r, &tsiPriv)) {
-        ret = FALSE;
-    }
-    return ret;
-}
-
 /******************************************************************************/
-int tsi_open_r(void *reent, devoptab_t *dot, int mode, int flags)
+static int tsi_open_r(void *reent, devoptab_t *dot, int mode, int flags)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
     int tsi;
@@ -171,7 +168,7 @@ int tsi_open_r(void *reent, devoptab_t *dot, int mode, int flags)
 }
 
 /******************************************************************************/
-int tsi_ioctl(devoptab_t *dot, int cmd, int flags)
+static int tsi_ioctl(devoptab_t *dot, int cmd, int flags)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
 
@@ -218,7 +215,7 @@ int tsi_ioctl(devoptab_t *dot, int cmd, int flags)
 }
 
 /******************************************************************************/
-int tsi_close_r(void *reent, devoptab_t *dot)
+static int tsi_close_r(void *reent, devoptab_t *dot)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
 
@@ -232,7 +229,7 @@ int tsi_close_r(void *reent, devoptab_t *dot)
 }
 
 /******************************************************************************/
-long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len)
+static long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
     (void)priv;
@@ -241,7 +238,7 @@ long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len)
 }
 
 /******************************************************************************/
-long tsi_read_r(void *reent, devoptab_t *dot, void *buf, int len)
+static long tsi_read_r(void *reent, devoptab_t *dot, void *buf, int len)
 {
     tsiPriv_t *priv = (tsiPriv_t *)dot->priv;
     uint16_t data;
@@ -269,3 +266,19 @@ long tsi_read_r(void *reent, devoptab_t *dot, void *buf, int len)
     }
     return actual;
 }
+
+/******************************************************************************/
+int tsi_install(void)
+{
+    int ret = TRUE;
+    tsiPriv.open = FALSE;
+    if (!deviceInstall(DEV_MAJ_TSI, tsi_open_r, tsi_ioctl, tsi_close_r,
+                                           tsi_write_r, tsi_read_r)) {
+        ret = FALSE;
+    }
+    if (!deviceRegister("tsi0", DEV_MAJ_TSI, 0, &tsiPriv)) {
+        ret = FALSE;
+    }
+    return ret;
+}
+

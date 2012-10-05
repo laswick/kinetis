@@ -255,46 +255,86 @@ enum {
 #define SIM_PINID_SHIFT 0
 #define SIM_PINID_MASK (0xf << SIM_PINID_SHIFT)                 /* Pincout Id */
 
+/* System Options Registers */
+#define SIM_SOPT1_ADDR  0x40047000
+#define SIM_SOPT1_PTR (volatile uint32_t *) SIM_SOPT1_ADDR
+#define SIM_SOPT1   (*(volatile uint32_t *) SIM_SOPT1_ADDR)
+#define SIM_SOPT1_OSC32KSEL  BIT_19
+#define SIM_SOPT2_ADDR  0x40048004
+#define SIM_SOPT2_PTR (volatile uint32_t *) SIM_SOPT2_ADDR
+#define SIM_SOPT2   (*(volatile uint32_t *) SIM_SOPT2_ADDR)
+#define SIM_SOPT2_PLLFLLSEL  BIT_16
+#define SIM_SOPT2_MCGCLKSEL  BIT_0
+
+
 /* System Clock Gate Control Registers */
 #define SIM_SCGC1_ADDR  0x40048028
-#define SIM_SCGC1   (*(volatile uint32_t *) SIM_SCGC1_ADDR)
-#define SIM_SCGC1_PTR (volatile uint32_t *) SIM_SCGC1_ADDR
+#define SIM_SCGC1_PTR     (volatile uint32_t *) SIM_SCGC1_ADDR
+#define SIM_SCGC1       (*(volatile uint32_t *) SIM_SCGC1_ADDR)
+#define SIM_SCGC1_UART5_ENABLE  BIT_11
+#define SIM_SCGC1_UART4_ENABLE  BIT_10
+
+#define SIM_SCGC2_ADDR  0x4004802C
+#define SIM_SCGC2_PTR     (volatile uint32_t *) SIM_SCGC2_ADDR
+#define SIM_SCGC2       (*(volatile uint32_t *) SIM_SCGC2_ADDR)
+#define SIM_SCGC2_DAC0_ENABLE  BIT_12
+
+#define SIM_SCGC3_ADDR  0x40048030
+#define SIM_SCGC3_PTR     (volatile uint32_t *) SIM_SCGC3_ADDR
+#define SIM_SCGC3       (*(volatile uint32_t *) SIM_SCGC3_ADDR)
+#define SIM_SCGC3_SPI2_ENABLE  BIT_12
+#define SIM_SCGC3_ADC1_ENABLE  BIT_27
+
 #define SIM_SCGC4_ADDR  0x40048034
-#define SIM_SCGC4   (*(volatile uint32_t *) SIM_SCGC4_ADDR)
-#define SIM_SCGC4_PTR (volatile uint32_t *) SIM_SCGC4_ADDR
-#define SIM_UART5_ENABLE  BIT_11
-#define SIM_UART4_ENABLE  BIT_10
-#define SIM_EWM_ENABLE    BIT_1
-#define SIM_CMT_ENABLE    BIT_2
-#define SIM_I2C0_ENABLE   BIT_6
-#define SIM_I2C1_ENABLE   BIT_7
-#define SIM_UART0_ENABLE  BIT_10
-#define SIM_UART1_ENABLE  BIT_11
-#define SIM_UART2_ENABLE  BIT_12
-#define SIM_UART3_ENABLE  BIT_13
-#define SIM_USBOTG_ENABLE BIT_18
-#define SIM_CMP_ENABLE    BIT_19
-#define SIM_VREF_ENABLE   BIT_20
-#define SIM_LLWU_ENABLE   BIT_28
+#define SIM_SCGC4_PTR     (volatile uint32_t *) SIM_SCGC4_ADDR
+#define SIM_SCGC4       (*(volatile uint32_t *) SIM_SCGC4_ADDR)
+#define SIM_SCGC4_EWM_ENABLE    BIT_1
+#define SIM_SCGC4_CMT_ENABLE    BIT_2
+#define SIM_SCGC4_I2C0_ENABLE   BIT_6
+#define SIM_SCGC4_I2C1_ENABLE   BIT_7
+#define SIM_SCGC4_UART0_ENABLE  BIT_10
+#define SIM_SCGC4_UART1_ENABLE  BIT_11
+#define SIM_SCGC4_UART2_ENABLE  BIT_12
+#define SIM_SCGC4_UART3_ENABLE  BIT_13
+#define SIM_SCGC4_USBOTG_ENABLE BIT_18
+#define SIM_SCGC4_CMP_ENABLE    BIT_19
+#define SIM_SCGC4_VREF_ENABLE   BIT_20
+#define SIM_SCGC4_LLWU_ENABLE   BIT_28
+
+#define SIM_SCGC5_ADDR  0x40048038
+#define SIM_SCGC5_PTR     (volatile uint32_t *) SIM_SCGC5_ADDR
+#define SIM_SCGC5       (*(volatile uint32_t *) SIM_SCGC5_ADDR)
+#define SIM_SCGC5_PORTA_ENABLE BIT_9
+#define SIM_SCGC5_PORTB_ENABLE BIT_10
+#define SIM_SCGC5_PORTC_ENABLE BIT_11
+#define SIM_SCGC5_PORTD_ENABLE BIT_12
+#define SIM_SCGC5_PORTE_ENABLE BIT_13
+
+#define SIM_TSI_ENABLE   BIT_5
+
 #define SIM_SCGC6_ADDR  0x4004803C
-#define SIM_SCGC6_PTR (volatile uint32_t *) SIM_SCGC6_ADDR
-#define SIM_SCGC6 (*(volatile uint32_t *) SIM_SCGC6_ADDR)
+#define SIM_SCGC6_PTR     (volatile uint32_t *) SIM_SCGC6_ADDR
+#define SIM_SCGC6       (*(volatile uint32_t *) SIM_SCGC6_ADDR)
 #define SIM_SCGC6_SPI0_ENABLE  BIT_12
 #define SIM_SCGC6_SPI1_ENABLE  BIT_13
 #define SIM_SCGC6_CRC_ENABLE   BIT_18
-#define SIM_SCGC3_ADDR  0x40048030
-#define SIM_SCGC3_PTR (volatile uint32_t *) SIM_SCGC3_ADDR
-#define SIM_SCGC3 (*(volatile uint32_t *) SIM_SCGC3_ADDR)
-#define SIM_SCGC3_SPI2_ENABLE  BIT_12
-#define SIM_SCGC5_ADDR  0x40048038
-#define SIM_SCGC5_PTR (volatile uint32_t) * SIM_SCGC5_ADDR
-#define SIM_SCGC5 (*(volatile uint32_t *) SIM_SCGC5_ADDR)
-#define SIM_TSI_ENABLE   BIT_5
-#define SIM_PORTA_ENABLE BIT_9
-#define SIM_PORTB_ENABLE BIT_10
-#define SIM_PORTC_ENABLE BIT_11
-#define SIM_PORTD_ENABLE BIT_12
-#define SIM_PORTE_ENABLE BIT_13
+#define SIM_SCGC6_PIT_ENABLE   BIT_23
+#define SIM_SCGC6_ADC0_ENABLE  BIT_27
+#define SIM_SCGC6_FTFL_ENABLE  BIT_0
+#define SIM_SCGC7_ADDR  0x40048040
+#define SIM_SCGC7_PTR (volatile uint32_t *) SIM_SCGC7_ADDR
+#define SIM_SCGC7   (*(volatile uint32_t *) SIM_SCGC7_ADDR)
+#define SIM_SCGC7_FLEXBUS_ENABLE BIT_0
+
+/* System Clock Divider Registers */
+#define SIM_CLKDIV1_ADDR  0x40048044
+#define SIM_CLKDIV1_PTR (volatile uint32_t *) SIM_CLKDIV1_ADDR
+#define SIM_CLKDIV1   (*(volatile uint32_t *) SIM_CLKDIV1_ADDR)
+#define SIM_CLKDIV1_OUTDIV1_MASK  0xF << 28 /* Core/System clock divider */
+#define SIM_CLKDIV1_OUTDIV2_MASK  0xF << 24 /* Bus/Peripheral clock divider */
+#define SIM_CLKDIV1_OUTDIV3_MASK  0xF << 20 /* FlexBus clock divider */
+#define SIM_CLKDIV1_OUTDIV4_MASK  0xF << 16 /* Flash clock divider */
+
 
 /*******************************************************************************
 * PORT CONTROLLER
@@ -426,7 +466,7 @@ typedef struct {
 #define ADC0_BASE_ADDR 0x4003b000
 #define ADC0_REG_PTR   (volatile adc_t *) ADC0_BASE_ADDR
 #define ADC1_BASE_ADDR 0x400bb000
-#define ADC1_REG_PTR   (volatile adc_t *) ADC0_BASE_ADDR
+#define ADC1_REG_PTR   (volatile adc_t *) ADC1_BASE_ADDR
 
 
 #define ADC0 UART0_BASE_ADDR
@@ -463,6 +503,10 @@ typedef struct {
     uint32_t clm0;    /* Minus-side general cal. value  , R/W, 0x00000020 */
 } adc_t; /* Memmapped registers */
 
+enum {
+    ADC_REGISTERS_A,
+    ADC_REGISTERS_B
+};
 
 /* SC1n */
 typedef enum {
@@ -1081,11 +1125,13 @@ typedef enum {
     FTFL_CMD_PRGRM_ONCE         = 0x43,
     FTFL_CMD_ERASE_ALL_BLOCKS   = 0x44,
     FTFL_CMD_VERIFY_BACKDOOR    = 0x45,
+    FTFL_CMD_SWAP               = 0x46,
     FTFL_CMD_PRGRM_PARTITION    = 0x80,
     FTFL_CMD_SET_FLEXRAM_FN     = 0x81,
 } ftflFCMD_t;
 
-#define FTFL_FLASH_SECTOR_SIZE 0x800 /* Bytes */
+#define FTFL_FLASH_SECTOR_SIZE 0x800   /* 2   KBytes */
+#define FTFL_FLASH_BLOCK_SIZE  0x40000 /* 256 KBytes */
 
 #define FTFL_BASE_ADDR 0x40020000
 #define FTFL_FSTAT  (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x0))
@@ -1110,7 +1156,7 @@ typedef enum {
 #define FTFL_FPROT0 (*(volatile uint8_t *) (FTFL_BASE_ADDR + 0x13))
 
 /* Flash Memory Controller */
-enum {
+typedef enum {
     FMC_CINV_WAY = BIT_20 | BIT_21 | BIT_22 | BIT_23, /* W - 0 */
     FMC_S_B_INV  = BIT_19,                            /* W - 0 */
 } fmcPFBCR_t;
@@ -1359,7 +1405,7 @@ typedef enum {
 * MPU
 *******************************************************************************/
 
-enum {
+typedef enum {
     MPU_VLD     = BIT_0,                             /* R/W - 1 */
     MPU_NGRD    = BIT_8  | BIT_9  | BIT_10 | BIT_11, /* R   - 1 */
     MPU_NSP     = BIT_12 | BIT_13 | BIT_14 | BIT_15, /* R   - 5 */
@@ -1455,4 +1501,282 @@ typedef struct {
 #define MPU_RGDAAC9  (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x24))
 #define MPU_RGDAAC10 (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x28))
 #define MPU_RGDAAC11 (*(volatile uint32_t *) (MPU_RGDAAC_BASE_ADDR + 0x2C))
+
+/*******************************************************************************
+* DAC
+*******************************************************************************/
+
+#define DAC0_BASE_ADDR 0x400CC000
+
+#define DAC0_DAT0L_ADDR (DAC0_BASE_ADDR + 0x0)
+#define DAC0_DAT0H_ADDR (DAC0_BASE_ADDR + 0x1)
+#define DAC0_DAT1L_ADDR (DAC0_BASE_ADDR + 0x2)
+#define DAC0_DAT1H_ADDR (DAC0_BASE_ADDR + 0x3)
+
+#define DAC0_DAT (*(volatile uint8_t *) (DAC0_BASE_ADDR)
+
+#define DAC0_SR  (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x20)
+#define DAC0_CR0 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x21)
+#define DAC0_CR1 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x22)
+#define DAC0_CR2 (*(volatile uint8_t *) (DAC0_BASE_ADDR + 0x23)
+
+#define DAC_DATA_MAX 16
+
+#define DAC_SR_BFWMF  BIT_2  /* watermark flag */
+#define DAC_SR_BFRPTF BIT_1  /* read pointer top position flag */
+#define DAC_SR_BFRPBF BIT_0  /* read pointer bottom position flag */
+
+#define DAC_CR0_DACEN     BIT_7 /* Enable */
+#define DAC_CR0_DACRFS    BIT_6 /* Reference select, 0 = DACREF_1
+			    	                     1 = DACREF_2 */
+#define DAC_CR0_DACTRGSEL BIT_5 /* Trigger select, 0 = HW trigger
+				                   1 = SW trigger */
+#define DAC_CR0_DACSWTRG  BIT_4 /* Software trigger, active high, WO */
+#define DAC_CR0_LPEN      BIT_3 /* Low power control, 0 = high power
+				                      1 = low power */
+#define DAC_CR0_DACBWIEN  BIT_2 /* Buffer watermark interrupt enable */
+#define DAC_CR0_DACBTIEN  BIT_1 /* Buffer read pointer top flag enable */
+#define DAC_CR0_DACBBIEN  BIT_0 /* Buffer read pointer bottom flag enable */
+
+#define DAC_CR1_DMAEN     BIT_7 /* DMA Enabled */
+
+enum {
+    DAC_MODE_NORMAL,
+    DAC_MODE_SWING,
+    DAC_MODE_ONE_TIME,
+    DAC_MODE_RESERVED
+};
+
+#define DAC_CR0_FLAG (DAC_CR0_DACEN | DAC_CR0_DACRFS | DAC_CR0_DACTRGSEL)
+#define DAC_CR0_TRGF (DAC_CR0_FLAG | DAC_CR0_DACSWTRG)
+#define DAC_CR1_FLAG 0x01
+#define DAC_CR2_FLAG 0x0f
+
+/*******************************************************************************
+* PIT
+*******************************************************************************/
+
+#define PIT_CTRL_BASE 0x40037000
+#define PIT_CH_OFFSET 0x010
+#define PIT_LDVALN_OFFSET 0x100
+#define	PIT_CVALN_OFFSET 0x104
+#define PIT_TCTRLN_OFFSET 0x108
+#define PIT_TFLGN_OFFSET 0x10C
+
+#define PIT0_MCR (PIT_CTRL_BASE + (PIT_CH_OFFSET * 0x0))
+#define PIT0_LDVAL (PIT_CTRL_BASE + PIT_LDVALN_OFFSET)
+#define PIT0_CVAL (PIT_CTRL_BASE + PIT_CVALN_OFFSET)
+#define PIT0_TCTRL (PIT_CTRL_BASE + PIT_TCTRLN_OFFSET)
+#define PIT0_TFLG (PIT_CTRL_BASE + PIT_TFLGN_OFFSET)
+
+#define MCR_MDIS (1 << 1)
+#define MCR_FRZ (1 << 0)
+#define TCTRL_TIE (1 << 1)
+#define TCTRL_TEN (1 << 0)
+#define TFLG_TIF (1 << 0)
+
+#define PIT_ENABLE (1 << 23)
+#define	SIM_SCGC6_FLAGS (PIT_ENABLE)
+
+/*******************************************************************************
+* CLOCKS
+*
+* MCG     = Multipurpose Clock Generator
+* OSC     = Oscillator
+* RTC     = Real Time Clock
+*
+*******************************************************************************/
+
+typedef enum {
+    CLOCK_MCGIRCLK,
+    CLOCK_MCGFFCLK,
+    CLOCK_SYSTEM,                              /* Clocks the ARM Cortex M4 core */
+    CLOCK_CORE = CLOCK_SYSTEM,
+    CLOCK_BUS,
+    CLOCK_FLEXBUS,
+    CLOCK_FLASH,
+    CLOCK_MCGPLLCLK,
+    CLOCK_MCGFLLCLK,
+    CLOCK_OSCERCLK,
+    CLOCK_ERCLK32K,
+    CLOCK_LPO,
+} clockSource_t;
+
+                                        /* Multipurpose Clock Generator (MCG) */
+typedef struct {
+    uint8_t c1;                 /* Control 1 Register                     0x0 */
+    uint8_t c2;                 /* Control 2 Register                     0x1 */
+    uint8_t c3;                 /* Control 3 Register                     0x2 */
+    uint8_t c4;                 /* Control 4 Register                     0x3 */
+    uint8_t c5;                 /* Control 5 Register                     0x4 */
+    uint8_t c6;                 /* Control 6 Register                     0x5 */
+    uint8_t s;                  /* Status Register                        0x6 */
+    uint8_t const _unused1;     /*                                        0x7 */
+    uint8_t atc;                /* Auto Trim Control Register             0x8 */
+    uint8_t const _unused2;     /*                                        0x9 */
+    uint8_t atcvh;              /* Auto Trim Compare Value High Register  0xA */
+    uint8_t atcvl;              /* Auto Trim Compare Value Low Register   0xB */
+} mcg_t;
+
+#define MCG_BASE_ADDR 0x40064000
+
+typedef enum {
+    /* MCG Control 1 Register */
+    MCG_C1_CLKS_MASK      = 0x3 << 6,
+    MCG_C1_FRDIV_MASK     = 0x7 << 3,
+    MCG_C1_IREFS          = BIT_2,
+    MCG_C1_IRCLKEN        = BIT_1,
+    MCG_C1_IREFSTEN       = BIT_0,
+    /* MCG Control 2 Register */
+    MCG_C2_RANGE_MASK     = 0x3 << 4,
+    MCG_C2_HGO            = BIT_3,
+    MCG_C2_EREFS          = BIT_2,
+    MCG_C2_LP             = BIT_1,
+    MCG_C2_IRCS           = BIT_0,
+    /* MCG Control 3 Register */
+    MCG_C3_SCTRIM_MASK    = 0xFF,
+    /* MCG Control 4 Register */
+    MCG_C4_DMX32          = BIT_7,
+    MCG_C4_DRST_DRS_MASK  = 0x3 << 5,
+    MCG_C4_FCTRIM_MASK    = 0xF << 1,
+    MCG_C4_SCFTRIM        = BIT_0,
+    /* MCG Control 5 Register */
+    MCG_C5_PLLCLKEN       = BIT_6,
+    MCG_C5_PLLSTEN        = BIT_5,
+    MCG_C5_PRDIV_MASK     = 0x1F,
+    /* MCG Control 6 Register */
+    MCG_C6_LOLIE          = BIT_7,
+    MCG_C6_PLLS           = BIT_6,
+    MCG_C6_CME            = BIT_5,
+    MCG_C6_VDIV_MASK      = 0x1F,
+} mcgControlReg_t;
+
+/* MCG Status Register */
+typedef enum {
+    MCG_S_LOLS            = BIT_7,
+    MCG_S_LOCK            = BIT_6,
+    MCG_S_PLLST           = BIT_5,
+    MCG_S_IREFST          = BIT_4,
+    MCG_S_CLKST_MASK      = 0x3 << 2,
+    MCG_S_OSCINIT         = BIT_1,
+    MCG_S_IRCST           = BIT_0,
+} mcgStatusReg_t;
+
+typedef enum {
+    /* MCG Auto Trim Control register */
+    MCG_ATC_ATME          = BIT_7,
+    MCG_ATC_ATMS          = BIT_6,
+    MCG_ATC_ATMF          = BIT_5,
+    /* MCG Auto Trim Compare Value High Register */
+    MCG_ATCVH             = 0xFF,
+    /* MCG Auto Trim Compare Value Low Register */
+    MCG_ATCVL             = 0xFF,
+} mcgAutoTrimReg_t;
+
+                                                          /* Oscillator (OSC) */
+typedef struct {
+    uint8_t cr;                  /* Control Register                      0x0 */
+} osc_t;
+
+#define OSC_BASE_ADDR 0x40065000
+
+/* OSC Control register */
+typedef enum {
+    OSC_CR_ERCLKEN        = BIT_7,
+    OSC_CR_EREFSTEN       = BIT_5,
+    OSC_CR_SC2P           = BIT_3,
+    OSC_CR_SC4P           = BIT_2,
+    OSC_CR_SC8P           = BIT_1,
+    OSC_CR_SC16P          = BIT_0,
+} oscControlReg_t;
+                                                     /* Real Time Clock (RTC) */
+typedef struct {
+    uint32_t tsr;                /* Time Seconds Register               0x000 */
+    uint32_t tpr;                /* Time Prescaler Register             0x004 */
+    uint32_t tar;                /* Time Alarm Register                 0x008 */
+    uint32_t tcr;                /* Time Compensation Register          0x00C */
+    uint32_t cr;                 /* Control Register                    0x010 */
+    uint32_t sr;                 /* Status Register                     0x014 */
+    uint32_t lr;                 /* Lock Register                       0x018 */
+    uint32_t ier;                /* Interrupt Enable Register           0x01C */
+    uint32_t const _unused[63];  /*                                     0x020 */
+    uint32_t war;                /* Write Access Register               0x800 */
+    uint32_t rar;                /* Read Access Register                0x804 */
+} rtc_t;
+
+#define RTC_BASE_ADDR 0x4003D000
+
+typedef enum {
+    /* RTC Time Seconds Register */
+    RTC_TSR_MASK          = 0xFFFFFFFF,
+    /* RTC Time Prescaler Register */
+    RTC_TPR_MASK          = 0xFFFF,
+    /* RTC Time Alarm Register */
+    RTC_TAR_MASK          = 0xFFFFFFFF,
+    /* RTC Time Compensation Register */
+    RTC_TCR_CIC_MASK      = 0xFF << 24,
+    RTC_TCR_TCV_MASK      = 0xFF << 16,
+    RTC_TCR_CIR_MASK      = 0xFF << 8,
+    RTC_TCR_TCR_MASK      = 0xFF,
+} rtcTimeReg_t;
+
+/* RTC Control Register */
+typedef enum {
+    RTC_CR_SC2P           = BIT_13,
+    RTC_CR_SC4P           = BIT_12,
+    RTC_CR_SC8P           = BIT_11,
+    RTC_CR_SC16P          = BIT_10,
+    RTC_CR_CLKO           = BIT_9,
+    RTC_CR_OSCE           = BIT_8,
+    RTC_CR_UM             = BIT_3,
+    RTC_CR_SUP            = BIT_2,
+    RTC_CR_WEP            = BIT_1,
+    RTC_CR_SWR            = BIT_0,
+} rtcControlReg_t;
+
+/* RTC Status Register */
+typedef enum {
+    RTC_SR_TCE            = BIT_4,
+    RTC_SR_TAF            = BIT_2,
+    RTC_SR_TOF            = BIT_1,
+    RTC_SR_TIF            = BIT_0,
+} rtcStatusReg_t;
+
+/* RTC Lock Register */
+typedef enum {
+    RTC_LR_LRL            = BIT_6,
+    RTC_LR_SRL            = BIT_5,
+    RTC_LR_CRL            = BIT_4,
+    RTC_LR_TCL            = BIT_3,
+} rtcLockReg_t;
+
+/* RTC Interrupt Enable Register */
+typedef enum {
+    RTC_IER_TAIE          = BIT_2,
+    RTC_IER_TOIE          = BIT_1,
+    RTC_IER_TIIE          = BIT_0,
+} rtcIeReg_t;
+
+typedef enum {
+    /* RTC Write Access Register */
+    RTC_WAR_IERW          = BIT_7,
+    RTC_WAR_LRW           = BIT_6,
+    RTC_WAR_SRW           = BIT_5,
+    RTC_WAR_CRW           = BIT_4,
+    RTC_WAR_TCRW          = BIT_3,
+    RTC_WAR_TARW          = BIT_2,
+    RTC_WAR_TPRW          = BIT_1,
+    RTC_WAR_TSRW          = BIT_0,
+    /* RTC Read Access Register */
+    RTC_RAR_IERR          = BIT_7,
+    RTC_RAR_LRR           = BIT_6,
+    RTC_RAR_SRR           = BIT_5,
+    RTC_RAR_CRR           = BIT_4,
+    RTC_RAR_TCRR          = BIT_3,
+    RTC_RAR_TARR          = BIT_2,
+    RTC_RAR_TPRR          = BIT_1,
+    RTC_RAR_TSRR          = BIT_0,
+} rtcAccessReg_t;
+
+
 #endif

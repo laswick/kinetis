@@ -9,7 +9,8 @@
 
 MEMORY
 {
-    FLASH  (rx) : ORIGIN = 0x00000000, LENGTH = 512K
+    FLASH  (rx) : ORIGIN = 0x00000000, LENGTH = 254K
+    SWAP   (rx) : ORIGIN = 0x0003F800, LENGTH = 2K
     SRAM_L(rwx) : ORIGIN = 0x1FFF0000, LENGTH = 64K
     SRAM  (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
@@ -48,6 +49,10 @@ SECTIONS
         _ramcode_end = .;
     } > SRAM_L AT>FLASH
 
+    .flashSwap :
+    {
+        _flash_swap_addr = .;
+    } > SWAP
 
     .ramvect :
     {

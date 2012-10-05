@@ -6,34 +6,26 @@
 
 # Name of project/output file:
 
-TARGET = loader
+TARGET = clocks_demo
 
 # List your asm files here (minus the .s):
 
-ASM_PIECES = startcode libc_stubs
+ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES  = hardware devoptab util loaderUart
-C_PIECES += gpio flash xmodem loader
+C_PIECES = hardware gpio clocks demoClocks
 
 # Define Hardware Platform
 
 PLATFORM = FREESCALE_K60N512_TOWER_HW
-PRO_TOOLS = FALSE
 
-ifeq ($(PRO_TOOLS), TRUE)
-PATH :=/opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/bin:${PATH}
-else
 PATH :=/opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/bin:${PATH}
-endif
-
-CC = arm-none-eabi-gcc
-AS = arm-none-eabi-as
-LD = arm-none-eabi-ld
-GDB = arm-none-eabi-gdb
-OBJDUMP = arm-none-eabi-objdump
-OBJCOPY = arm-none-eabi-objcopy
+CC = arm-none-eabi-gcc              # Compiler
+AS = arm-none-eabi-as               # Assembler
+LD = arm-none-eabi-ld               # Linker
+GDB = arm-none-eabi-gdb             # Debugger
+OBJDUMP = arm-none-eabi-objdump     # Object file (disassembler output)
 
 ASM_FLAGS = -g
 ASM_FILES = ${ASM_PIECES:%=%.s}
@@ -41,35 +33,37 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS  = -Wall -c -ggdb -MD -O${OPT_LEVEL} -D${PLATFORM} -mlong-calls
-C_FLAGS += -DBOOTLOADER
-ifeq ($(PRO_TOOLS), TRUE)
-C_FLAGS += -DPRO_TOOLS
-endif
-C_FILES  = ${C_PIECES:%=%.c}
+C_FLAGS = -Wall -c -g -O${OPT_LEVEL} -D${PLATFORM}
+C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
 O_FILES = ${ASM_O_FILES} ${C_O_FILES}
 
 CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
-LD_SCRIPT = linkerscript_boot.ld
+LD_SCRIPT = linkerscript.ld
+
+# nostartfiles flag prevents the toolchain from including it's default startup
+# routines. 
 
 LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 
-ifeq ($(PRO_TOOLS), TRUE)
-LIBPATH = /opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/arm-none-eabi/lib/thumb2
-else
+# path to the thumb-2 assembly instruction set library. Thumb 2 is an
+# instruction set for ARM programs. It uses 16 and 32 bit instructions.
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
-endif
 
 LIBS  = ${LIBPATH}/libc.a
 
+# Target : Dependencies
+
+# Running the makefile, create the executable for loading (axf)
+# OBJDUMP (create the dissassembler of the object file)
 all: ${TARGET}.axf
+    # D = disassemble all sections of the code
+    # S = intermix the dissassembly with source code.
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
-	@${OBJCOPY} -Obinary ${TARGET}.axf ${TARGET}.bin
 	@ln -fs ${TARGET}.out.s out.s
-	@ln -fs ${TARGET}.axf out.axf
+	@ln -fs ${TARGET}.axf out.axf       # f = force, s = symbolic
 	@echo
 	@echo Executable: ${TARGET}.axf, sym-linked to out.axf
 	@echo
@@ -77,13 +71,19 @@ all: ${TARGET}.axf
 	@echo
 	@${CC} --version
 
+# Create the microcontroller AXF file from the object files using
+# LINKER
 ${TARGET}.axf: ${O_FILES}
 	@echo
 	${LD} ${O_FILES} ${LIBS} -T ${LD_SCRIPT} ${LD_FLAGS} -o ${TARGET}.axf
 
+# Create the object files from the assembly files using
+# ASSEMBLER
 %.o: %.s
 	${AS} ${ASM_FLAGS} ${CPU_FLAGS} -o $@ $<
 
+# Create the object files from the C files using
+# COMPILER
 %.o: %.c
 	${CC} ${C_FLAGS} ${CPU_FLAGS} -o $@ $<
 
@@ -93,7 +93,6 @@ clean:
 	@echo
 	rm -f *.o
 	rm -f ${TARGET}.axf
-	rm -f ${TARGET}.bin
 	rm -f ${TARGET}.out.s
 	rm -f out.axf
 	rm -f out.s

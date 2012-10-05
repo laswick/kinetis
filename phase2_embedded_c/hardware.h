@@ -35,30 +35,45 @@ extern void assert_(const char *file, const int line);
 
 #define __RAMCODE__ __attribute__ ((long_call, section(".ramcode")))
 
-/* POSIX Interface ************************************************************/
+/* POSIX Interface ***********************************************************/
 
 extern int ioctl(int fd, int cmd, int flags);
 
-typedef struct devoptab_s {                        /* Device Operations Table */
+enum {                                               /* Major Device Numbers */
+    DEV_MAJ_UART,
+    DEV_MAJ_SPI,
+    DEV_MAJ_TSI,
+    DEV_MAJ_CRC,
+    DEV_MAJ_ADC,
+};
+
+typedef struct devoptab_s {                       /* Device Operations Table */
     const char *name;
+    uint32_t    maj;
+    uint32_t    min;
+    void       *priv;
+} devoptab_t;
+
+extern int deviceRegister (const char *name, uint32_t maj, uint32_t min,
+                                                                   void *priv);
+
+typedef struct devlist_s {                             /* Device Driver List */
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags);
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags);
     int  (*close_r)(void *reent, struct devoptab_s *dot);
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
-                                                                       int len);
+                                                                      int len);
     long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len);
-    void *priv;
-} devoptab_t;
+} devlist_t;
 
 extern int deviceInstall(
-    const char *name,
+    uint32_t maj,
     int  (*open_r )(void *reent, struct devoptab_s *dot, int mode, int flags),
     int  (*ioctl  )(             struct devoptab_s *dot, int cmd,  int flags),
     int  (*close_r)(void *reent, struct devoptab_s *dot),
     long (*write_r)(void *reent, struct devoptab_s *dot, const void *buf,
-                                                                       int len),
-    long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len),
-    void *priv
+                                                                      int len),
+    long (*read_r )(void *reent, struct devoptab_s *dot, void *buf, int len)
 );
 
 /* INTERRUPTS *****************************************************************/
@@ -181,22 +196,31 @@ typedef struct spiWriteRead_s {
 #define DEVOPTAB_SPI2_STR "spi2"
 
 int  spi_install (void);
-int  spi_open_r  (void *reent, devoptab_t *dot,  int mode,  int flags);
-int  spi_ioctl   (             devoptab_t *dot,  int cmd,   int flags);
-int  spi_close_r (void *reent, devoptab_t *dot);
-long spi_write_r (void *reent, devoptab_t *dot, const void *buf, int len);
-long spi_read_r  (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* FLASH **********************************************************************/
+
+enum {
+    FLASH_BLOCK_0,
+    FLASH_BLOCK_1,
+
+    MAX_FLASH_BLOCKS,
+};
 
 typedef struct {
 } flashConfig_t;
 
 extern int32_t flashInit(const flashConfig_t *cfg);
 extern int32_t flashErase(uint32_t addr, uint32_t numBytes);
+extern int32_t flashEraseBlock(uint32_t blockNum);
 extern int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords);
+extern int32_t flashSwapInit(void);
+extern int32_t flashSwap(void);
+
+/* APPLICATION LOADER *********************************************************/
+extern int32_t loader(void);
 
 /* TSI ************************************************************************/
+
 #define TSI_COUNT 16
 
 typedef struct {
@@ -219,11 +243,6 @@ extern uint32_t tsiRead(const tsiConfig_t *cfg);
 extern uint32_t tsiReadRaw(uint32_t pin);
 
 extern int  tsi_install(void);
-extern int  tsi_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-extern int  tsi_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-extern int  tsi_close_r(void *reent, devoptab_t *dot);
-extern long tsi_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-extern long tsi_read_r (void *reent, devoptab_t *dot,       void *buf, int len);
 
 /* IO_IOCTL_ commands */
 enum {
@@ -291,11 +310,6 @@ typedef enum {
 #define DEVOPTAB_CRC_STR    "crc"
 
 int  crc_install(void);
-int  crc_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-int  crc_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-int  crc_close_r(void *reent, devoptab_t *dot);
-long crc_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-long crc_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
 /* MPU ************************************************************************/
 
@@ -333,21 +347,21 @@ extern bool32_t mpuCheckFaults(void);
 #define MAX_UARTS     6
 
 #define UART5_PORT    PORTE
-#define UART5_PORT_ENABLE SIM_PORTE_ENABLE
+#define UART5_PORT_ENABLE SIM_SCGC5_PORTE_ENABLE
 #define UART5_RX_PIN  9
 #define UART5_TX_PIN  8
 #define UART5_RX_MUX  PORT_MUX_ALT3
 #define UART5_TX_MUX  PORT_MUX_ALT3
 
 #define UART4_PORT    PORTE
-#define UART4_PORT_ENABLE SIM_PORTE_ENABLE
+#define UART4_PORT_ENABLE SIM_SCGC5_PORTE_ENABLE
 #define UART4_RX_PIN  25
 #define UART4_TX_PIN  24
 #define UART4_RX_MUX  PORT_MUX_ALT3
 #define UART4_TX_MUX  PORT_MUX_ALT3
 
 #define UART3_PORT    PORTC
-#define UART3_PORT_ENABLE SIM_PORTC_ENABLE
+#define UART3_PORT_ENABLE SIM_SCGC5_PORTC_ENABLE
 #define UART3_RX_PIN  16
 #define UART3_TX_PIN  17
 #define UART3_RX_MUX  PORT_MUX_ALT3
@@ -361,11 +375,6 @@ extern bool32_t mpuCheckFaults(void);
 #define DEVOPTAB_UART5_STR "uart5"
 
 int  uart_install(void);
-int  uart_open_r (void *reent, devoptab_t *dot, int mode, int flags);
-int  uart_ioctl  (             devoptab_t *dot, int cmd,  int flags);
-int  uart_close_r(void *reent, devoptab_t *dot);
-long uart_write_r(void *reent, devoptab_t *dot, const void *buf, int len);
-long uart_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
 
                                                         /* IO_IOCTL_ commands */
 enum {
@@ -376,6 +385,7 @@ enum {
     IO_IOCTL_UART_BAUD_SET,         /* Set the baud rate */
 };
 
+<<<<<<< HEAD
 /* WATCH DOG ******************************************************************/
 #define WDOG_UNLOCK_KEY_1  0xC520
 #define WDOG_UNLOCK_KEY_2  0xD928
@@ -386,6 +396,153 @@ extern void watchDogConfig();
 extern void watchDogInit();
 extern void watchDogKick();
 extern void watchDogDisable();
+=======
+/* DAC ************************************************************************/
+
+typedef struct {
+    uint8_t low;
+    uint8_t high;
+} dacData_t;
+
+typedef struct {
+    dacData_t data[DAC_DATA_MAX];
+    uint8_t sr;
+    uint8_t c0;
+    uint8_t c1;
+    uint8_t c2;
+} dac_t;
+
+extern volatile dac_t * const dac0;
+
+extern void dac0Init(void);
+
+/* PIT ************************************************************************/
+
+typedef struct {
+    uint32_t loadVal;      /* value to load into pit timer */
+    uint32_t currVal;      /* current value of the down counter */
+    uint32_t ctrl;
+    uint32_t flags;
+} pit_t;
+
+enum {
+    PIT_0,
+    PIT_1,
+    PIT_2,
+    PIT_3,
+    MAX_PIT,
+};
+
+typedef struct {
+    uint32_t mcr;
+    uint32_t reserved[(0x100/4) - 1];
+    pit_t pit[4];
+} pitCtrl_t;
+
+extern volatile pitCtrl_t * const pitCtrl;
+
+extern void pitInit(int timer, void *isr, uint32_t initCount);
+
+/* ADC ***********************************************************************/
+
+#define MAX_ADCS     2
+
+/* TODO is there a port enable required for ADC? */
+#define ADC0_PORT    PORTA
+#define ADC0_PORT_ENABLE SIM_SCGC5_PORTA_ENABLE
+
+#define ADC1_PORT    PORTA
+#define ADC1_PORT_ENABLE SIM_SCGC5_PORTA_ENABLE
+
+
+#if defined(FREESCALE_K60N512_TOWER_HW)
+#define ADC_POT_ADC_INPUT ADC_SC1_ADCH_CH20
+#endif
+
+#define DEVOPTAB_ADC0_STR "adc0"
+#define DEVOPTAB_ADC1_STR "adc1"
+int  adc_install(void);
+#if 0
+int  adc_open_r (void *reent, devoptab_t *dot, int mode, int flags);
+int  adc_ioctl  (             devoptab_t *dot, int cmd,  int flags);
+int  adc_close_r(void *reent, devoptab_t *dot);
+long adc_read_r (void *reent, devoptab_t *dat,       void *buf, int len);
+#endif
+                                                        /* IO_IOCTL_ commands */
+enum {
+    IO_IOCTL_ADC_CALIBRATE,
+    IO_IOCTL_ADC_OFFSET_SET,
+    IO_IOCTL_ADC_PGASET,
+    IO_IOCTL_ADC_CLOCK_SELECT,
+    IO_IOCTL_ADC_RESOLUTION_SELECT,
+    IO_IOCTL_ADC_VREF_SELECT,
+    IO_IOCTL_ADC_TRIGGER_SELECT,
+    IO_IOCTL_ADC_CHANNEL_SELECT,
+    IO_IOCTL_ADC_CONVERSION_CONTINUOUS,
+    IO_IOCTL_ADC_CONVERSION_TIME_SELECT,
+    IO_IOCTL_ADC_AVERAGE_SELECT,
+    IO_IOCTL_ADC_COMPARE_SELECT,
+    IO_IOCTL_ADC_CALL_BACK_SET,     /* Register a call back function. */
+    IO_IOCTL_ADC_SAMPLE_SIZE_SET,   /* Specify number of samples.*/
+    IO_IOCTL_ADC_FLUSH_FIFO,       /* Flush driver's FIFO */
+};
+
+enum {
+    IO_IOCTL_ADC_RESOLUTION_FLAGS_8BIT,
+    IO_IOCTL_ADC_RESOLUTION_FLAGS_12BIT,
+    IO_IOCTL_ADC_RESOLUTION_FLAGS_10BIT,
+    IO_IOCTL_ADC_RESOLUTION_FLAGS_16BIT,
+};
+
+#define IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_B (1 << 31)
+#define IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A (0 << 31)
+#define IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK  0x1F
+enum {
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_SHORT_SAMPLE   = -1,
+
+    /* These map 1:1 with the ADLSTS reg value.  If you change them:
+    * 1. Shame on you.
+    * 2. You will need to set up a switch LUT in adc.c
+   */
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_20 =  0,
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_12,
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_6,
+    IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_2,
+};
+
+enum {
+    /* These map 1:1 with the reg value.  If you change them:
+    * 1. Shame on you.
+    * 2. You will need to set up a switch LUT in adc.c
+    */
+
+    IO_IOCTL_ADC_FLAGS_AVGS_4,
+    IO_IOCTL_ADC_FLAGS_AVGS_8,
+    IO_IOCTL_ADC_FLAGS_AVGS_16,
+    IO_IOCTL_ADC_FLAGS_AVGS_32,
+};
+
+enum {
+    /* These map 1:1 with the reg value. */
+    IO_IOCTL_ADC_RES_FLAGS_8_BIT,  /* 2's complitment 9-bit output in DIFF */
+    IO_IOCTL_ADC_RES_FLAGS_12_BIT, /* 2's complitment 13-bit output in DIFF */
+    IO_IOCTL_ADC_RES_FLAGS_10_BIT, /* 2's complitment 11-bit output in DIFF */
+    IO_IOCTL_ADC_RES_FLAGS_16_BIT, /* 2's complitment 16-bit output in DIFF */
+};
+
+enum {
+    /* These map 1:1 with the reg value. */
+    IO_IOCTL_ADC_FLAGS_ADICLK_BUS,
+    IO_IOCTL_ADC_FLAGS_ADICLK_BUS_DIV_2,
+    IO_IOCTL_ADC_FLAGS_ADICLK_ALTCLK,
+    IO_IOCTL_ADC_FLAGS_ADICLK_ADACK,
+};
+
+enum {
+     IO_IOCTL_ADC_TRIGGER_SELECT_SW,
+     IO_IOCTL_ADC_TRIGGER_SELECT_HW,
+};
+>>>>>>> 3820bed359054853fbe3fc8f230905e7a940f072
 
 /*******************************************************************************
 *
@@ -413,19 +570,67 @@ extern void watchDogDisable();
  * table in the device TRM.
  */
 
-/*
- * TODO
- *
- * We should define a hwGetSystemClock(), and use the result everywhere that
- * needs it, rather then relying on a fixed define.  The default fixed
- * define should only be the default power on clock.
- *
- * Jan's clock code would obviously update the hwSystemClock value if it
- * where changed, and/or someone engaged the FLL/PLL, etc.
- */
+#define BUS_CLOCK_HZ            20480000
 
-#define SYSTEM_CLOCK_HZ  20480000
-#define    BUS_CLOCK_HZ  20480000
+#define SYSTEM_CLOCK_HZ_DFLT    BUS_CLOCK_HZ        /* Default power-on clock */
+#define SYSTEM_DIVIDER_DFLT     DIVIDE_BY_1
+#define BUS_DIVIDER_DFLT        DIVIDE_BY_1
+#define FLEXBUS_DIVIDER_DFLT    DIVIDE_BY_2
+#define FLASH_DIVIDER_DFLT      DIVIDE_BY_2
+
+#define MAX_SYSTEM_FREQ         100000000
+#define MAX_BUS_FREQ            50000000
+#define MAX_FLEXBUS_FREQ        MAX_BUS_FREQ
+#define MAX_FLASH_FREQ          25000000
+
+        /* Dividers are used to configure the system/bus/flexbus/flash clocks */
+typedef enum {
+    DIVIDE_BY_1 = 0,
+    DIVIDE_BY_2,
+    DIVIDE_BY_3,
+    DIVIDE_BY_4,
+    DIVIDE_BY_5,
+    DIVIDE_BY_6,
+    DIVIDE_BY_7,
+    DIVIDE_BY_8,
+    DIVIDE_BY_9,
+    DIVIDE_BY_10,
+    DIVIDE_BY_11,
+    DIVIDE_BY_12,
+    DIVIDE_BY_13,
+    DIVIDE_BY_14,
+    DIVIDE_BY_15,
+    DIVIDE_BY_16,
+    MAX_DIVIDER,
+} divider_t;
+
+
+typedef enum {
+    MCG_PLL_EXTERNAL_100MHZ,
+    MCG_PLL_EXTERNAL_48MHZ,
+    MCG_FLL_INTERNAL_24MHZ,
+    MAX_MCG_CLOCK_OPTIONS,
+} clockConfig_t;
+
+extern void clockSetDividers(divider_t systemDiv, divider_t busDiv,
+                                      divider_t flexBusDiv, divider_t flashDiv);
+extern uint32_t clockGetFreq(clockSource_t cs);
+
+extern void clockConfigMcgOut(clockConfig_t cc);
+extern void clockConfigMcgIr();
+extern void clockConfigMcgFf();
+extern void clockConfigMcgFll();
+extern void clockConfigMcgPll();
+
+extern void clockConfigOsc();
+extern void clockConfigOsc32k();
+extern void clockConfigOscEr();
+
+extern void clockConfigEr32k();
+
+extern void clockConfigRtc();
+
+extern void clockConfigLpo();
 
 /* LEDS ***********************************************************************/
 
@@ -442,6 +647,9 @@ extern void watchDogDisable();
 #define N_LED_BLUE_PIN    10
 
 /* SWITCHES *******************************************************************/
+
+#define N_SWITCH_0_PORT  PORTE
+#define N_SWITCH_0_PIN   26
 
 #define N_SWITCH_1_PORT  PORTA
 #define N_SWITCH_1_PIN   19
@@ -460,6 +668,91 @@ extern void watchDogDisable();
 #define TSI_BLUE_INDEX    9
 #define TSI_BLUE_BIT      BIT_9
 
+
+/* ADC ***********************************************************************/
+#define ADC_ALTCLK_SOURCE CLOCKS_OSCERCLK
+
+enum {
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP0        = 0,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP1        = 1,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_PGA0_DP1        = 2,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP3        = 3,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED1       = 4,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED2       = 5,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED3       = 6,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED4       = 7,
+
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE4B       = 4,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE5B       = 5,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE6B       = 6,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE7B       = 7,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE8        = 8,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE9        = 9,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE10       = 10,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE11       = 11,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE12       = 12,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE13       = 13,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE14       = 14,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE15       = 15,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE16       = 16,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE17       = 17,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_SE18       = 18,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DM0        = 19,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DM1        = 20,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED5       = 21,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED6       = 22,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_12_BIT_DAC0     = 23,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED7       = 24,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED8       = 25,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_TEMP_SENSOR     = 26,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_BANDGAP         = 27,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_RESERVED9       = 28,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_VREFH           = 29,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_VREFL           = 30,
+    IO_IOCTL_ADC0_CHANNEL_FLAGS_MODULE_DISABLED = 31,
+};
+
+enum {
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DP0        = 0,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DP1        = 1,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_PGA1_DP1        = 2,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DP3        = 3,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE4A       = 4,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE5A       = 5,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE6A       = 6,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE7A       = 7,
+
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE4B       = 4,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE5B       = 5,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE6B       = 6,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE7B       = 7,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE8        = 8,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE9        = 9,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE10       = 10,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE11       = 11,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE12       = 12,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE13       = 13,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE14       = 14,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE15       = 15,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE16       = 16,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_SE17       = 17,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_VREF       = 18,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DM0        = 19,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DM1        = 20,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED1       = 21,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED2       = 22,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_12_BIT_DAC0     = 23,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED3       = 24,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED4       = 25,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_TEMP_SENSOR     = 26,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_BANDGAP         = 27,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_RESERVED5       = 28,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_VREFH           = 29,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_VREFL           = 30,
+    IO_IOCTL_ADC1_CHANNEL_FLAGS_MODULE_DISABLED = 31,
+};
+
+
 /******************************************************************************/
 
 #else
@@ -467,3 +760,4 @@ extern void watchDogDisable();
 #endif
 
 #endif
+

@@ -19,6 +19,7 @@
 * Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
 *
 *******************************************************************************/
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -29,9 +30,14 @@
 #include "globalDefs.h"
 
 
+/* TODO refactor into a dev dependent portion (uartDev_t) and a
+ * multiple instance (uart_t) structure.  There is no need
+ * to malloc and memcpy stuff that will be constant to all
+ * instances of uart accessors.
+ */
 
 typedef struct {
-    int32_t             major;
+    int32_t              minor;
     volatile uartPort_t *reg;
     unsigned             port;
     unsigned             sim;
@@ -58,10 +64,10 @@ typedef enum uartModule_e{
 
 static uart_t uartList[NUM_UART_MODULES] = {
     [UART_MODULE_0] = {
-        .major          = UART_MODULE_0,
+        .minor          = UART_MODULE_0,
         .reg            = UART0_REG_PTR,
         .simScgcPtr     = SIM_SCGC4_PTR,
-        .simScgcEnBit   = SIM_UART0_ENABLE,
+        .simScgcEnBit   = SIM_SCGC4_UART0_ENABLE,
 #if 0 /* RFI */
         .port           = UART0_PORT
         .simScgc5PortEn = UART0_PORT_ENABLE,
@@ -72,10 +78,10 @@ static uart_t uartList[NUM_UART_MODULES] = {
 #endif
     },
     [UART_MODULE_1] = {
-        .major          = UART_MODULE_1,
+        .minor          = UART_MODULE_1,
         .reg            = UART1_REG_PTR,
         .simScgcPtr     = SIM_SCGC4_PTR,
-        .simScgcEnBit   = SIM_UART1_ENABLE,
+        .simScgcEnBit   = SIM_SCGC4_UART1_ENABLE,
 #if 0 /* RFI */
         .port           = UART1_PORT
         .simScgc5PortEn = UART1_PORT_ENABLE,
@@ -86,10 +92,10 @@ static uart_t uartList[NUM_UART_MODULES] = {
 #endif
     },
     [UART_MODULE_2] = {
-        .major          = UART_MODULE_2,
+        .minor          = UART_MODULE_2,
         .reg            = UART2_REG_PTR,
         .simScgcPtr     = SIM_SCGC4_PTR,
-        .simScgcEnBit   = SIM_UART2_ENABLE,
+        .simScgcEnBit   = SIM_SCGC4_UART2_ENABLE,
 #if 0 /* RFI */
         .port           = UART2_PORT
         .simScgc5PortEn = UART2_PORT_ENABLE,
@@ -100,11 +106,11 @@ static uart_t uartList[NUM_UART_MODULES] = {
 #endif
     },
     [UART_MODULE_3] = {
-        .major          = UART_MODULE_3,
+        .minor          = UART_MODULE_3,
         .reg            = UART3_REG_PTR,
         .port           = UART3_PORT,
         .simScgcPtr     = SIM_SCGC4_PTR,
-        .simScgcEnBit   = SIM_UART3_ENABLE,
+        .simScgcEnBit   = SIM_SCGC4_UART3_ENABLE,
         .simScgc5PortEn = UART3_PORT_ENABLE,
         .txPin          = UART3_TX_PIN,
         .rxPin          = UART3_RX_PIN,
@@ -112,11 +118,11 @@ static uart_t uartList[NUM_UART_MODULES] = {
         .rxPortCtrlBits = UART3_RX_MUX,
     },
     [UART_MODULE_4] = {
-        .major          = UART_MODULE_4,
+        .minor          = UART_MODULE_4,
         .reg            = UART4_REG_PTR,
         .port           = UART4_PORT,
         .simScgcPtr     = SIM_SCGC1_PTR,
-        .simScgcEnBit   = SIM_UART4_ENABLE,
+        .simScgcEnBit   = SIM_SCGC1_UART4_ENABLE,
         .simScgc5PortEn = UART4_PORT_ENABLE,
         .txPin          = UART4_TX_PIN,
         .rxPin          = UART4_RX_PIN,
@@ -124,11 +130,11 @@ static uart_t uartList[NUM_UART_MODULES] = {
         .rxPortCtrlBits = UART4_RX_MUX,
     },
     [UART_MODULE_5] = {
-        .major          = UART_MODULE_5,
+        .minor          = UART_MODULE_5,
         .reg            = UART5_REG_PTR,
         .port           = UART5_PORT,
         .simScgcPtr     = SIM_SCGC1_PTR,
-        .simScgcEnBit   = SIM_UART5_ENABLE,
+        .simScgcEnBit   = SIM_SCGC1_UART5_ENABLE,
         .simScgc5PortEn = UART5_PORT_ENABLE,
         .txPin          = UART5_TX_PIN,
         .rxPin          = UART5_RX_PIN,
@@ -148,8 +154,13 @@ typedef struct {
     volatile uint8_t length;
 } uartBuffer_t;
 
+enum {
+    UART_CLOCK_SOURCE_SYSTEM,
+    UART_CLOCK_SOURCE_BUS,
+};
+
 typedef struct {
-    int32_t      clockHz;
+    int32_t      clockSource;
     int32_t      baud;
     int32_t      (*callBack)(uint8_t const *buf, int len);
     char         terminator;
@@ -158,73 +169,30 @@ typedef struct {
 
 static uartDev_t uartDev[NUM_UART_MODULES] = {
     [UART_MODULE_0] = {
-        .clockHz    = SYSTEM_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_SYSTEM,
         .baud       = 9600,
     },
     [UART_MODULE_1] = {
-        .clockHz    = SYSTEM_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_SYSTEM,
         .baud       = 9600,
     },
     [UART_MODULE_2] = {
-        .clockHz    = BUS_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_BUS,
         .baud       = 9600,
     },
     [UART_MODULE_3] = {
-        .clockHz    = BUS_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_BUS,
         .baud       = 9600,
     },
     [UART_MODULE_4] = {
-        .clockHz    = BUS_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_BUS,
         .baud       = 9600,
     },
     [UART_MODULE_5] = {
-        .clockHz    = BUS_CLOCK_HZ,
+        .clockSource    = UART_CLOCK_SOURCE_BUS,
         .baud       = 9600,
     },
 };
-
-int uart_install(void)
-{
-    int ret = TRUE;
-
-    /* Std  In, Out, Err use uart3 */
-    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-
-
-    if (!deviceInstall("uart0", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-
-    if (!deviceInstall("uart1", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-
-    if (!deviceInstall("uart2", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-
-    if (!deviceInstall("uart3", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-
-    if (!deviceInstall("uart4", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-
-    if (!deviceInstall("uart5", uart_open_r, uart_ioctl, uart_close_r,
-                                uart_write_r, uart_read_r, NULL))
-        ret = FALSE;
-
-    return ret;
-}
 
 
 static void rxMsgNotify(uart_t *uart, uartBuffer_t *bufferPtr)
@@ -236,7 +204,7 @@ static void rxMsgNotify(uart_t *uart, uartBuffer_t *bufferPtr)
         bufferPtr->headIdx = (bufferPtr->headIdx + 1)
             & UART_BUFFER_WRAP;
     }
-    uartDev[uart->major].callBack(buf, bufferPtr->length);
+    uartDev[uart->minor].callBack(buf, bufferPtr->length);
     bufferPtr->length = 0;
     return;
 }
@@ -246,16 +214,16 @@ static void rxMsgNotify(uart_t *uart, uartBuffer_t *bufferPtr)
 * Status ISR definition.
 *
 ******************************************************************************/
-static void isrHandler(int major)
+static void isrHandler(int minor)
 {
-    uart_t *uart = &uartList[major];
+    uart_t *uart = &uartList[minor];
     char d;
-    uartBuffer_t *bufferPtr = &uartDev[major].uartRxBuffer;
+    uartBuffer_t *bufferPtr = &uartDev[minor].uartRxBuffer;
 
     if (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
         while (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
             d = uart->reg->d;
-            if (uartDev[major].callBack && uartDev[major].terminator == d) {
+            if (uartDev[minor].callBack && uartDev[minor].terminator == d) {
                 rxMsgNotify(uart, bufferPtr);
             }
             else {
@@ -263,7 +231,7 @@ static void isrHandler(int major)
                 bufferPtr->tailIdx = (bufferPtr->tailIdx + 1)
                     & UART_BUFFER_WRAP;
                 bufferPtr->length++;
-                if (uartDev[major].callBack && !uartDev[major].terminator) {
+                if (uartDev[minor].callBack && !uartDev[minor].terminator) {
                     /* Send every char back to caller when no
                      * terminator specified
                      */
@@ -332,9 +300,19 @@ static void setBaud(uart_t *uart)
     uint16_t sbr;
     uint16_t baudFineAdjust;
 
-    int32_t major = uart->major;
-    int32_t clockHz = uartDev[major].clockHz;
-    int32_t baud    = uartDev[major].baud;
+    int32_t minor = uart->minor;
+    int32_t clockHz;
+    int32_t baud    = uartDev[minor].baud;
+
+
+    switch (uartDev[minor].clockSource) {
+    case UART_CLOCK_SOURCE_SYSTEM:
+        clockHz = clockGetFreq(CLOCK_SYSTEM);
+        break;
+    case UART_CLOCK_SOURCE_BUS:
+        clockHz = clockGetFreq(CLOCK_BUS);
+        break;
+    }
 
 
     uart->reg->c2 &= ~(UART_C2_RX_ENABLE | UART_C2_TX_ENABLE);
@@ -356,12 +334,12 @@ static void setBaud(uart_t *uart)
 
     return;
 }
-static int uartOpen(uartModule_t mod, devoptab_t *dot)
+static int uartOpen(devoptab_t *dot)
 {
     uart_t *uart;
     void   *isrPtr;
 
-    if (dot->priv) return FALSE; /* Device is already open */
+    if (dot->priv) return TRUE; /* Device is already open */
 
     /* Create 'private' uart structure and point devoptab's
      * private pointer to it */
@@ -372,7 +350,7 @@ static int uartOpen(uartModule_t mod, devoptab_t *dot)
 
 
     /* Load init & default info into private spi structure */
-    memcpy(uart, &uartList[mod], sizeof(uart_t));
+    memcpy(uart, &uartList[dot->min], sizeof(uart_t));
 
     /*
      * Config the SIM Clock Gate
@@ -401,36 +379,35 @@ static int uartOpen(uartModule_t mod, devoptab_t *dot)
     uart->reg->cfifo |= UART_CFIFO_RXFLUSH;
     uart->reg->pfifo |= UART_PFIFO_RXFE;
 
-    switch (uart->major) {
-        case UART_MODULE_0:
-            isrPtr = isrUart0;
-            break;
-        case UART_MODULE_1:
-            isrPtr = isrUart1;
-            break;
-        case UART_MODULE_2:
-            isrPtr = isrUart2;
-            break;
-        case UART_MODULE_3:
-            isrPtr = isrUart3;
-            break;
-        case UART_MODULE_4:
-            isrPtr = isrUart4;
-            break;
-        case UART_MODULE_5:
-            isrPtr = isrUart5;
-            break;
-        default:
-            assert(0);
-            return FALSE;
+    switch (uart->minor) {
+    case UART_MODULE_0:
+        isrPtr = isrUart0;
+        break;
+    case UART_MODULE_1:
+        isrPtr = isrUart1;
+        break;
+    case UART_MODULE_2:
+        isrPtr = isrUart2;
+        break;
+    case UART_MODULE_3:
+        isrPtr = isrUart3;
+        break;
+    case UART_MODULE_4:
+        isrPtr = isrUart4;
+        break;
+    case UART_MODULE_5:
+        isrPtr = isrUart5;
+        break;
+    default:
+        assert(0);
+        return FALSE;
     }
 
-    hwInstallISRHandler(ISR_UART0_STATUS_SOURCES + 2 * uart->major,
+    hwInstallISRHandler(ISR_UART0_STATUS_SOURCES + 2 * uart->minor,
             isrPtr);
 
     uart->reg->c2 |= UART_C2_RX_ENABLE | UART_C2_TX_ENABLE
         | UART_C2_RX_FULL_INT_ENABLE;
-
 
     return TRUE;
 }
@@ -483,8 +460,6 @@ int32_t uartRead(devoptab_t *dot, const void *data, unsigned len)
     if (!dot || !dot->priv) return FALSE;
     else uart = (uart_t *) dot->priv;
 
-
-return 0;
     for (i = 0; i < len; i++) {
         int readyRetry = 1000;
 
@@ -514,52 +489,31 @@ return 0;
  *      Enable the SIM SCGC for the device
  *      Initialize the device with a default configuration
  ********************************************************************************/
-int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
+static int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 {
-    uartModule_t mod;
-
     if (!dot || !dot->name) {
         /* errno ? */
         return FALSE;
     }
 
-    /* Determine the module instance */
-    if (strcmp(DEVOPTAB_UART0_STR, dot->name) == 0 ) {
-        mod = UART_MODULE_0;
-    }
-    else if (strcmp(DEVOPTAB_UART1_STR, dot->name) == 0) {
-        mod = UART_MODULE_1;
-    }
-    else if (strcmp(DEVOPTAB_UART2_STR, dot->name) == 0) {
-        mod = UART_MODULE_2;
-    }
-    else if (strcmp(DEVOPTAB_UART3_STR, dot->name) == 0) {
-        mod = UART_MODULE_3;
-    }
-    else if (strcmp(DEVOPTAB_UART4_STR, dot->name) == 0) {
-        mod = UART_MODULE_4;
-    }
-    else if (strcmp(DEVOPTAB_UART5_STR, dot->name) == 0) {
-        mod = UART_MODULE_5;
-    }
-    else {
+    /* Test the module instance */
+    if ( dot->min >= NUM_UART_MODULES ) {
         /* Device does not exist */
         ((struct _reent *)reent)->_errno = ENODEV;
         return FALSE;
     }
 
-    /* Try to open if not already open */
-    if (uartOpen(mod,dot)) {
+    /* Try to open */
+    if (uartOpen(dot)) {
         return TRUE;
     } else {
-        /* Device is already open, is this an issue or not? */
-        ((struct _reent *)reent)->_errno = EPERM;
+        /* Could not allocate memory */
         return FALSE;
     }
 }
 
 /*******************************************************************************/
-/* uart_ioctl_r                                                                 */
+/* uart_ioctl                                                                  */
 /*******************************************************************************/
 /* Jobs of the 'ioctl' syscall:
  *      Implement any device specific commands.
@@ -572,7 +526,7 @@ int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
  *              Set device registers to specific values
  *              Configure I/O pins
  *******************************************************************************/
-int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
+static int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
 /* TODO: return errors if flags or cmd is bad */
 {
     uart_t *uart;
@@ -582,16 +536,16 @@ int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
     if (!dot || !dot->priv) return FALSE;
     else uart = (uart_t *) dot->priv;
 
-    bufferPtr = &uartDev[uart->major].uartRxBuffer;
+    bufferPtr = &uartDev[uart->minor].uartRxBuffer;
 
     switch (cmd) {
     case IO_IOCTL_UART_CALL_BACK_SET:
         if (flags) {
-            uartDev[uart->major].callBack = (void *) flags;
+            uartDev[uart->minor].callBack = (void *) flags;
         }
         break;
     case IO_IOCTL_UART_TERMINATOR_SET:
-        uartDev[uart->major].terminator = (char) flags;
+        uartDev[uart->minor].terminator = (char) flags;
         break;
     case IO_IOCTL_UART_FLUSH_RX_FIFO:
         uart->reg->c2 &= ~UART_C2_RX_FULL_INT_ENABLE;
@@ -612,7 +566,7 @@ int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
                              * I'm not checking standard baud rates.
                              * Just don't be an a$$hole... :)
                              */
-        uartDev[uart->major].baud = flags;
+        uartDev[uart->minor].baud = flags;
         setBaud(uart);
         break;
     default:
@@ -631,7 +585,7 @@ int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
  *      Disable the SIM SCGC for the device
  *      Free the device 'state' structure, unhook it to the devoptab private ptr
  *******************************************************************************/
-int uart_close_r (void *reent, devoptab_t *dot )
+static int uart_close_r (void *reent, devoptab_t *dot )
 {
     uart_t *uart = dot->priv;
 
@@ -655,7 +609,8 @@ int uart_close_r (void *reent, devoptab_t *dot )
  *      Write data to the device.
  *      Return the number of bytes written
  *******************************************************************************/
-long uart_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
+static long uart_write_r (void *reent, devoptab_t *dot,
+                                       const void *buf, int len)
 {
     /* You could just put your write function here, but I want switch between
      * polled & interupt functions here at a later point.*/
@@ -669,11 +624,41 @@ long uart_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
  *      Read data from the device
  *      Return the number of bytes read
  *******************************************************************************/
-long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
+static long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 {
     /* You could just put your read function here, but I want switch between
      * polled & interupt functions here at a later point.*/
     return uartRead(dot, buf, len);
 }
 
+
+int uart_install(void)
+{
+    int ret = TRUE;
+
+    if( !deviceInstall(DEV_MAJ_UART,uart_open_r, uart_ioctl, uart_close_r,
+                                                 uart_write_r, uart_read_r) ){
+        ret = FALSE;
+    }
+    if( !deviceRegister("uart0", DEV_MAJ_UART, UART_MODULE_0,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart1", DEV_MAJ_UART, UART_MODULE_1,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart2", DEV_MAJ_UART, UART_MODULE_2,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart3", DEV_MAJ_UART, UART_MODULE_3,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart4", DEV_MAJ_UART, UART_MODULE_4,  NULL) ) {
+        ret =  FALSE;
+    }
+    if( !deviceRegister("uart5", DEV_MAJ_UART, UART_MODULE_5,  NULL) ) {
+        ret =  FALSE;
+    }
+
+    return ret;
+}
 

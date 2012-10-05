@@ -89,5 +89,6 @@ SECTIONS
     _heap_end = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM) - STACK_SIZE, 8);
     _stack_start = ALIGN (ORIGIN(SRAM) + LENGTH(SRAM), 8);
     _stack_end = _stack_start - STACK_SIZE;
+    _flash_swap_addr = 0xffffffff;
 }
 
