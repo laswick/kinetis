@@ -376,6 +376,11 @@ enum {
     IO_IOCTL_UART_BAUD_SET,         /* Set the baud rate */
 };
 
+/* WATCH DOG ******************************************************************/
+extern void watchDogConfig();
+extern void watchDogInit();
+extern void watchDogKick();
+extern void watchDogDisable();
 /*******************************************************************************
 *
 * CCA Hardware Defines
@@ -396,7 +401,7 @@ enum {
 /* CLOCKS *********************************************************************/
 
 /*
- * On resest, the system clock is defaulted to FEI mode where MCGOUTCLK
+ * On reset, the system clock is defaulted to FEI mode where MCGOUTCLK
  * is derived from the FLL clock, controlled by the 32kHz IRC with a
  * default FLL factor of 640 (=20.48MHz)  See the MCG Modes of Operation
  * table in the device TRM.
