@@ -88,6 +88,7 @@ static msg_t msg = {
     .style         = HELP_ENGLISH,
     .helpStringEng =     "\r\n"
                          "Serial Interface: \r\n"
+                         "Escape message by hitting the tab, then: \r\n"
                          "Byte 0: Framing byte 'A', \r\n"
                          "Byte 1: Cmd: \r\n"
                          "          '1' Echo this help message, \r\n"
@@ -166,6 +167,9 @@ int main(void)
     int quit  = FALSE;
     int blink = FALSE;
 
+    int32_t len;
+    char readString[256] = {'\0'};
+
     setClock();
 
 
@@ -174,19 +178,6 @@ int main(void)
 
     /* Install uart into the device table before using it */
     uart_install();
-
-    fd = open("uart3", 0, 0); /* STDIN */
-    if (fd != 0) {
-        assert(0);
-    }
-    fd = open("uart3", 0, 0); /* STDOUT */
-    if (fd != 1) {
-        assert(0);
-    }
-    fd = open("uart3", 0, 0); /* STDERR */
-    if (fd != 2) {
-        assert(0);
-    }
 
     fd = open("uart3", 0, 0);
     if (fd==-1) {
@@ -200,11 +191,14 @@ int main(void)
      */
     ioctl(fd, IO_IOCTL_UART_CALL_BACK_SET, (int)uartCallBackHandler);
 
+              /* Don't bother listening until you hear a tab key.  I mean it! */
+    ioctl(fd, IO_IOCTL_UART_ESCAPE_SET, '\t');
+
                                           /* Call me when the user hits enter */
     ioctl(fd, IO_IOCTL_UART_TERMINATOR_SET, '\r');
     ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
 
-    printf("The start of something good...\r\n"); /* StdOut is uart3 */
+//    printf("The start of something good...\r\n"); /* StdOut is uart3 */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -237,6 +231,7 @@ int main(void)
         }
 
 
+
         if (updateFlags & UPDATE_CMD) {
             updateFlags &= ~UPDATE_CMD;
             switch (msg.cmd) {
@@ -261,7 +256,7 @@ int main(void)
 
         if (updateFlags & UPDATE_GARBAGE) {
             updateFlags &= ~UPDATE_GARBAGE;
-            write(fd, "\r\n GARGAGE: ",
+            write(fd, "\r\n GARBAGE: ",
                 strlen("\r\n GARBAGE:"));
             write(fd, msg.garbage, strlen(msg.garbage));
             write(fd, "\r\n",
@@ -278,16 +273,32 @@ int main(void)
     gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
 
 
+    /* 'Quiting' to echo mode.  Turn off callback and use reads */
+    ioctl(fd, IO_IOCTL_UART_CALL_BACK_SET, (int)NULL);
     for (;;) {
         delay();
         gpioClear(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
+#if 0
         printf("Whoop...\n\n");
         printf("\tWhoop...\n\n");
         printf("\t\tWhoop...\n\n");
         printf("\t\t\t  Gangnam Style!\n\n");
-
+#endif
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
+
+                                                /* read a maximum of 10 bytes */
+        len = read(fd, (uint8_t *)readString, 10);
+        if (len < 254) {
+            readString[len + 1] = '\0';
+        }
+        if (len) {
+            write(fd, readString, len);
+            write(fd, "\r\n", strlen("\r\n"));
+            readString[0] = '\0';
+        }
+
+
     }
 
     close(fd);
