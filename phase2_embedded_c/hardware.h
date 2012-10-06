@@ -385,7 +385,6 @@ enum {
     IO_IOCTL_UART_BAUD_SET,         /* Set the baud rate */
 };
 
-<<<<<<< HEAD
 /* WATCH DOG ******************************************************************/
 #define WDOG_UNLOCK_KEY_1  0xC520
 #define WDOG_UNLOCK_KEY_2  0xD928
@@ -396,7 +395,6 @@ extern void watchDogConfig();
 extern void watchDogInit();
 extern void watchDogKick();
 extern void watchDogDisable();
-=======
 /* DAC ************************************************************************/
 
 typedef struct {
@@ -542,7 +540,6 @@ enum {
      IO_IOCTL_ADC_TRIGGER_SELECT_SW,
      IO_IOCTL_ADC_TRIGGER_SELECT_HW,
 };
->>>>>>> 3820bed359054853fbe3fc8f230905e7a940f072
 
 /*******************************************************************************
 *
