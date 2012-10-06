@@ -536,7 +536,6 @@ enum {
      IO_IOCTL_ADC_TRIGGER_SELECT_SW,
      IO_IOCTL_ADC_TRIGGER_SELECT_HW,
 };
->>>>>>> 3820bed359054853fbe3fc8f230905e7a940f072
 
 /*******************************************************************************
 *
