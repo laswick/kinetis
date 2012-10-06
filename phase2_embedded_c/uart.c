@@ -456,22 +456,19 @@ int32_t uartRead(devoptab_t *dot, const void *data, unsigned len)
     int32_t i;
     uint8_t *dataPtr = (uint8_t *) data;
     uart_t *uart;
+    uartBuffer_t *bufferPtr;
 
     if (!dot || !dot->priv) return FALSE;
     else uart = (uart_t *) dot->priv;
 
-    for (i = 0; i < len; i++) {
-        int readyRetry = 1000;
+    bufferPtr = &uartDev[uart->minor].uartRxBuffer;
 
-        while (!(uart->reg->s1 & UART_S1_RX_DATA_FULL) && --readyRetry);
-
-        if (readyRetry) {
-            *dataPtr++ = uart->reg->d;
-        }
-        else {
-            break;
-        }
+    for (i = 0; i < bufferPtr->length && i < len; i++) {
+        *dataPtr++ = bufferPtr->buffer[bufferPtr->headIdx];
+        bufferPtr->headIdx = (bufferPtr->headIdx + 1)
+            & UART_BUFFER_WRAP;
     }
+    bufferPtr->length -= i;
     return dataPtr - (uint8_t *)data;
 }
 
