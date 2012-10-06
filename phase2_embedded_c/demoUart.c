@@ -88,6 +88,7 @@ static msg_t msg = {
     .style         = HELP_ENGLISH,
     .helpStringEng =     "\r\n"
                          "Serial Interface: \r\n"
+                         "Escape message by hitting the tab, then: \r\n"
                          "Byte 0: Framing byte 'A', \r\n"
                          "Byte 1: Cmd: \r\n"
                          "          '1' Echo this help message, \r\n"
@@ -189,6 +190,9 @@ int main(void)
      * but the leprechaun that screams in my ear told me to do it...
      */
     ioctl(fd, IO_IOCTL_UART_CALL_BACK_SET, (int)uartCallBackHandler);
+
+              /* Don't bother listening until you hear a tab key.  I mean it! */
+    ioctl(fd, IO_IOCTL_UART_ESCAPE_SET, '\t');
 
                                           /* Call me when the user hits enter */
     ioctl(fd, IO_IOCTL_UART_TERMINATOR_SET, '\r');

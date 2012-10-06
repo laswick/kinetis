@@ -147,11 +147,16 @@ static uart_t uartList[NUM_UART_MODULES] = {
 #define UART_BUFFER_SIZE 256
 #define UART_BUFFER_WRAP (UART_BUFFER_SIZE - 1)
 
+enum {
+    BUFFER_ESCAPE_STARTED,
+    BUFFER_ESCAPE_PENDING,
+};
 typedef struct {
     volatile uint8_t buffer[UART_BUFFER_SIZE];
     volatile uint8_t tailIdx;
     volatile uint8_t headIdx;
     volatile uint8_t length;
+    int32_t state; /* used for escape sequences */
 } uartBuffer_t;
 
 enum {
@@ -163,6 +168,7 @@ typedef struct {
     int32_t      clockSource;
     int32_t      baud;
     int32_t      (*callBack)(uint8_t const *buf, int len);
+    char         escape;
     char         terminator;
     uartBuffer_t uartRxBuffer;
 } uartDev_t;
@@ -220,23 +226,41 @@ static void isrHandler(int minor)
     char d;
     uartBuffer_t *bufferPtr = &uartDev[minor].uartRxBuffer;
 
+    /* A good sw develper would not let the if statements get 4 levels deep... */
     if (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
         while (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
             d = uart->reg->d;
-            if (uartDev[minor].callBack && uartDev[minor].terminator == d) {
-                rxMsgNotify(uart, bufferPtr);
+            if (uartDev[minor].callBack) {
+                if (bufferPtr->state == BUFFER_ESCAPE_PENDING) {
+                    if (d == uartDev[minor].escape) {
+                        bufferPtr->state = BUFFER_ESCAPE_STARTED;
+                    }
+                }
+                else {
+                    if (bufferPtr->state == BUFFER_ESCAPE_STARTED
+                            && d == uartDev[minor].terminator) {
+                        if (uartDev[minor].escape) {
+                            bufferPtr->state = BUFFER_ESCAPE_PENDING;
+                        }
+                        rxMsgNotify(uart, bufferPtr);
+                    }
+                    else {
+                        bufferPtr->buffer[bufferPtr->tailIdx] = d;
+                        bufferPtr->tailIdx = (bufferPtr->tailIdx + 1)
+                            & UART_BUFFER_WRAP;
+                        bufferPtr->length++;
+                              /* Fire back every char when not use terminator */
+                        if (!uartDev[minor].terminator) {
+                            rxMsgNotify(uart, bufferPtr);
+                        }
+                    }
+                }
             }
             else {
                 bufferPtr->buffer[bufferPtr->tailIdx] = d;
                 bufferPtr->tailIdx = (bufferPtr->tailIdx + 1)
                     & UART_BUFFER_WRAP;
                 bufferPtr->length++;
-                if (uartDev[minor].callBack && !uartDev[minor].terminator) {
-                    /* Send every char back to caller when no
-                     * terminator specified
-                     */
-                    rxMsgNotify(uart, bufferPtr);
-                }
             }
         }
     }
@@ -537,8 +561,19 @@ static int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
 
     switch (cmd) {
     case IO_IOCTL_UART_CALL_BACK_SET:
+        uartDev[uart->minor].callBack = (void *) flags;
+        break;
+    case IO_IOCTL_UART_ESCAPE_SET:
+        uartDev[uart->minor].escape = (char) flags;
+        /* If no terminator assigned, assume escape is used to frame the message */
+        if (!uartDev[uart->minor].terminator) {
+            uartDev[uart->minor].terminator = (char) flags;
+        }
         if (flags) {
-            uartDev[uart->minor].callBack = (void *) flags;
+            bufferPtr->state = BUFFER_ESCAPE_PENDING;
+        }
+        else {
+            bufferPtr->state = BUFFER_ESCAPE_STARTED;
         }
         break;
     case IO_IOCTL_UART_TERMINATOR_SET:
