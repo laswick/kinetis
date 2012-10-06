@@ -50,7 +50,7 @@
 * RETURNS: Nothing
 *
 *******************************************************************************/
-static void watchDogUnlock()
+void watchDogUnlock()
 {
 #if 0
     push { r0, r1 }
@@ -88,6 +88,15 @@ static void watchDogUnlock()
         /* No output */ :
         /* No input  */ :
         "r0", "r1" ); /* Specify which registers we destroy */
+
+#endif
+    /* NOTE: Need to wait one clock cycle before updating any registers */
+    int32_t test = 5;
+    test += 1;
+#if 0
+    if (test++ > 3) {
+        test++;
+    }
 #endif
 }
 
@@ -104,12 +113,22 @@ static void watchDogUnlock()
 void watchDogConfig()
 {
     /* clock pre-scaler */
+
+    /* programmable timeout period */
+
+    /* windowing refresh option */
+
+    /* configurable interrupt to provide debug breadcrumbs in 256 cycles */
+
+    /* Alt clock to LPO Oscillator */
+
+    /* Test the watchdog */
 }
 
 /*******************************************************************************
 * watchDogInit
 *******************************************************************************/
-void watchDogInit()
+void watchDogInit(/* TODO add timeout value */)
 {
 #if 0
     push { r0, r1, r4, lr }
@@ -155,25 +174,30 @@ void watchDogInit()
  * destroyed. */
     asm volatile("\n\
         ldr  r2,=0x40052006 @ WDOG_TOVALL\n\
+        ldr  r0,=0x14c4b4c\n\
         strh r0,[r2]\n\
         ldr  r2,=0x40052004 @ WDOG_TOVALH\n\
         lsr  r0,r0,#16\n\
         strh r0,[r2]\n\
         ldr  r2,=0x40052000 @ WDOG_STCTRLH\n\
-        ldr  r0,=0x01D5 @ STNDBYEN | STOPEN | ALLOWUPDATE | IRQSTEN | WDOGEN\n\
+        ldr  r0,=0x01D3 @ STNDBYEN | WAITEN | STOPEN | ALLOWUPDATE | WDOGEN\n\
         strh r0,[r2]\n\
         ldr  r2,=0x40052016 @ WDOG_PRESC\n\
         ldr  r0,=#0\n\
         strh r0,[r2]\n\
+        " :
+        /* No output */ :
+        /* No input  */ :
+        "r0", "r1", "r2" ); /* Specify which registers we destroy */
+
+#if 0
         ldr  r0,=0x00400000 @ BIT_22\n\
         ldr  r1,=0xE000E280 @ NVIC_ICPR0\n\
         str  r0,[r1]\n\
         ldr  r1,=0xE000E100 @ NVIC_ISER0\n\
         str  r0,[r1]\n\
         " :
-        /* No output */ :
-        /* No input  */ :
-        "r0", "r1", "r2" ); /* Specify which registers we destroy */
+#endif
 }
 
 /*******************************************************************************
@@ -225,7 +249,7 @@ void watchDogDisable()
 
     asm volatile("\n\
         ldr  r1,=0x40052000 @ WDOG_STCTRLH\n\
-        ldr  r0,=0x01D2\n\
+        ldr  r0,=0x01D2 @ STNDBYEN | WAITEN | STOPEN | ALLOWUPDATE \n\
         strh r0,[r1]\n\
         " :
         /* No output */ :
@@ -265,5 +289,8 @@ loop:                       /* Wait for watchdog to issue reset */
 
     .end
 #endif
+
+    /* TODO Apparently the interrupt does work after all, but for now I won't
+     * implement it unless someone really needs it. */
 }
 

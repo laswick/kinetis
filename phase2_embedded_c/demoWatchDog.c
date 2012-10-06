@@ -26,15 +26,26 @@ static void delay(void)
 
 int main(void)
 {
-    /* Initialize watchDog */
-    watchDogConfig();
-    watchDogInit();
+    watchDogDisable(); /* while configuring non-safety critical portion */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_PIN,  GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_PIN,   GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_SWITCH_1_PORT,   N_SWITCH_1_PIN,   GPIO_INPUT);
+
+    delay(); delay(); delay(); delay(); delay(); delay(); delay(); delay();
+    gpioSet(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
+    delay(); delay(); delay(); delay(); delay(); delay(); delay(); delay();
+    gpioSet(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
+    delay(); delay(); delay(); delay(); delay(); delay(); delay(); delay();
+    gpioSet(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
+    delay(); delay(); delay(); delay(); delay(); delay(); delay(); delay();
+    gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
+
+    /* Initialize watchDog */
+//  watchDogConfig();
+    watchDogInit();
 
     for (;;) {
         delay();
@@ -57,11 +68,15 @@ int main(void)
 
 	/* While no button pressed smack the watchdog around */
 	if (gpioRead(N_SWITCH_1_PORT, N_SWITCH_1_PIN) != 0) {
-		watchDogKick(); 
+            watchDogKick();
 	}
+        else {
+            int test = 5;
+            test++;
+        }
 /*
 	if (sw2 pressed) {
-		watchDogDisable();
+            watchDogDisable();
 	}
 */
     }
