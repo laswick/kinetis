@@ -79,10 +79,10 @@ static void watchDogUnlock()
     /* Write the first unlock word */
     /* Write the second unlock word within 20 bus clock cycles */
     asm volatile("\n\
-        ldr  r1, =0x4005200E\n\
-        ldr  r0, =0xC520\n\
+        ldr  r1, =0x4005200E @ WDOG_UNLOCK\n\
+        ldr  r0, =0xC520 @ WDOG_UNLOCK_KEY_1\n\
         strh r0, [r1]\n\
-        ldr  r0, =0xD928\n\
+        ldr  r0, =0xD928 @ WDOG_UNLOCK_KEY_2\n\
         strh r0, [r1]\n\
         " :
         /* No output */ :
@@ -154,21 +154,21 @@ void watchDogInit()
  * assembly you may destroy registers but you must specify which you have
  * destroyed. */
     asm volatile("\n\
-        ldr  r2,=0x40052006\n\
+        ldr  r2,=0x40052006 @ WDOG_TOVALL\n\
         strh r0,[r2]\n\
-        ldr  r2,=0x40052004\n\
+        ldr  r2,=0x40052004 @ WDOG_TOVALH\n\
         lsr  r0,r0,#16\n\
         strh r0,[r2]\n\
-        ldr  r2,=0x40052000\n\
-        ldr  r0,=0x01D5\n\
+        ldr  r2,=0x40052000 @ WDOG_STCTRLH\n\
+        ldr  r0,=0x01D5 @ STNDBYEN | STOPEN | ALLOWUPDATE | IRQSTEN | WDOGEN\n\
         strh r0,[r2]\n\
-        ldr  r2,=0x40052016\n\
+        ldr  r2,=0x40052016 @ WDOG_PRESC\n\
         ldr  r0,=#0\n\
         strh r0,[r2]\n\
-        ldr  r0,=0x00400000\n\
-        ldr  r1,=0xE000E280\n\
+        ldr  r0,=0x00400000 @ BIT_22\n\
+        ldr  r1,=0xE000E280 @ NVIC_ICPR0\n\
         str  r0,[r1]\n\
-        ldr  r1,=0xE000E100\n\
+        ldr  r1,=0xE000E100 @ NVIC_ISER0\n\
         str  r0,[r1]\n\
         " :
         /* No output */ :
@@ -196,9 +196,9 @@ void watchDogKick()
     asm volatile("\n\
         cpsid i\n\
         ldr  r1,=0x4005200C @ WDOG_REFRESH\n\
-        ldr  r0,=0xA602\n\
+        ldr  r0,=0xA602 @ WDOG_REFRESH_KEY_1\n\
         strh r0,[r1]\n\
-        ldr  r0,=0xB480\n\
+        ldr  r0,=0xB480 @ WDOG_REFRESH_KEY_2\n\
         strh r0,[r1]\n\
         cpsie i\n\
         " :
@@ -224,7 +224,7 @@ void watchDogDisable()
     watchDogUnlock();
 
     asm volatile("\n\
-        ldr  r1,=0x40052000\n\
+        ldr  r1,=0x40052000 @ WDOG_STCTRLH\n\
         ldr  r0,=0x01D2\n\
         strh r0,[r1]\n\
         " :
