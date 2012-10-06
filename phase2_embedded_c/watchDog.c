@@ -195,7 +195,7 @@ void watchDogKick()
 #endif
     asm volatile("\n\
         cpsid i\n\
-        ldr  r1,=0x4005200C\n\
+        ldr  r1,=0x4005200C @ WDOG_REFRESH\n\
         ldr  r0,=0xA602\n\
         strh r0,[r1]\n\
         ldr  r0,=0xB480\n\
