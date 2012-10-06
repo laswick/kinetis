@@ -256,7 +256,7 @@ int main(void)
 
         if (updateFlags & UPDATE_GARBAGE) {
             updateFlags &= ~UPDATE_GARBAGE;
-            write(fd, "\r\n GARGAGE: ",
+            write(fd, "\r\n GARBAGE: ",
                 strlen("\r\n GARBAGE:"));
             write(fd, msg.garbage, strlen(msg.garbage));
             write(fd, "\r\n",
