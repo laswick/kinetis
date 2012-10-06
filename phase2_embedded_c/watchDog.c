@@ -22,6 +22,20 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
+/* Watchdog Timer (WDOG) Module (s23) */
+#define WDOG_STCTRLH    0x40052000
+#define WDOG_STCTRLL    0x40052002
+#define WDOG_TOVALH     0x40052004
+#define WDOG_TOVALL     0x40052006
+#define WDOG_WINH       0x40052008
+#define WDOG_WINL       0x4005200A
+#define WDOG_REFRESH    0x4005200C
+#define WDOG_UNLOCK     0x4005200E
+#define WDOG_TRMOUTH    0x40052010
+#define WDOG_TMROUTL    0x40052012
+#define WDOG_RSTCNT     0x40052014
+#define WDOG_PRESC      0x40052016
+
 #define WDOG_UNLOCK_KEY_1  0xC520
 #define WDOG_UNLOCK_KEY_2  0xD928
 #define WDOG_REFRESH_KEY_1 0xA602
@@ -36,7 +50,7 @@
 * RETURNS: Nothing
 *
 *******************************************************************************/
-void watchDogUnlock()
+static void watchDogUnlock()
 {
 #if 0
     push { r0, r1 }
@@ -49,6 +63,31 @@ void watchDogUnlock()
     strh r0, [r1]
     pop  { r0, r1 }
     bx   lr
+#endif
+#if 0
+    const uint32_t codeAddr = WDOG_UNLOCK;
+    uint16_t key1 = WDOG_UNLOCK_KEY_1;
+    uint16_t key2 = WDOG_UNLOCK_KEY_1;
+    /* Write the first unlock word */
+    asm volatile  ("strh %[addr], [%[value]]"
+            : : [addr] "r" (codeAddr), [value] "r" (key1));
+
+    /* Write the second unlock word within 20 bus clock cycles */
+    asm volatile  ("strh %[addr], [%[value]]"
+            : : [addr] "r" (codeAddr), [value] "r" (key2));
+#else
+    /* Write the first unlock word */
+    /* Write the second unlock word within 20 bus clock cycles */
+    asm volatile("\n\
+        ldr  r1, =0x4005200E\n\
+        ldr  r0, =0xC520\n\
+        strh r0, [r1]\n\
+        ldr  r0, =0xD928\n\
+        strh r0, [r1]\n\
+        " :
+        /* No output */ :
+        /* No input  */ :
+        "r0", "r1" ); /* Specify which registers we destroy */
 #endif
 }
 
@@ -64,6 +103,7 @@ void watchDogUnlock()
 *******************************************************************************/
 void watchDogConfig()
 {
+    /* clock pre-scaler */
 }
 
 /*******************************************************************************
@@ -75,10 +115,8 @@ void watchDogInit()
     push { r0, r1, r4, lr }
 
     bl   wdogUnlock
-    /*
-     * Write the timeout value directly. Clock source is configured as LPO
-     * oscillator which operates at 1KHz (s5.7.2)
-     */
+    /* Write the timeout value directly. Clock source is configured as LPO
+     * oscillator which operates at 1KHz (s5.7.2) */
     ldr  r4,=WDOG_TOVALL
     strh r0,[r4]
     ldr  r4,=WDOG_TOVALH
@@ -103,6 +141,39 @@ void watchDogInit()
     pop  { r0, r1, r4, lr }
     bx lr
 #endif
+
+    watchDogUnlock();
+
+    /* Write the timeout value directly. Clock source is configured as LPO
+     * oscillator which operates at 1KHz (s5.7.2) */
+/* NOTE: Changed from r4 to r2 as:
+ * GCC allows you to destroy r0,r1,r2,r3, & r12 in your own stand-alone
+ * assembly code procedures. All other registers must be preserved.
+ * In this aspect, GCC follows the APCS (Arm Procedure Call Standard).
+ * However, this does not apply to inline assembly code in C. For inline
+ * assembly you may destroy registers but you must specify which you have
+ * destroyed. */
+    asm volatile("\n\
+        ldr  r2,=0x40052006\n\
+        strh r0,[r2]\n\
+        ldr  r2,=0x40052004\n\
+        lsr  r0,r0,#16\n\
+        strh r0,[r2]\n\
+        ldr  r2,=0x40052000\n\
+        ldr  r0,=0x01D5\n\
+        strh r0,[r2]\n\
+        ldr  r2,=0x40052016\n\
+        ldr  r0,=#0\n\
+        strh r0,[r2]\n\
+        ldr  r0,=0x00400000\n\
+        ldr  r1,=0xE000E280\n\
+        str  r0,[r1]\n\
+        ldr  r1,=0xE000E100\n\
+        str  r0,[r1]\n\
+        " :
+        /* No output */ :
+        /* No input  */ :
+        "r0", "r1", "r2" ); /* Specify which registers we destroy */
 }
 
 /*******************************************************************************
@@ -122,6 +193,18 @@ void watchDogKick()
     pop { r0, r1, lr }
     bx lr
 #endif
+    asm volatile("\n\
+        cpsid i\n\
+        ldr  r1,=0x4005200C\n\
+        ldr  r0,=0xA602\n\
+        strh r0,[r1]\n\
+        ldr  r0,=0xB480\n\
+        strh r0,[r1]\n\
+        cpsie i\n\
+        " :
+        /* No output */ :
+        /* No input  */ :
+        "r0", "r1" ); /* Specify which registers we destroy */
 }
 
 /*******************************************************************************
@@ -138,6 +221,16 @@ void watchDogDisable()
     pop  { r0, r1, lr }
     bx lr
 #endif
+    watchDogUnlock();
+
+    asm volatile("\n\
+        ldr  r1,=0x40052000\n\
+        ldr  r0,=0x01D2\n\
+        strh r0,[r1]\n\
+        " :
+        /* No output */ :
+        /* No input  */ :
+        "r0", "r1" ); /* Specify which registers we destroy */
 }
 
 /*******************************************************************************
