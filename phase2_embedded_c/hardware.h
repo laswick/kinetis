@@ -386,11 +386,6 @@ enum {
 };
 
 /* WATCH DOG ******************************************************************/
-#define WDOG_UNLOCK_KEY_1  0xC520
-#define WDOG_UNLOCK_KEY_2  0xD928
-#define WDOG_REFRESH_KEY_1 0xA602
-#define WDOG_REFRESH_KEY_2 0xB480
-
 extern void watchDogConfig();
 extern void watchDogInit();
 extern void watchDogKick();
