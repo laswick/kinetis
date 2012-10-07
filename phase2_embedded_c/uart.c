@@ -239,10 +239,19 @@ static void isrHandler(int minor)
                 else {
                     if (bufferPtr->state == BUFFER_ESCAPE_STARTED
                             && d == uartDev[minor].terminator) {
-                        if (uartDev[minor].escape) {
+                        if (uartDev[minor].escape
+                                != uartDev[minor].terminator) {
                             bufferPtr->state = BUFFER_ESCAPE_PENDING;
+                            rxMsgNotify(uart, bufferPtr);
                         }
-                        rxMsgNotify(uart, bufferPtr);
+                        else if (bufferPtr->length) {
+                            /* When escape and terminator are the same,
+                             * some data shows you are escape|data|term
+                             * and not data|term|escape.
+                             */
+                            bufferPtr->state = BUFFER_ESCAPE_PENDING;
+                            rxMsgNotify(uart, bufferPtr);
+                        }
                     }
                     else {
                         bufferPtr->buffer[bufferPtr->tailIdx] = d;
