@@ -678,6 +678,34 @@ enum {
 #define ADC_CLM0_MASK  0x3F
 
 
+/*******************************************************************************
+* WATCH DOG
+*******************************************************************************/
+typedef {
+    uint16_t stCtrlFlags;
+    uint16_t prescaler;
+    uint32_t timeout;
+    uint32_t window;
+} watchDogConfig_t;
+
+/* Watchdog Status and Control Register High enum */
+enum {
+   WDOG_EN          = BIT_0,
+   WDOG_CLKSRC      = BIT_1,
+   WDOG_IRQRSTEN    = BIT_2, /* TODO: If anyone cares let me know */
+   WDOG_WINEN       = BIT_3,
+   WDOG_ALLOWUPDATE = BIT_4,
+   WDOG_DBGEN       = BIT_5,
+   WDOG_STOPEN      = BIT_6,
+   WDOG_WAITEN      = BIT_7,
+   WDOG_STNDBYEN    = BIT_8,
+#if 0 /* TODO: If anyone cares let me know */
+   WDOG_TEST        = BIT_10,
+   WDOG_TESTSEL     = BIT_11,
+   WDOG_BYTES_SEL   = BIT_12 | BIT13,
+   WDOG_DISTEST     = BIT_14,
+#endif
+};
 
 
 /*******************************************************************************

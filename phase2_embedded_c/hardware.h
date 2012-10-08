@@ -389,8 +389,7 @@ enum {
 };
 
 /* WATCH DOG ******************************************************************/
-extern void watchDogConfig();
-extern void watchDogInit();
+extern void watchDogInit(const watchDogConfig_t *wdCfgPtr);
 extern void watchDogKick();
 extern void watchDogDisable();
 /* DAC ************************************************************************/

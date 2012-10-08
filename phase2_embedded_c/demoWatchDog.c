@@ -26,6 +26,13 @@ static void delay(void)
 
 int main(void)
 {
+    watchDogConfig_t wdCfg = {
+        .timeout = 0x14c4b4c;
+        .stCtrlFlags = WDOG_STNDBYEN | WDOG_WAITEN | WDOG_STOPEN
+                     | WDOG_ALLOWUPDATE | WDOG_EN;
+        .prescaler = 0;
+    };
+
     watchDogDisable(); /* while configuring non-safety critical portion */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -44,8 +51,7 @@ int main(void)
     gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
 
     /* Initialize watchDog */
-//  watchDogConfig();
-    watchDogInit();
+    watchDogInit(&wdCfg);
 
     for (;;) {
         delay();
@@ -74,11 +80,6 @@ int main(void)
             int test = 5;
             test++;
         }
-/*
-	if (sw2 pressed) {
-            watchDogDisable();
-	}
-*/
     }
 
     return 0;

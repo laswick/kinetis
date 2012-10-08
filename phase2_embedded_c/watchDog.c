@@ -6,8 +6,7 @@
 *
 * Low level driver for the Kinetis Watchdog module.
 *
-* API: watchDogConfig(), watchDogInit(), watchDogKick(), watchDogDisable(),
-*      watchDogEnableInterrupt()
+* API: watchDogInit(), watchDogKick(), watchDogDisable(),
 *
 * Copyright (C) 2012 www.laswick.net
 *
@@ -35,6 +34,22 @@
 #define WDOG_TMROUTL    0x40052012
 #define WDOG_RSTCNT     0x40052014
 #define WDOG_PRESC      0x40052016
+
+typedef struct {
+    uint16_t stCtrlH;
+    uint16_t stCtrlL;
+    uint16_t toValH;
+    uint16_t toValL;
+    uint16_t winH;
+    uint16_t winL;
+    uint16_t refresh;
+    uint16_t unlock;
+    uint16_t tmrOutH;
+    uint16_t tmrOutL;
+    uint16_t rstCnt;
+    uint16_t presc;
+} watchDog_t; /* Mem Mapped registers */
+static volatile watchDog_t *wdPtr = (volatile watchDog_t *) 0x40052000;
 
 #define WDOG_UNLOCK_KEY_1  0xC520
 #define WDOG_UNLOCK_KEY_2  0xD928
@@ -64,18 +79,7 @@ void watchDogUnlock()
     pop  { r0, r1 }
     bx   lr
 #endif
-#if 0
-    const uint32_t codeAddr = WDOG_UNLOCK;
-    uint16_t key1 = WDOG_UNLOCK_KEY_1;
-    uint16_t key2 = WDOG_UNLOCK_KEY_1;
-    /* Write the first unlock word */
-    asm volatile  ("strh %[addr], [%[value]]"
-            : : [addr] "r" (codeAddr), [value] "r" (key1));
-
-    /* Write the second unlock word within 20 bus clock cycles */
-    asm volatile  ("strh %[addr], [%[value]]"
-            : : [addr] "r" (codeAddr), [value] "r" (key2));
-#else
+#if 1
     /* Write the first unlock word */
     /* Write the second unlock word within 20 bus clock cycles */
     asm volatile("\n\
@@ -88,47 +92,19 @@ void watchDogUnlock()
         /* No output */ :
         /* No input  */ :
         "r0", "r1" ); /* Specify which registers we destroy */
-
+#else
+    wdPtr->unlock = WDOG_UNLOCK_KEY_1;
+    wdPtr->unlock = WDOG_UNLOCK_KEY_2;
 #endif
     /* NOTE: Need to wait one clock cycle before updating any registers */
     int32_t test = 5;
     test += 1;
-#if 0
-    if (test++ > 3) {
-        test++;
-    }
-#endif
-}
-
-/*******************************************************************************
-*
-* watchDogConfig
-*
-* This routine configures the provided ?????. All available config
-* options are in the WatchDog section in hardware.h.
-*
-* RETURNS: Nothing
-*
-*******************************************************************************/
-void watchDogConfig()
-{
-    /* clock pre-scaler */
-
-    /* programmable timeout period */
-
-    /* windowing refresh option */
-
-    /* configurable interrupt to provide debug breadcrumbs in 256 cycles */
-
-    /* Alt clock to LPO Oscillator */
-
-    /* Test the watchdog */
 }
 
 /*******************************************************************************
 * watchDogInit
 *******************************************************************************/
-void watchDogInit(/* TODO add timeout value */)
+void watchDogInit(const watchDogConfig_t *wdCfgPtr)
 {
 #if 0
     push { r0, r1, r4, lr }
@@ -162,7 +138,7 @@ void watchDogInit(/* TODO add timeout value */)
 #endif
 
     watchDogUnlock();
-
+#if 1
     /* Write the timeout value directly. Clock source is configured as LPO
      * oscillator which operates at 1KHz (s5.7.2) */
 /* NOTE: Changed from r4 to r2 as:
@@ -198,6 +174,46 @@ void watchDogInit(/* TODO add timeout value */)
         str  r0,[r1]\n\
         " :
 #endif
+
+#else
+    assert(wdCfgPtr->window < wdCfgPtr->timeout);
+
+    wdPtr->toValL  = wdCfgPtr->timeout;
+    wdPtr->toValH  = wdCfgPtr->timeout >> 16;
+    wdPtr->stCtrlH = wdCfgPtr->stCtrlFlags;
+    wdPtr->presc   = wdCfgPtr->prescaler;
+    wdPtr->winL    = wdCfgPtr->window;
+    wdPtr->winH    = wdCfgPtr->window >> 16;
+
+    if (wdCfgPtr->stCtrlFlags & WDOG_IRQRSTEN) {
+        /* TODO: If anyone cares */
+    }
+
+    if (wdCfgPtr->stCtrlFlags & WDOG_TEST) {
+        /* TODO: If anyone cares */
+    }
+
+    /* TODO: Alt clock to LPO Oscillator */
+#endif
+}
+
+static void interrupDisable()
+{
+    asm volatile("\n\
+        cpsid i\n\
+        " :
+        /* No output */ :
+        /* No input  */ :
+        ); /* Specify which registers we destroy */
+}
+static void interrupEnable()
+{
+    asm volatile("\n\
+        cpsie i\n\
+        " :
+        /* No output */ :
+        /* No input  */ :
+        ); /* Specify which registers we destroy */
 }
 
 /*******************************************************************************
@@ -217,6 +233,8 @@ void watchDogKick()
     pop { r0, r1, lr }
     bx lr
 #endif
+
+#if 1
     asm volatile("\n\
         cpsid i\n\
         ldr  r1,=0x4005200C @ WDOG_REFRESH\n\
@@ -229,6 +247,12 @@ void watchDogKick()
         /* No output */ :
         /* No input  */ :
         "r0", "r1" ); /* Specify which registers we destroy */
+#else
+    interruptDisable();
+    wdPtr->refresh = WDOG_REFRESH_KEY_1;
+    wdPtr->refresh = WDOG_REFRESH_KEY_2;
+    interruptEnable();
+#endif
 }
 
 /*******************************************************************************
@@ -246,7 +270,7 @@ void watchDogDisable()
     bx lr
 #endif
     watchDogUnlock();
-
+#if 1
     asm volatile("\n\
         ldr  r1,=0x40052000 @ WDOG_STCTRLH\n\
         ldr  r0,=0x01D2 @ STNDBYEN | WAITEN | STOPEN | ALLOWUPDATE \n\
@@ -255,42 +279,8 @@ void watchDogDisable()
         /* No output */ :
         /* No input  */ :
         "r0", "r1" ); /* Specify which registers we destroy */
-}
-
-/*******************************************************************************
-* watchDogEnableInterrupt()
-*******************************************************************************/
-void watchDhgEnableInterrupt()
-{
-#if 0
-    .extern _wdog_debug    /* From Linker */
-
-    /* TODO: This interrupt never seems to get triggered. Other people
-             are citing the same problem but no errata data yet */
-    .align 2
-    .global __isr_wdog
-    .thumb_func
-    .type   __isr_wdog, %function
-__isr_wdog:                 /* Save off state of registers to ram */
-    ldr r8,=_wdog_debug
-    mov r7,#0x5a5a5a5a
-    str r7,[r8]!
-    str r0,[r8]!
-    str r1,[r8]!
-    str r2,[r8]!
-    str r3,[r8]!
-    str r9,[r8]!
-    str ip,[r8]!
-    str sp,[r8]!
-    str lr,[r8]!
-    str r7,[r8]!
-loop:                       /* Wait for watchdog to issue reset */
-    b loop
-
-    .end
+#else
+    wdPtr->stCtrlH = WDOG_STNDBYEN | WDOG_WAITEN | WDOG_STOPEN
+                   | WDOG_ALLOWUPDATE;
 #endif
-
-    /* TODO Apparently the interrupt does work after all, but for now I won't
-     * implement it unless someone really needs it. */
 }
-
