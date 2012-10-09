@@ -30,7 +30,7 @@
 #define WDOG_WINL       0x4005200A
 #define WDOG_REFRESH    0x4005200C
 #define WDOG_UNLOCK     0x4005200E
-#define WDOG_TRMOUTH    0x40052010
+#define WDOG_TMROUTH    0x40052010
 #define WDOG_TMROUTL    0x40052012
 #define WDOG_RSTCNT     0x40052014
 #define WDOG_PRESC      0x40052016
@@ -138,7 +138,7 @@ void watchDogInit(const watchDogConfig_t *wdCfgPtr)
 #endif
 
     watchDogUnlock();
-#if 1
+#if 0
     /* Write the timeout value directly. Clock source is configured as LPO
      * oscillator which operates at 1KHz (s5.7.2) */
 /* NOTE: Changed from r4 to r2 as:
@@ -156,7 +156,7 @@ void watchDogInit(const watchDogConfig_t *wdCfgPtr)
         lsr  r0,r0,#16\n\
         strh r0,[r2]\n\
         ldr  r2,=0x40052000 @ WDOG_STCTRLH\n\
-        ldr  r0,=0x01D3 @ STNDBYEN | WAITEN | STOPEN | ALLOWUPDATE | WDOGEN\n\
+        ldr  r0,=0x01D3 @ STNDBYEN|WAITEN|STOPEN|ALLOWUPDATE|CLKSRC|WDOGEN \n\
         strh r0,[r2]\n\
         ldr  r2,=0x40052016 @ WDOG_PRESC\n\
         ldr  r0,=#0\n\
@@ -165,39 +165,29 @@ void watchDogInit(const watchDogConfig_t *wdCfgPtr)
         /* No output */ :
         /* No input  */ :
         "r0", "r1", "r2" ); /* Specify which registers we destroy */
-
-#if 0
-        ldr  r0,=0x00400000 @ BIT_22\n\
-        ldr  r1,=0xE000E280 @ NVIC_ICPR0\n\
-        str  r0,[r1]\n\
-        ldr  r1,=0xE000E100 @ NVIC_ISER0\n\
-        str  r0,[r1]\n\
-        " :
-#endif
-
 #else
-    assert(wdCfgPtr->window < wdCfgPtr->timeout);
+//  assert(wdCfgPtr->window < wdCfgPtr->timeout);
 
     wdPtr->toValL  = wdCfgPtr->timeout;
     wdPtr->toValH  = wdCfgPtr->timeout >> 16;
     wdPtr->stCtrlH = wdCfgPtr->stCtrlFlags;
     wdPtr->presc   = wdCfgPtr->prescaler;
-    wdPtr->winL    = wdCfgPtr->window;
-    wdPtr->winH    = wdCfgPtr->window >> 16;
+//  wdPtr->winL    = wdCfgPtr->window;
+//  wdPtr->winH    = wdCfgPtr->window >> 16;
 
     if (wdCfgPtr->stCtrlFlags & WDOG_IRQRSTEN) {
         /* TODO: If anyone cares */
     }
-
+#if 0
     if (wdCfgPtr->stCtrlFlags & WDOG_TEST) {
         /* TODO: If anyone cares */
     }
-
+#endif
     /* TODO: Alt clock to LPO Oscillator */
 #endif
 }
 
-static void interrupDisable()
+static void interruptDisable()
 {
     asm volatile("\n\
         cpsid i\n\
@@ -206,7 +196,7 @@ static void interrupDisable()
         /* No input  */ :
         ); /* Specify which registers we destroy */
 }
-static void interrupEnable()
+static void interruptEnable()
 {
     asm volatile("\n\
         cpsie i\n\
@@ -234,7 +224,7 @@ void watchDogKick()
     bx lr
 #endif
 
-#if 1
+#if 0
     asm volatile("\n\
         cpsid i\n\
         ldr  r1,=0x4005200C @ WDOG_REFRESH\n\
@@ -270,10 +260,10 @@ void watchDogDisable()
     bx lr
 #endif
     watchDogUnlock();
-#if 1
+#if 0
     asm volatile("\n\
         ldr  r1,=0x40052000 @ WDOG_STCTRLH\n\
-        ldr  r0,=0x01D2 @ STNDBYEN | WAITEN | STOPEN | ALLOWUPDATE \n\
+        ldr  r0,=0x01D2 @ STNDBYEN | WAITEN | STOPEN | ALLOWUPDATE | CLKSRC \n\
         strh r0,[r1]\n\
         " :
         /* No output */ :

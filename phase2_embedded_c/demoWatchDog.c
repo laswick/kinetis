@@ -29,7 +29,7 @@ int main(void)
     watchDogConfig_t wdCfg = {
         .timeout = 0x14c4b4c,
         .stCtrlFlags = WDOG_STNDBYEN | WDOG_WAITEN | WDOG_STOPEN
-                     | WDOG_ALLOWUPDATE | WDOG_EN,
+                     | WDOG_ALLOWUPDATE | WDOG_CLKSRC | WDOG_EN,
         .prescaler = 0,
     };
 
