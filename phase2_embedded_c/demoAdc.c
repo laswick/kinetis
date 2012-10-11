@@ -160,20 +160,10 @@ int main(void)
      * Register the standard I/O streams with a particular deivce driver.
      */
 
-    int fd0 = fdevopen(stdin,  "uart3", 0, 0);
     int fd1 = fdevopen(stdout, "uart3", 0, 0);
-    int fd2 = fdevopen(stderr, "uart3", 0, 0);
-
-    assert(fd0 != -1);
+    ioctl(fd1, IO_IOCTL_UART_BAUD_SET, 115200);
     assert(fd1 != -1);
-    assert(fd2 != -1);
 
-
-    fdUart = open("uart3", 0, 0);
-    if (fdUart==-1) {
-        assert(0);
-    }
-    ioctl(fdUart, IO_IOCTL_UART_BAUD_SET, 115200);
 
     fdPot = open("adc1", 0, 0);
     if (fdPot==-1) {
@@ -312,19 +302,12 @@ int main(void)
         }
         if (update) {
             sprintf(string, "\r%s ", string);
-#if 1
-            write(fdUart, string, strlen(string));
-#else
-            /* TODO JM/RL */
-           /* Why doesn't this work? */
             printf("%s", string);
-            /* Need a \n to make it work */
-            printf("\n");
-#endif
+            fflush(stdout);
         }
 
     }
-    close(fdUart);
+    close(fd1);
     close(fdPot);
     return 0;
 }
