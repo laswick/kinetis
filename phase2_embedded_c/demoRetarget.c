@@ -76,8 +76,8 @@ int main(void)
      * Banner.
      */
 
-    puts("Retargeting Demo for the Kinetis Project");
-    puts("Rob Laswick");
+    puts  ("Retargeting Demo for the Kinetis Project");
+    puts  ("Rob Laswick");
     printf("File: %s\n", __FILE__);
     printf("Build Date: %s\n\n", __DATE__);
 
@@ -96,26 +96,26 @@ int main(void)
     printf("test 1\n");
     printf("test %d\n", 2);
     printf("test %.2f\n", 3.0);
-    printf("test %.2f\n", 4.1);
-    printf("%s %.2f\n\n", "test", 5.5);
+    printf("test %.3f\n", 4.1);
+    printf("%s %.4f\n\n", "test", 5.5);
 
     /*
      * sprintf test.
      */
 
     char str[200];
-    sprintf(str, "%s %.2f\n", "This string was build by sprintf!", 6.6);
+    sprintf(str, "%s %.2f\n", "This string was built by sprintf!", 6.6);
     puts(str);
 
     /*
      * scanf test.
      *
-     * FIXME  This broken at the moment.  The uart read routine returns
-     *        immediately for some reason.
+     * FIXME  Scanf is broken at the moment.
+     *        Probably something to do with uartRead() and/or the uart config.
      */
 
     printf("Enter your name: ");
-    scanf("%s", str);
+    scanf ("%s", str);
     printf("\nYour name is %s!\n\n", str);
 
     /*
