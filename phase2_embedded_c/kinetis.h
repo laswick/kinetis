@@ -603,19 +603,15 @@ enum {
 
 /* SC2 */
 enum {
-    ADC_SC2_ADACT_BIT   = 1 << 7,
-    ADC_SC2_ADTRG_BIT   = 1 << 6, /* Set for hardware trigger */
-    ADC_SC2_ACFE_BIT    = 1 << 5, /* Compare function enable */
-    ADC_SC2_ACFGT_BIT   = 1 << 4, /* Compare function greater than enable */
-    ADC_SC2_ADREN_BIT   = 1 << 3, /* Compare function range enable */
-    ADC_SC2_DMAEN_BIT   = 1 << 2, /* DMA enable */
-};
+    ADC_SC2_ADACT_BIT      = 1 << 7,
+    ADC_SC2_ADTRG_BIT      = 1 << 6, /* Set for hardware trigger */
+    ADC_SC2_ACFE_BIT       = 1 << 5, /* Compare function enable */
+    ADC_SC2_ACFGT_BIT      = 1 << 4, /* Compare function > enable */
+    ADC_SC2_ADREN_BIT      = 1 << 3, /* Compare function range enable */
+    ADC_SC2_DMAEN_BIT      = 1 << 2, /* DMA enable */
 
-enum {
-    ADC_SC2_REFESL_DEFAULT,   /* External pins V_REFH, V_REFL */
-    ADC_SC2_REFESL_ALTERNATE, /* V_ALTH, V_ALTL */
+    ADC_SC2_REFSEL_ALT_BIT = 1 << 0, /* V_ALTH, V_ALTL */
 };
-#define ADC_SC2_REFESL_MASK 0x3
 
 /* SC3 */
 enum {
@@ -706,6 +702,30 @@ enum {
    WDOG_DISTEST     = BIT_14,           /* TODO */
 };
 
+/*******************************************************************************
+* VREF
+*******************************************************************************/
+
+#define VREF_BASE_ADDR 0x40074000
+#define VREF_REG_PTR   (volatile vref_t *) VREF_BASE_ADDR
+
+typedef struct {
+    uint8_t trm; /* Voltage trim register VREF_TRM , R/W, factory trim */
+    uint8_t sc;  /* Status and control register,     R/W, 0x00000000 */
+} vref_t; /* Memmapped registers */
+
+#define VREF_TRM_TRIM_MASK 0x3F /* Factory trimmed to 1.2V.  ~ +/- 0.5mV/bit */
+
+enum {
+    VREF_SC_VREFEN     = BIT_7,
+    VREF_SC_REFEN      = BIT_6,
+
+    VREF_SC_VREFST     = BIT_2,
+
+    VREF_SC_MODE_TIGHT = BIT_1,
+};
+#define VREF_SC_PGA_SUPPORT ((uint8_t) (VREF_SC_VREFEN | VREF_SC_REFEN \
+                                                       | VREF_SC_MODE_TIGHT))
 
 /*******************************************************************************
 * UART

@@ -29,7 +29,8 @@
 
 static int updateFlags;
 static int fdUart;
-static int fdAdc;
+static int fdPot;
+static int fdThrmCpl;
 
 #define MAX_SAMPLES 256
 typedef struct {
@@ -38,29 +39,54 @@ typedef struct {
     uint32_t data[MAX_SAMPLES];
 } msg_t;
 
-static msg_t msg = {
+static msg_t potMsg = {
     .helpString =     "\r\n"
                          "Turn the pot... \r\n"
                          "\r\n",
 };
 
 enum {
-    UPDATE_DATA = 1 << 0,
+    UPDATE_POT_DATA = 1 << 0,
+    UPDATE_TC_DATA  = 1 << 1,
 };
 
 /******************************************************************************
-* adcCallBackHandler
+* potCallBackHandler
 *
 * Parse RX messages.
 *
 ******************************************************************************/
-static void adcCallBackHandler(uint32_t const *buf, int len)
+static void potCallBackHandler(uint32_t const *buf, int len)
 {
     len = len > MAX_SAMPLES ? MAX_SAMPLES : len;
     if (len) {
-        memcpy(msg.data, buf, len * 4);
-        msg.len = len;
-        updateFlags |= UPDATE_DATA;
+        memcpy(potMsg.data, buf, len * 4);
+        potMsg.len = len;
+        updateFlags |= UPDATE_POT_DATA;
+
+    }
+   return;
+}
+
+static msg_t tcMsg = {
+    .helpString =     "\r\n"
+                         "Aim the thermocouple... \r\n"
+                         "\r\n",
+};
+
+/******************************************************************************
+* tcCallBackHandler
+*
+* Parse RX messages.
+*
+******************************************************************************/
+static void tcCallBackHandler(uint32_t const *buf, int len)
+{
+    len = len > MAX_SAMPLES ? MAX_SAMPLES : len;
+    if (len) {
+        memcpy(tcMsg.data, buf, len * 4);
+        tcMsg.len = len;
+        updateFlags |= UPDATE_TC_DATA;
 
     }
    return;
@@ -122,7 +148,7 @@ static void setClock(void)
      * Flexbus:  50 MHz
      * Flash:    25 MHz
      */
-    clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_4, DIVIDE_BY_4);
+    clockSetDividers(DIVIDE_BY_4, DIVIDE_BY_4, DIVIDE_BY_4, DIVIDE_BY_4);
     clockConfigMcgOut(MCG_PLL_EXTERNAL_100MHZ);
 
     return;
@@ -149,29 +175,68 @@ int main(void)
     }
     ioctl(fdUart, IO_IOCTL_UART_BAUD_SET, 115200);
 
-    fdAdc = open("adc1", 0, 0);
-    if (fdAdc==-1) {
+    fdPot = open("adc1", 0, 0);
+    if (fdPot==-1) {
         assert(0);
     }
 
-    ioctl(fdAdc, IO_IOCTL_ADC_CALIBRATE, TRUE);
+    ioctl(fdPot, IO_IOCTL_ADC_CALIBRATE, TRUE);
 
 
-    ioctl(fdAdc, IO_IOCTL_ADC_SAMPLE_SIZE_SET, 10);
-    ioctl(fdAdc, IO_IOCTL_ADC_CALL_BACK_SET, (int)adcCallBackHandler);
-    ioctl(fdAdc, IO_IOCTL_ADC_TRIGGER_SELECT, IO_IOCTL_ADC_TRIGGER_SELECT_SW);
-    ioctl(fdAdc, IO_IOCTL_ADC_CONVERSION_CONTINUOUS, TRUE);
-    ioctl(fdAdc, IO_IOCTL_ADC_CONVERSION_TIME_SELECT,
+    ioctl(fdPot, IO_IOCTL_ADC_SAMPLE_SIZE_SET, 10);
+    ioctl(fdPot, IO_IOCTL_ADC_CALL_BACK_SET, (int)potCallBackHandler);
+    ioctl(fdPot, IO_IOCTL_ADC_TRIGGER_SELECT, IO_IOCTL_ADC_TRIGGER_SELECT_SW);
+    ioctl(fdPot, IO_IOCTL_ADC_CONVERSION_CONTINUOUS, TRUE);
+    ioctl(fdPot, IO_IOCTL_ADC_CONVERSION_TIME_SELECT,
                  IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_20);
-    ioctl(fdAdc, IO_IOCTL_ADC_AVERAGE_SELECT, IO_IOCTL_ADC_FLAGS_AVGS_4);
-    ioctl(fdAdc, IO_IOCTL_ADC_RESOLUTION_SELECT, IO_IOCTL_ADC_RES_FLAGS_12_BIT);
-    ioctl(fdAdc, IO_IOCTL_ADC_CLOCK_SELECT, IO_IOCTL_ADC_FLAGS_ADICLK_BUS);
+    ioctl(fdPot, IO_IOCTL_ADC_AVERAGE_SELECT, IO_IOCTL_ADC_FLAGS_AVGS_4);
+    ioctl(fdPot, IO_IOCTL_ADC_RESOLUTION_SELECT, IO_IOCTL_ADC_RES_FLAGS_12_BIT);
+    ioctl(fdPot, IO_IOCTL_ADC_CLOCK_SELECT, IO_IOCTL_ADC_FLAGS_ADICLK_BUS);
+    ioctl(fdPot, IO_IOCTL_ADC_DIFFERENTIAL_SET,
+                (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+                  | IO_IOCTL_ADC_DIFF_FLAGS_SINGLE_ENDED));
 
-    ioctl(fdAdc, IO_IOCTL_ADC_CHANNEL_SELECT,
+    ioctl(fdPot, IO_IOCTL_ADC_COMPARE_HIGH_LOW_SET,
+                 IO_IOCTL_ADC_COMPARE_HIGH_LOW_FLAG_GREATER);
+
+    ioctl(fdPot, IO_IOCTL_ADC_CHANNEL_SELECT,
                  (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
                     | (IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DM1
                        & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK)));
 
+
+
+
+    fdThrmCpl = open("adc0", 0, 0);
+    if (fdThrmCpl ==-1) {
+        assert(0);
+    }
+
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_RESOLUTION_SELECT,
+                     IO_IOCTL_ADC_RES_FLAGS_12_BIT);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_VREF_SELECT, IO_IOCTL_ADC_VREF_FLAGS_ALT);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_PGASET, IO_IOCTL_ADC_PGA_FLAGS_GAIN_4);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_CALIBRATE, TRUE);
+
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_SAMPLE_SIZE_SET, 10);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_CALL_BACK_SET, (int)tcCallBackHandler);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_TRIGGER_SELECT,
+                     IO_IOCTL_ADC_TRIGGER_SELECT_SW);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_CONVERSION_CONTINUOUS, TRUE);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_CONVERSION_TIME_SELECT,
+                 IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_ADLSTS_ADCK_20);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_AVERAGE_SELECT, IO_IOCTL_ADC_FLAGS_AVGS_32);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_CLOCK_SELECT, IO_IOCTL_ADC_FLAGS_ADICLK_BUS);
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_DIFFERENTIAL_SET,
+                    (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+                      | IO_IOCTL_ADC_DIFF_FLAGS_DIFFERENTIAL));
+
+
+    ioctl(fdThrmCpl, IO_IOCTL_ADC_CHANNEL_SELECT,
+                     (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+//                        | (IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP0
+                          | (IO_IOCTL_ADC0_CHANNEL_FLAGS_PGA0_DP1
+                           & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK)));
     //printf("The start of something good...\r\n"); /* StdOut is uart3 */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
@@ -185,24 +250,70 @@ int main(void)
         }
 
 
-        if (updateFlags & UPDATE_DATA) {
+        if (updateFlags & UPDATE_POT_DATA) {
             char string[10];
+            static int32_t compareVal;
+            static int32_t useGT = TRUE;
             int i;
 
-            updateFlags &= ~UPDATE_DATA;
+            updateFlags &= ~UPDATE_POT_DATA;
             write(fdUart, "DATA:", strlen("DATA:"));
             write(fdUart, "\r\n",
                     strlen("\r\n"));
-            for (i = 0; i < msg.len; i++) {
-                /* Vararg not working? printf(">%x \r\n", msg.data[i]); */
-                hex2HexStr(string, msg.data[i], TRUE);
+            for (i = 0; i < potMsg.len; i++) {
+                /* Vararg not working? printf(">%x \r\n", potMsg.data[i]); */
+                hex2HexStr(string, potMsg.data[i], TRUE);
+                write(fdUart, string, strlen(string));
+
+                compareVal = potMsg.data[i];
+
+                ioctl(fdPot, IO_IOCTL_ADC_COMPARE_VALUES_SET,
+                        compareVal & IO_IOCTL_ADC_COMPARE_VAL_MASK);
+
+                if (compareVal >= 0xff0 && useGT) {
+                    useGT = FALSE;
+                    ioctl(fdPot, IO_IOCTL_ADC_COMPARE_HIGH_LOW_SET,
+                            IO_IOCTL_ADC_COMPARE_HIGH_LOW_FLAG_LESS);
+                }
+                else if (compareVal <= 5 && !useGT){
+                    useGT = TRUE;
+                    ioctl(fdPot, IO_IOCTL_ADC_COMPARE_HIGH_LOW_SET,
+                            IO_IOCTL_ADC_COMPARE_HIGH_LOW_FLAG_GREATER);
+                }
+                ioctl(fdPot, IO_IOCTL_ADC_COMPARE_ENABLE, TRUE);
+                ioctl(fdPot, IO_IOCTL_ADC_COMPARE_RANGE_SET, FALSE);
+            }
+            /* Set the channel again trigger - needed because changing the
+             * compare setpoint breaks the continous conversion mode */
+            ioctl(fdPot, IO_IOCTL_ADC_CHANNEL_SELECT,
+                 (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+                    | (IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DM1
+                       & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK)));
+
+
+        }
+
+        if (updateFlags & UPDATE_TC_DATA) {
+            char string[10];
+            int i;
+
+            updateFlags &= ~UPDATE_TC_DATA;
+            write(fdUart, "\tTEMP:", strlen("\tTEMP:"));
+            write(fdUart, "\r\n",
+                    strlen("\r\n"));
+            for (i = 0; i < tcMsg.len; i++) {
+                /* Vararg not working? printf("\t>%x \r\n", tcMsg.data[i]); */
+                string[0] = '\t';
+                //hex2TempStr(&string[1], tcMsg.data[i], TRUE);
+                hex2HexStr(&string[1], tcMsg.data[i], TRUE);
                 write(fdUart, string, strlen(string));
             }
         }
 
 
+
     }
     close(fdUart);
-    close(fdAdc);
+    close(fdPot);
     return 0;
 }

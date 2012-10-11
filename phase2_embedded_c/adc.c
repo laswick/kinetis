@@ -38,6 +38,8 @@ typedef struct {
 } adcBuffer_t;
 
 
+volatile vref_t *vRef = VREF_REG_PTR;
+
 typedef struct {
     int32_t            minor;
     volatile adc_t    *reg;
@@ -532,6 +534,7 @@ int adc_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
 {
     adcDev_t *adc;
+    volatile uint32_t *adcSc1xPtr;
     adcBuffer_t *bufferPtr;
     uint32_t value;
     int retVal = !ERROR;
@@ -608,6 +611,20 @@ int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
         value |= (flags & ADC_CFG1_MODE_MASK) << ADC_CFG1_MODE_SHIFT;
         adc->reg->cfg1 = value;
         break;
+    case IO_IOCTL_ADC_DIFFERENTIAL_SET:
+
+        if (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_B) {
+            adcSc1xPtr = &adc->reg->sc1b;
+        } else {
+            adcSc1xPtr = &adc->reg->sc1a;
+        }
+        if (flags) {
+            *adcSc1xPtr |= ADC_SC1_DIFF_BIT;
+        }
+        else {
+            *adcSc1xPtr &= ~ADC_SC1_DIFF_BIT;
+        }
+        break;
     case IO_IOCTL_ADC_CHANNEL_SELECT:
         if (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_B) {
             value = adc->reg->sc1b;
@@ -644,14 +661,119 @@ int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
     case IO_IOCTL_ADC_CLOCK_SELECT:
         adcClockCfg(adc, flags);
         break;
+    case IO_IOCTL_ADC_PGASET:
+        value = adc->reg->pga;
+        switch (flags){
+        case IO_IOCTL_ADC_PGA_FLAGS_GAIN_1:
+            value |= ADC_PGA_PGAEN_BIT;
+            value |= (ADC_PGA_PGAG_1 << ADC_PGA_PGAG_SHIFT);
+            break;
+        case IO_IOCTL_ADC_PGA_FLAGS_GAIN_2:
+            value |= ADC_PGA_PGAEN_BIT;
+            value |= (ADC_PGA_PGAG_2 << ADC_PGA_PGAG_SHIFT);
+            break;
+        case IO_IOCTL_ADC_PGA_FLAGS_GAIN_4:
+            value |= ADC_PGA_PGAEN_BIT;
+            value |= (ADC_PGA_PGAG_4 << ADC_PGA_PGAG_SHIFT);
+            break;
+        case IO_IOCTL_ADC_PGA_FLAGS_GAIN_8:
+            value |= ADC_PGA_PGAEN_BIT;
+            value |= (ADC_PGA_PGAG_8 << ADC_PGA_PGAG_SHIFT);
+            break;
+        case IO_IOCTL_ADC_PGA_FLAGS_GAIN_16:
+            value |= ADC_PGA_PGAEN_BIT;
+            value |= (ADC_PGA_PGAG_16 << ADC_PGA_PGAG_SHIFT);
+            break;
+        case IO_IOCTL_ADC_PGA_FLAGS_GAIN_32:
+            value |= ADC_PGA_PGAEN_BIT;
+            value |= (ADC_PGA_PGAG_32 << ADC_PGA_PGAG_SHIFT);
+            break;
+        case IO_IOCTL_ADC_PGA_FLAGS_GAIN_64:
+            value |= ADC_PGA_PGAEN_BIT;
+            value |= (ADC_PGA_PGAG_64 << ADC_PGA_PGAG_SHIFT);
+            break;
+        default:
+            assert(0);
+            retVal = ERROR;
+            break;
+        }
+        if (retVal != ERROR) {
+            /* NOTE: Should be used with IO_IOCTL_ADC_VREF_SELECT,
+             * IO_IOCTL_ADC_VREF_FLAGS_ALT
+             */
+            /* Update pga */
+            adc->reg->pga = value;
+#if 0
+            /* Turn on 1.2V vref */
+            vRef->sc = VREF_SC_PGA_SUPPORT;
+            /* Use V_ALT as reference */
+            adc->reg->sc2 |= ADC_SC2_REFSEL_ALT_BIT;
+#endif
+        }
+        break;
+    case IO_IOCTL_ADC_VREF_SELECT:
+        switch (flags) {
+        case IO_IOCTL_ADC_VREF_FLAGS_DEFAULT:
+            /* Use V_ALT as reference */
+            adc->reg->sc2 &= ~ADC_SC2_REFSEL_ALT_BIT;
+            break;
+        case IO_IOCTL_ADC_VREF_FLAGS_ALT:
+            /* Turn on 1.2V vref */
+            vRef->sc = VREF_SC_PGA_SUPPORT;
+            /* Use V_ALT as reference */
+            adc->reg->sc2 |= ADC_SC2_REFSEL_ALT_BIT;
+            break;
+        default:
+            assert(0);
+            retVal = ERROR;
+            break;
+        }
+        break;
 
+    case IO_IOCTL_ADC_COMPARE_ENABLE:
+        if (flags) {
+            adc->reg->sc2 |= ADC_SC2_ACFE_BIT;
+        }
+        else {
+            adc->reg->sc2 &= ~ADC_SC2_ACFE_BIT;
+        }
+        break;
+    case IO_IOCTL_ADC_COMPARE_HIGH_LOW_SET:
+        switch (flags) {
+        case IO_IOCTL_ADC_COMPARE_HIGH_LOW_FLAG_GREATER:
+            adc->reg->sc2 |= ADC_SC2_ACFGT_BIT;
+            break;
+        case IO_IOCTL_ADC_COMPARE_HIGH_LOW_FLAG_LESS:
+            adc->reg->sc2 &= ~ADC_SC2_ACFGT_BIT;
+            break;
+        default:
+            assert(0);
+            retVal = ERROR;
+            break;
+        }
+        break;
+    case IO_IOCTL_ADC_COMPARE_RANGE_SET:
+         if (flags) {
+            adc->reg->sc2 |= ADC_SC2_ADREN_BIT;
+        }
+        else {
+            adc->reg->sc2 &= ~ADC_SC2_ADREN_BIT;
+        }
+        break;
+    case IO_IOCTL_ADC_COMPARE_VALUES_SET:
+        adc->reg->cv1 = flags & IO_IOCTL_ADC_COMPARE_VAL_MASK;
+        adc->reg->cv2 = (flags >> IO_IOCTL_ADC_COMPARE_VAL2_SHIFT)
+                        & IO_IOCTL_ADC_COMPARE_VAL_MASK;
+        break;
     default:
 #if 0
             /*TODO Add cmds */
         IO_IOCTL_ADC_OFFSET_SET,
-        IO_IOCTL_ADC_PGASET,
-        IO_IOCTL_ADC_VREF_SELECT,
-        IO_IOCTL_ADC_COMPARE_SELECT,
+
+        IO_IOCTL_ADC_COMPARE_ENABLE,
+        IO_IOCTL_ADC_COMPARE_HIGH_LOW_SET,
+        IO_IOCTL_ADC_COMPARE_RANGE_SET,
+        IO_IOCTL_ADC_COMPARE_VALUE_SET,
 #endif
 
         assert(0);
