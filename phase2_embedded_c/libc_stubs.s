@@ -1,5 +1,8 @@
 /*******************************************************************************
 *
+* NOTE: THIS FILE IS TO BE CONSIDERED DEPRECATED.
+        MOVING FORWARD USE SYSCALLS.C.
+*
 * libc_stubs.s
 *
 * Rob Laswick

@@ -681,6 +681,7 @@ int uart_install(void)
                                                  uart_write_r, uart_read_r) ){
         ret = FALSE;
     }
+
     if( !deviceRegister("uart0", DEV_MAJ_UART, UART_MODULE_0,  NULL) ) {
         ret =  FALSE;
     }

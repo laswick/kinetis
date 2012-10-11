@@ -7,10 +7,10 @@
 * Low level driver for the Kinetis Clock module.
 *
 * API:  clockSetDividers(), clockGetFreq()
-*       
-*       clockConfigMcgOut(), clockConfigMcgIr(), clockConfigMcgFf(), 
+*
+*       clockConfigMcgOut(), clockConfigMcgIr(), clockConfigMcgFf(),
 *       clockConfigMcgFll(), clockConfigMcgPll()
-*       
+*
 *       clockConfigOsc(), clockConfigOsc32k(), clockConfigOscEr()
 *
 *       clockConfigEr32k(), clockConfigRtc(), clockConfigLpo()
@@ -32,7 +32,7 @@ typedef struct {
     volatile mcg_t *mcg;
     volatile osc_t *osc;
     volatile rtc_t *rtc;
-} clockReg_t; 
+} clockReg_t;
 
 static clockReg_t clock = {
     .mcg     = (volatile mcg_t *) MCG_BASE_ADDR,
@@ -66,15 +66,15 @@ typedef struct {
    uint32_t        clockHz;
 } clockConfigParam_t;
 
-/* 
+/*
  * Any additional configurations must be listed in clockConfig_t of hardware.h
  */
 clockConfigParam_t clockConfigParam[MAX_MCG_CLOCK_OPTIONS] = {
 
     [MCG_PLL_EXTERNAL_100MHZ] = {
         .clockMode   = MODE_PEE,
-        /* 
-         * Note: For PLL, the received external clock must be 2 - 4MHz 
+        /*
+         * Note: For PLL, the received external clock must be 2 - 4MHz
          *       Here, we receive 50MHz from the external source, and divide
          *       by 25 to get 2MHz.
          *
@@ -96,7 +96,7 @@ clockConfigParam_t clockConfigParam[MAX_MCG_CLOCK_OPTIONS] = {
 
     [MCG_FLL_INTERNAL_24MHZ] = {
         .clockMode   = MODE_FEI,
-        .divider     = NULL,  /* Dividers are only for externally engaged (EE)*/
+        .divider     = 0,     /* Dividers are only for externally engaged (EE)*/
         /*
          * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
          * WARNING: Do not enter a clock multiplier that would exceed the system
@@ -113,12 +113,12 @@ clockConfigParam_t clockConfigParam[MAX_MCG_CLOCK_OPTIONS] = {
 
 typedef struct {
     clockMode_t   currentMode;
-    clockMode_t   nextMode; 
+    clockMode_t   nextMode;
     clockConfig_t clockConfig;
-} mcgState_t; 
+} mcgState_t;
 
 /* Initial value is FEI. This is entered upon reset. */
-static mcgState_t mcgState; 
+static mcgState_t mcgState;
 
 typedef struct {
     uint32_t    mcgClockFreq;
@@ -153,13 +153,13 @@ static clockFreq_t clockFreq = {
 
 static void fei2fee(clockConfig_t cc)
 {
-    /* 
+    /*
      * The FRDIV selects the amount to divide down the external reference
-     * clock for the FLL. 
+     * clock for the FLL.
      *
      * In our case, we have a 50MHz external reference clock. This frequency
      * must be divided down to fall in the range between 31.25 kHz and 39.0625
-     * kHz. 
+     * kHz.
      *
      * Uno problemo: The largest divide factor available by FRDIV is 1024... And
      * 50MHz / 1024 = 48.3 kHz, which exceeds the 39.0625 kHz range. With our
@@ -168,13 +168,13 @@ static void fei2fee(clockConfig_t cc)
      */
 }
 
-static void fei2pee(clockConfig_t cc) 
+static void fei2pee(clockConfig_t cc)
 {
                                                     /* External crystal setup */
     /* Select the OSCCLK */
     SIM_SOPT2 &= ~SIM_SOPT2_MCGCLKSEL;
 
-    /* 
+    /*
      * Enabling the XTAL for 50MHz
      * RANGE=1, match the frequency of the crystal being used
      * HGO=1,   set for high gain operation (best against noise)
@@ -215,7 +215,7 @@ static void fei2pee(clockConfig_t cc)
                                                             /* Enter PBE mode */
     /* PLLS=1, select the PLL. */
     clock.mcg->c6 |= MCG_C6_PLLS;
-     
+
                                                     /* Wait for status update */
     /* Wait for the PLL to be the clock source */
     while (!(clock.mcg->s & MCG_S_PLLST)) {}
@@ -233,33 +233,33 @@ static void fei2pee(clockConfig_t cc)
     mcgState.currentMode = MODE_PEE;
 }
 
-static void fei2blpi(clockConfig_t cc) 
+static void fei2blpi(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void fei2blpe(clockConfig_t cc) 
+static void fei2blpe(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
 
-static void fee2fei(clockConfig_t cc) 
+static void fee2fei(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void fee2pee(clockConfig_t cc) 
+static void fee2pee(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void fee2blpi(clockConfig_t cc) 
+static void fee2blpi(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void fee2blpe(clockConfig_t cc) 
+static void fee2blpe(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
@@ -275,7 +275,7 @@ static void pee2fei(clockConfig_t cc)
     while ((clock.mcg->s & MCG_S_CLKST_MASK) != (0x2 << 2)) {}
 
                                                             /* Enter FBE mode */
-    /* 
+    /*
      * With the FLL frequency valid, we can now clear the PLLS bit to select FLL
      */
     clock.mcg->c6 &= ~MCG_C6_PLLS;
@@ -300,59 +300,59 @@ static void pee2fei(clockConfig_t cc)
     mcgState.currentMode = MODE_FEI;
 }
 
-static void pee2fee(clockConfig_t cc) 
+static void pee2fee(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void pee2blpi(clockConfig_t cc) 
+static void pee2blpi(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void pee2blpe(clockConfig_t cc) 
-{
-                                                            /* Not configured */
-}
-
-
-static void blpi2fei(clockConfig_t cc) 
-{
-                                                            /* Not configured */
-}
-
-static void blpi2fee(clockConfig_t cc) 
-{
-                                                            /* Not configured */
-}
-
-static void blpi2pee(clockConfig_t cc) 
-{
-                                                            /* Not configured */
-}
-
-static void blpi2blpe(clockConfig_t cc) 
+static void pee2blpe(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
 
-static void blpe2fei(clockConfig_t cc) 
+static void blpi2fei(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void blpe2fee(clockConfig_t cc) 
+static void blpi2fee(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void blpe2pee(clockConfig_t cc) 
+static void blpi2pee(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
 
-static void blpe2blpi(clockConfig_t cc) 
+static void blpi2blpe(clockConfig_t cc)
+{
+                                                            /* Not configured */
+}
+
+
+static void blpe2fei(clockConfig_t cc)
+{
+                                                            /* Not configured */
+}
+
+static void blpe2fee(clockConfig_t cc)
+{
+                                                            /* Not configured */
+}
+
+static void blpe2pee(clockConfig_t cc)
+{
+                                                            /* Not configured */
+}
+
+static void blpe2blpi(clockConfig_t cc)
 {
                                                             /* Not configured */
 }
@@ -362,15 +362,15 @@ static void blpe2blpi(clockConfig_t cc)
 * clockSetDividers
 *
 * The clock dividers divide the MCGOUTCLK frequency to produce the resultant
-* system, bus, flexbus, and flash clock frequencies. 
+* system, bus, flexbus, and flash clock frequencies.
 *
 *******************************************************************************/
-void clockSetDividers(divider_t systemDiv, divider_t busDiv, 
+void clockSetDividers(divider_t systemDiv, divider_t busDiv,
                                        divider_t flexBusDiv, divider_t flashDiv)
 {
     int mcgClock = clockFreq.mcgClockFreq;
 
-    /* 
+    /*
      * The asserts are raised when the internal clock requirements (sec. 5.5)
      * are not met.
      */
@@ -391,8 +391,8 @@ void clockSetDividers(divider_t systemDiv, divider_t busDiv,
     clockFreq.flashDiv   = flashDiv;
 
     /* Set the SIM clock dividers */
-    SIM_CLKDIV1 = (systemDiv << 28)  | 
-                  (busDiv << 24)     | 
+    SIM_CLKDIV1 = (systemDiv << 28)  |
+                  (busDiv << 24)     |
                   (flexBusDiv << 20) |
                   (flashDiv << 16);
 }
@@ -433,19 +433,19 @@ uint32_t clockGetFreq(clockSource_t cs)
 * clockConfigMcgOut
 *
 * This configures the clock frequency for the SYSTEM/CORE, BUS, FLASH, and
-* FLEXBUS. 
-* 
+* FLEXBUS.
+*
 * State Machine
 *
-* All modes can move to any other mode on the same line. 
+* All modes can move to any other mode on the same line.
 *
-*  RESET 
+*  RESET
 *      \___ FEI ____ FBI ____ BLPI  (Internal source branch)
-*                |    
+*                |
 *                |  (External source branch)
 *                |
 *                |__ FEE
-*                |    
+*                |
 *                |__ FBE ____ BLPE
 *                         |
 *                         |__ PBE ____ PEE
@@ -461,7 +461,7 @@ void clockConfigMcgOut(clockConfig_t clockConfig)
      * This is the jump table. Depending on the current state, and the desired
      * state, the appropriate function handler is called.
      */
-    static void (* const jumpTable[5][5])(clockConfig_t cc) = { 
+    static void (* const jumpTable[5][5])(clockConfig_t cc) = {
         {     NULL,  fei2fee,  fei2pee,  fei2blpi,  fei2blpe, },
         {  fee2fei,     NULL,  fee2pee,  fee2blpi,  fee2blpe, },
         {  pee2fei,  pee2fee,     NULL,  pee2blpi,  pee2blpe, },
@@ -482,7 +482,7 @@ void clockConfigMcgOut(clockConfig_t clockConfig)
 /*******************************************************************************
 * clockConfigMcgIr
 *******************************************************************************/
-void clockConfigMcgIr() 
+void clockConfigMcgIr()
 {
                                                             /* Not configured */
 }
@@ -490,7 +490,7 @@ void clockConfigMcgIr()
 /*******************************************************************************
 * clockConfigMcgFf
 *******************************************************************************/
-void clockConfigMcgFf() 
+void clockConfigMcgFf()
 {
                                                             /* Not configured */
 }
@@ -498,7 +498,7 @@ void clockConfigMcgFf()
 /*******************************************************************************
 * clockConfigMcgFll
 *******************************************************************************/
-void clockConfigMcgFll() 
+void clockConfigMcgFll()
 {
                                                             /* Not configured */
 }
@@ -506,7 +506,7 @@ void clockConfigMcgFll()
 /*******************************************************************************
 * clockConfigMcgPll
 *******************************************************************************/
-void clockConfigMcgPll() 
+void clockConfigMcgPll()
 {
                                                             /* Not configured */
 }
@@ -514,7 +514,7 @@ void clockConfigMcgPll()
 /*******************************************************************************
 * clockConfigOsc
 *******************************************************************************/
-void clockConfigOsc() 
+void clockConfigOsc()
 {
                                                             /* Not configured */
 }
@@ -522,7 +522,7 @@ void clockConfigOsc()
 /*******************************************************************************
 * clockConfigOsc32k
 *******************************************************************************/
-void clockConfigOsc32k() 
+void clockConfigOsc32k()
 {
                                                             /* Not configured */
 }
@@ -530,7 +530,7 @@ void clockConfigOsc32k()
 /*******************************************************************************
 * clockConfigEr32k
 *******************************************************************************/
-void clockConfigEr32k() 
+void clockConfigEr32k()
 {
                                                             /* Not configured */
 }
@@ -538,7 +538,7 @@ void clockConfigEr32k()
 /*******************************************************************************
 * clockConfigRtc
 *******************************************************************************/
-void clockConfigRtc() 
+void clockConfigRtc()
 {
                                                             /* Not configured */
 }
@@ -546,7 +546,7 @@ void clockConfigRtc()
 /*******************************************************************************
 * clockConfigLpo
 *******************************************************************************/
-void clockConfigLpo() 
+void clockConfigLpo()
 {
                                                             /* Not configured */
 }

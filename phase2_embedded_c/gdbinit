@@ -11,12 +11,8 @@
 # is _not_ to considered a git controlled file.
 #
 target remote localhost:3333
+b _default_fault_handler
 b assert_
 define reset
 monitor reset init
-end
-define load
-reset
-load
-reset
 end

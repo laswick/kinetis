@@ -15,7 +15,9 @@
 #if !defined(HARDWARE_H)
 #define HARDWARE_H
 
+#include <stdio.h>
 #include <stdlib.h>
+
 #include "globalDefs.h"
 
 /* ASSERT *********************************************************************/
@@ -36,6 +38,8 @@ extern void assert_(const char *file, const int line);
 #define __RAMCODE__ __attribute__ ((long_call, section(".ramcode")))
 
 /* POSIX Interface ***********************************************************/
+
+extern int fdevopen(FILE *stream, const char *file, int flags, int mode);
 
 extern int ioctl(int fd, int cmd, int flags);
 

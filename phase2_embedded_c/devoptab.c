@@ -33,7 +33,7 @@
 * the terms of the WTF Public License (WTFPL), Version 2, as published by
 * Sam Hocevar.  See http://sam.zoy.org/wtfpl/COPYING for more details.
 *
-*******************************************************************************
+********************************************************************************
 
     Steps to add your open/read/write/etc
 
@@ -62,8 +62,8 @@
         See DEVOPTAB Entry's section in this file.
 
         An example entry:
-        devoptab_t devoptab_xxx   = { "xxx", xxx_open_r,  xxx_ioctl, xxx_close_r,
-                                             xxx_write_r, xxx_read_r, NULL     };
+        devoptab_t devoptab_xxx   = { "xxx", xxx_open_r, xxx_ioctl, xxx_close_r,
+                                             xxx_write_r, xxx_read_r, NULL    };
 
     3) In devoptab.c, place you devoptab_t entry into the devoptab. By doing
         this you are 'assigning' it a file descriptor, or an entry index the
@@ -132,14 +132,20 @@ int * __errno () {
 
 /*
  * File Descriptor Table
- *
  */
 
-#define MAX_FD 20
-static int fdTable[MAX_FD] =
-{
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+enum {
+    FD_STDIN,
+    FD_STDOUT,
+    FD_STDERR,
+    FD_START,
+
+    MAX_FD = 20,
+};
+
+static int fdTable[MAX_FD] = {
+  FD_STDIN, FD_STDOUT, FD_STDERR,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
 
 /******************************************************************************/
@@ -211,7 +217,7 @@ int _open   ( const char *file, int flags, int mode )
     int i;
 
     /* search for the first free FD */
-    for (i = 0; i < MAX_FD; i++) {
+    for (i = FD_START; i < MAX_FD; i++) {
         if (fdTable[i] == -1) {
             fd = i;
             break;
@@ -249,20 +255,64 @@ int _open   ( const char *file, int flags, int mode )
     return fd;
 }
 
+/*******************************************************************************
+*
+* fdevopen
+*
+* Extremely similar to _open_r, but specific to the standard I/O streams.
+*
+* RETURNS: fd.
+*
+*******************************************************************************/
+int fdevopen(FILE *stream, const char *file, int flags, int mode)
+{
+    int fd = (stream == stdin)? 0:(stream == stdout)? 1:(stream == stderr)?2:-1;
+
+    if (fd == -1) {
+        assert(0);
+        return -1;
+    }
+
+    int i;
+    int devop = -1;
+
+    for (i = 0; i < devoptab_size; i++) {
+        if (!strcmp(devoptab[i].name, file)) {
+            devop = i;
+            break;
+        }
+    }
+
+    if (devop == -1) {
+        assert(0);
+        return -1;
+    }
+
+    struct _reent tmp;
+    if (devlist[devoptab[devop].maj].open_r(&tmp, &devoptab[devop],mode,flags))
+        fdTable[fd] = devop;
+    else {
+        assert(0);
+        fd = -1;
+    }
+
+    return fd;
+}
+
 /******************************************************************************/
-static int is_fd_valid( struct _reent *ptr, int fd )
+static bool is_fd_valid(struct _reent *ptr, int fd )
 /******************************************************************************/
 {
     if (fd < 0 || fd >= MAX_FD) {
         ptr->_errno = EBADF;
-    return(FALSE);
+        return (FALSE);
     }
     else if (fdTable[fd] == -1) {
         ptr->_errno = ENOENT;
-    return(FALSE);
+        return (FALSE);
     }
     else {
-    return(TRUE);
+        return (TRUE);
     }
 }
 /******************************************************************************/
@@ -274,11 +324,13 @@ int _close   ( int fd )
 /******************************************************************************/
 {
     int retVal = -1;
-    if (is_fd_valid(ptr, fd)) {
-        int devop = fdTable[fd];
-        retVal = devlist[devoptab[devop].maj].close_r(ptr, &devoptab[devop]);
-        if (!retVal) {
-            fdTable[fd] = -1;
+    if (fd > FD_STDERR) {       /* Don't allow the stdio streams to be closed */
+        if (is_fd_valid(ptr, fd)) {
+            int devop = fdTable[fd];
+            retVal = devlist[devoptab[devop].maj].close_r(ptr,&devoptab[devop]);
+            if (!retVal) {
+                fdTable[fd] = -1;
+            }
         }
     }
     return retVal;
