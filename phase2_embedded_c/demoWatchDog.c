@@ -26,8 +26,9 @@ static void delay(void)
 
 int main(void)
 {
+    /* NOTE: Using alt clk src but am not sure what frequency it is */
     watchDogConfig_t wdCfg = {
-        .timeout = 0x14c4b4c,
+        .timeout = 0x14c4b4c, /* w.r.t. selected clock src */
         .stCtrlFlags = WDOG_STNDBYEN | WDOG_WAITEN | WDOG_STOPEN
                      | WDOG_ALLOWUPDATE | WDOG_CLKSRC | WDOG_EN,
         .prescaler = 0,
@@ -41,6 +42,7 @@ int main(void)
     gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_PIN,   GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_SWITCH_1_PORT,   N_SWITCH_1_PIN,   GPIO_INPUT);
 
+    /* Simulate doing useful non-safety critical stuff */
     delay(); delay(); delay(); delay(); delay(); delay(); delay(); delay();
     gpioSet(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
     delay(); delay(); delay(); delay(); delay(); delay(); delay(); delay();
@@ -76,10 +78,6 @@ int main(void)
 	if (gpioRead(N_SWITCH_1_PORT, N_SWITCH_1_PIN) != 0) {
             watchDogKick();
 	}
-        else {
-            int test = 5;
-            test++;
-        }
     }
 
     return 0;

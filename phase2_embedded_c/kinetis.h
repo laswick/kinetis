@@ -692,19 +692,18 @@ typedef struct {
 enum {
    WDOG_EN          = BIT_0,
    WDOG_CLKSRC      = BIT_1,
-   WDOG_IRQRSTEN    = BIT_2, /* TODO: If anyone cares let me know */
+   WDOG_IRQRSTEN    = BIT_2,            /* TODO */
    WDOG_WINEN       = BIT_3,
    WDOG_ALLOWUPDATE = BIT_4,
    WDOG_DBGEN       = BIT_5,
    WDOG_STOPEN      = BIT_6,
    WDOG_WAITEN      = BIT_7,
    WDOG_STNDBYEN    = BIT_8,
-#if 0 /* TODO: If anyone cares let me know */
-   WDOG_TEST        = BIT_10,
-   WDOG_TESTSEL     = BIT_11,
-   WDOG_BYTES_SEL   = BIT_12 | BIT13,
-   WDOG_DISTEST     = BIT_14,
-#endif
+
+   WDOG_TEST        = BIT_10,           /* TODO */
+   WDOG_TESTSEL     = BIT_11,           /* TODO */
+   WDOG_BYTES_SEL   = BIT_12 | BIT_13,  /* TODO */
+   WDOG_DISTEST     = BIT_14,           /* TODO */
 };
 
 
