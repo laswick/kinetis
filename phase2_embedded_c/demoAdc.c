@@ -237,11 +237,12 @@ int main(void)
 //                        | (IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP0
                           | (IO_IOCTL_ADC0_CHANNEL_FLAGS_PGA0_DP1
                            & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK)));
-    printf("The start of something good...\r\n"); /* StdOut is uart3 */
+    printf("\r\nThe start of something good...\r\n"); /* StdOut is uart3 */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
 
     while (!quit) {
+    int32_t update = FALSE;
         if (blink) {
             delay();
             gpioClear(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
@@ -258,6 +259,7 @@ int main(void)
             int i;
 
             updateFlags &= ~UPDATE_POT_DATA;
+            update = TRUE;
             sprintf(string, "%s POT: ", string);
             for (i = 0; i < potMsg.len; i++) {
                 sumVal += potMsg.data[i];
@@ -292,7 +294,7 @@ int main(void)
 
         }
         else {
-            sprintf(string, "         ");
+            sprintf(string, "            ");
         }
 
         if (updateFlags & UPDATE_TC_DATA) {
@@ -300,13 +302,26 @@ int main(void)
             int i;
 
             updateFlags &= ~UPDATE_TC_DATA;
+
+            update = TRUE;
             sprintf(string, "%s \t TEMP: ", string);
             for (i = 0; i < tcMsg.len; i++) {
                 sumVal += tcMsg.data[i];
             }
-            sprintf(string, "%s %3.1fC \r\n", string, getTemp(sumVal/i));
+            sprintf(string, "%s %3.1fC", string, getTemp(sumVal/i));
         }
-        printf("%s", string);
+        if (update) {
+            sprintf(string, "\r%s ", string);
+#if 1
+            write(fdUart, string, strlen(string));
+#else
+            /* TODO JM/RL */
+           /* Why doesn't this work? */
+            printf("%s", string);
+            /* Need a \n to make it work */
+            printf("\n");
+#endif
+        }
 
     }
     close(fdUart);
