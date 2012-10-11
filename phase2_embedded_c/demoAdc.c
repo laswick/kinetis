@@ -100,7 +100,7 @@ static double getTemp(uint32_t value)
     double tempC;
 
                                         /* (value/PGA gain)/resolution * vref */
-    volts = value / (4 * 256.0) * 1.2;
+    volts = value / (4 * 4096.0) * 1.2;
                                                                   /* 5mV/DegC */
     tempC = volts / 0.005;
 
@@ -203,7 +203,7 @@ int main(void)
     }
 
     ioctl(fdThrmCpl, IO_IOCTL_ADC_RESOLUTION_SELECT,
-                     IO_IOCTL_ADC_RES_FLAGS_8_BIT);
+                     IO_IOCTL_ADC_RES_FLAGS_12_BIT);
     ioctl(fdThrmCpl, IO_IOCTL_ADC_VREF_SELECT, IO_IOCTL_ADC_VREF_FLAGS_ALT);
     ioctl(fdThrmCpl, IO_IOCTL_ADC_PGASET, IO_IOCTL_ADC_PGA_FLAGS_GAIN_4);
     ioctl(fdThrmCpl, IO_IOCTL_ADC_CALIBRATE, TRUE);
