@@ -15,13 +15,15 @@
 * Canada Day 2012
 *
 *******************************************************************************/
-#include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
+#include <stdlib.h>
 #include <errno.h>
+
 #include "kinetis.h"
+
 #include "hardware.h"
 #include "globalDefs.h"
 #include "util.h"
@@ -92,47 +94,31 @@ static void tcCallBackHandler(uint32_t const *buf, int len)
    return;
 }
 
-static void hex2HexStr(char *string, uint32_t value, int addLFCR)
+static double getTemp(uint32_t value)
 {
-    int i;
-    int k = 0;
+    double volts;
+    double tempC;
 
-    string[k++] = '0';
-    string[k++] = 'x';
-    for (i = 3; i >= 0; i--) {
-        char charVal = (value >> 4 * i) & 0xf;
-        if (charVal < 0xa){
-            string[k++] = '0' + charVal;
-        }
-        else {
-            switch (charVal) {
-                case 0xa:
-                    string[k++] = 'a';
-                    break;
-                case 0xb:
-                    string[k++] = 'b';
-                    break;
-                case 0xc:
-                    string[k++] = 'c';
-                    break;
-                case 0xd:
-                    string[k++] = 'd';
-                    break;
-                case 0xe:
-                    string[k++] = 'e';
-                    break;
-                case 0xf:
-                    string[k++] = 'f';
-                    break;
-            }
-        }
-    }
-    if (addLFCR) {
-        string[k++] = '\r';
-        string[k++] = '\n';
-    }
-    string[k++] = '\0';
-    return;
+                                        /* (value/PGA gain)/resolution * vref */
+    volts = value / (4 * 256.0) * 1.2;
+                                                                  /* 5mV/DegC */
+    tempC = volts / 0.005;
+
+    /* Quick cal of system shows the following error by comparing
+     * standard sources at 0C and 37C (ice-water standard and anal probe...)
+     */
+    tempC = tempC * 1.636 - 17.966;
+
+    return tempC;
+}
+
+static double getVolt(uint32_t value)
+{
+    double volts;
+
+                                        /* (value/PGA gain)/resolution * vref */
+    volts = value / (1 * 4095.0) * 3.3;
+    return volts;
 }
 
 static void setClock(void)
@@ -161,6 +147,7 @@ int main(void)
 {
     int blink = TRUE;
     int quit  = FALSE;
+    char string[255];
 
 
     setClock();
@@ -168,6 +155,19 @@ int main(void)
     /* Install uart and adc into the device table before using them */
     uart_install();
     adc_install();
+
+    /*
+     * Register the standard I/O streams with a particular deivce driver.
+     */
+
+    int fd0 = fdevopen(stdin,  "uart3", 0, 0);
+    int fd1 = fdevopen(stdout, "uart3", 0, 0);
+    int fd2 = fdevopen(stderr, "uart3", 0, 0);
+
+    assert(fd0 != -1);
+    assert(fd1 != -1);
+    assert(fd2 != -1);
+
 
     fdUart = open("uart3", 0, 0);
     if (fdUart==-1) {
@@ -213,7 +213,7 @@ int main(void)
     }
 
     ioctl(fdThrmCpl, IO_IOCTL_ADC_RESOLUTION_SELECT,
-                     IO_IOCTL_ADC_RES_FLAGS_12_BIT);
+                     IO_IOCTL_ADC_RES_FLAGS_8_BIT);
     ioctl(fdThrmCpl, IO_IOCTL_ADC_VREF_SELECT, IO_IOCTL_ADC_VREF_FLAGS_ALT);
     ioctl(fdThrmCpl, IO_IOCTL_ADC_PGASET, IO_IOCTL_ADC_PGA_FLAGS_GAIN_4);
     ioctl(fdThrmCpl, IO_IOCTL_ADC_CALIBRATE, TRUE);
@@ -237,7 +237,7 @@ int main(void)
 //                        | (IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP0
                           | (IO_IOCTL_ADC0_CHANNEL_FLAGS_PGA0_DP1
                            & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK)));
-    //printf("The start of something good...\r\n"); /* StdOut is uart3 */
+    printf("The start of something good...\r\n"); /* StdOut is uart3 */
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
 
@@ -250,20 +250,17 @@ int main(void)
         }
 
 
+        string[0]= '\0';
         if (updateFlags & UPDATE_POT_DATA) {
-            char string[10];
             static int32_t compareVal;
             static int32_t useGT = TRUE;
+            int32_t sumVal = 0;
             int i;
 
             updateFlags &= ~UPDATE_POT_DATA;
-            write(fdUart, "DATA:", strlen("DATA:"));
-            write(fdUart, "\r\n",
-                    strlen("\r\n"));
+            sprintf(string, "%s POT: ", string);
             for (i = 0; i < potMsg.len; i++) {
-                /* Vararg not working? printf(">%x \r\n", potMsg.data[i]); */
-                hex2HexStr(string, potMsg.data[i], TRUE);
-                write(fdUart, string, strlen(string));
+                sumVal += potMsg.data[i];
 
                 compareVal = potMsg.data[i];
 
@@ -283,6 +280,8 @@ int main(void)
                 ioctl(fdPot, IO_IOCTL_ADC_COMPARE_ENABLE, TRUE);
                 ioctl(fdPot, IO_IOCTL_ADC_COMPARE_RANGE_SET, FALSE);
             }
+
+            sprintf(string, "%s %3.2fV", string, getVolt(sumVal/i));
             /* Set the channel again trigger - needed because changing the
              * compare setpoint breaks the continous conversion mode */
             ioctl(fdPot, IO_IOCTL_ADC_CHANNEL_SELECT,
@@ -292,25 +291,22 @@ int main(void)
 
 
         }
+        else {
+            sprintf(string, "         ");
+        }
 
         if (updateFlags & UPDATE_TC_DATA) {
-            char string[10];
+            int sumVal = 0;
             int i;
 
             updateFlags &= ~UPDATE_TC_DATA;
-            write(fdUart, "\tTEMP:", strlen("\tTEMP:"));
-            write(fdUart, "\r\n",
-                    strlen("\r\n"));
+            sprintf(string, "%s \t TEMP: ", string);
             for (i = 0; i < tcMsg.len; i++) {
-                /* Vararg not working? printf("\t>%x \r\n", tcMsg.data[i]); */
-                string[0] = '\t';
-                //hex2TempStr(&string[1], tcMsg.data[i], TRUE);
-                hex2HexStr(&string[1], tcMsg.data[i], TRUE);
-                write(fdUart, string, strlen(string));
+                sumVal += tcMsg.data[i];
             }
+            sprintf(string, "%s %3.1fC \r\n", string, getTemp(sumVal/i));
         }
-
-
+        printf("%s", string);
 
     }
     close(fdUart);
