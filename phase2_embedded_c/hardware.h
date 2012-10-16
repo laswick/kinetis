@@ -442,6 +442,10 @@ extern volatile pitCtrl_t * const pitCtrl;
 
 extern void pitInit(int timer, void *isr, uint32_t initCount);
 
+/* FTM ************************************************************************/
+/* TODO ftm interface functions coming soon... */
+extern void ftmInit(int timer, void *isr, uint32_t initCount);
+
 /* ADC ***********************************************************************/
 
 #define MAX_ADCS     2
