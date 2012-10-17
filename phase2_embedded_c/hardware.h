@@ -240,7 +240,7 @@ typedef struct {
                                         |            TSI_SCANC_DELVOL_600mV \
                                         | (1      << TSI_SCANC_SMOD_SHIFT) \
                                         |            TSI_SCANC_AMCLKS_BUS_CLK \
-                                        | (0      << TSI_SCANC_AMPSC_SHIFT))
+                                        | (1      << TSI_SCANC_AMPSC_SHIFT))
 
 extern int32_t tsiInit(const tsiConfig_t *cfg);
 extern uint32_t tsiRead(const tsiConfig_t *cfg);

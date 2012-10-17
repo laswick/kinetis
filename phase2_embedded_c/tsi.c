@@ -78,7 +78,7 @@ int32_t tsiInit(const tsiConfig_t *cfg)
 {
     int pin;
 
-    SIM_SCGC5 |= SIM_TSI_ENABLE;
+    SIM_SCGC5 |= SIM_SCGC5_TSI_ENABLE;
 
     tsiDisable();
 

@@ -25,7 +25,7 @@
 #define MODE_4PIN                 /* Use touch pads on TWR-K60N512 main board */
 /* #define MODE_KEYPAD */    /* Use touch pads on TWRPI-KEYPAD daughter board */
 
-/* #define CALIBRATE */              /* Display raw TSI counts on serial port */
+/*#define CALIBRATE */              /* Display raw TSI counts on serial port */
 
 static void delay(void)
 {
@@ -77,6 +77,25 @@ static const tsiConfig_t tsiConfig = {
 #endif
 #endif
 
+static void setClock(void)
+{
+    /* -------- 100 MHz (external clock) -----------
+     * Configure the Multipurpose Clock Generator output to use the external
+     * clock locked with a PLL at the maximum frequency of 100MHZ
+     *
+     * For PLL, the dividers must be set first.
+     *
+     * System:  100 MHz
+     * Bus:      50 MHz
+     * Flexbus:  50 MHz
+     * Flash:    25 MHz
+     */
+    clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_4, DIVIDE_BY_4);
+    clockConfigMcgOut(MCG_PLL_EXTERNAL_100MHZ);
+
+    return;
+}
+
 #if defined(CALIBRATE)
 int main(void)
 {
@@ -84,6 +103,8 @@ int main(void)
     int pin;
     uint32_t value;
     char buf[32];
+
+    setClock();
 
     uart_install();
 
@@ -136,6 +157,8 @@ int main(void)
 {
     uint32_t state, lastState = 0, pressed;
 
+    setClock();
+
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_PIN,  GPIO_OUTPUT | GPIO_LOW);
@@ -176,6 +199,8 @@ int main(void)
     int fd, len;
     char buf[2];
     tsiConfigure_t tsiConfigure;
+
+    setClock();
 
     tsi_install();
 

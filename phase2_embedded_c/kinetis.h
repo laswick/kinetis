@@ -304,13 +304,12 @@ enum {
 #define SIM_SCGC5_ADDR  0x40048038
 #define SIM_SCGC5_PTR     (volatile uint32_t *) SIM_SCGC5_ADDR
 #define SIM_SCGC5       (*(volatile uint32_t *) SIM_SCGC5_ADDR)
+#define SIM_SCGC5_TSI_ENABLE   BIT_5
 #define SIM_SCGC5_PORTA_ENABLE BIT_9
 #define SIM_SCGC5_PORTB_ENABLE BIT_10
 #define SIM_SCGC5_PORTC_ENABLE BIT_11
 #define SIM_SCGC5_PORTD_ENABLE BIT_12
 #define SIM_SCGC5_PORTE_ENABLE BIT_13
-
-#define SIM_TSI_ENABLE   BIT_5
 
 #define SIM_SCGC6_ADDR  0x4004803C
 #define SIM_SCGC6_PTR     (volatile uint32_t *) SIM_SCGC6_ADDR
