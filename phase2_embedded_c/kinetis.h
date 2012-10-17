@@ -1723,7 +1723,7 @@ enum {
     FTM_CH_CS_CHF_BIT   = 1 << 7,
     FTM_CH_CS_CHIE_BIT  = 1 << 6,
     FTM_CH_CS_MSB_BIT   = 1 << 5,
-    FTM_CH_CS_MSB_BIT   = 1 << 4,
+    FTM_CH_CS_MSA_BIT   = 1 << 4,
     FTM_CH_CS_ELSB_BIT  = 1 << 3,
     FTM_CH_CS_ELSA_BIT  = 1 << 2,
     /* Reserved 1 << 1 */
@@ -1830,7 +1830,7 @@ enum {
     FTM_COMBINE_CH0_CH1_DTEN_BIT     = 1 << 4,
     FTM_COMBINE_CH0_CH1_DECAP_BIT    = 1 << 3,
     FTM_COMBINE_CH0_CH1_DECAPEN_BIT  = 1 << 2,
-    FTM_COMBINE_CH0_CH1_COMP_BIT     = 1 << 1
+    FTM_COMBINE_CH0_CH1_COMP_BIT     = 1 << 1,
     FTM_COMBINE_CH0_CH1_COMBINE_BIT  = 1 << 0,
 };
 
@@ -1963,7 +1963,7 @@ enum {
     FTM_FLTPOL_FLT3_POL_BIT     = 1 << 3,
     FTM_FLTPOL_FLT2_POL_BIT     = 1 << 2,
     FTM_FLTPOL_FLT1_POL_BIT     = 1 << 1,
-    FTM_FLTPOL_FLT1_POL_BIT     = 1 << 0,
+    FTM_FLTPOL_FLT0_POL_BIT     = 1 << 0,
 };
 
 /* FTMx_SYNCONF */
