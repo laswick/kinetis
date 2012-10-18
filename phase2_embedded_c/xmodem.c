@@ -54,21 +54,21 @@ static void flushBuffer(void)
  * http://www.std.com/obi/Standards/FileTransfer/XMODEM-CRC.NOTE.1
  *
  *****************************************************************************/
-static uint16_t crctab[256];
+static int crcFd;
 static void initCRC(void)
 {
-    uint16_t count;
-    for (count = 0; count < 256; count++) {
-        uint16_t crc = (count << 8) ^ 0;
-        int i;
-        for (i = 0; i < 8; i++) {
-            if (crc & 0x8000)
-                crc = (crc << 1) ^ 0x1021;
-            else
-                crc <<= 1;
-        }
-        crctab[count] = crc;
+    crc_install();
+    crcFd = open("crc", 0, 0);
+    if (crcFd==-1) {
+        assert(0);
+        return;
     }
+    ioctl(crcFd, IO_IOCTL_CRC_SET_DWW,       CRC_DWW_BYTE);
+    ioctl(crcFd, IO_IOCTL_CRC_SET_PRO_WIDTH, CRC_WIDTH_16);
+    ioctl(crcFd, IO_IOCTL_CRC_SET_TOT,       CRC_TOT_NONE);
+    ioctl(crcFd, IO_IOCTL_CRC_SET_TOTR,      CRC_TOTR_NONE);
+    ioctl(crcFd, IO_IOCTL_CRC_SET_FXOR,      CRC_FXOR_DISABLE);
+    ioctl(crcFd, IO_IOCTL_CRC_SET_POLY,      CRC_POLY_CRC16CITT);
 }
 
 /******************************************************************************
@@ -81,9 +81,9 @@ static void initCRC(void)
 static int16_t calcCRC(uint8_t *dataPtr, int numBytes)
 {
     int16_t crc = 0;
-    while (numBytes--)
-        crc = (crc << 8) ^ crctab[(crc >> 8) ^ *dataPtr++];
-
+    ioctl(crcFd, IO_IOCTL_CRC_SET_SEED,      CRC_SEED_CRC16CITT_XMODEM);
+    write(crcFd, (void *)dataPtr, numBytes);
+    read(crcFd, &crc, 2);
     return crc;
 }
 
@@ -252,6 +252,5 @@ int32_t xmodemRecv(uint8_t *outBuffer, uint32_t numBytes)
             xmodem.state = STATE_WAITING;
         }
     }
-
     return returnVal;
 }

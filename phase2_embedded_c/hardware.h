@@ -262,8 +262,10 @@ typedef struct tsiConfigure_s {
 
 /* CRC  ***********************************************************************/
 
-                                                        /* IO_IOCTL_ commands */
+                                  /* IO_IOCTL_ commands */
 enum {
+    IO_IOCTL_CRC_SET_DWW,       /* Set the CRC Data Write Width */
+    IO_IOCTL_CRC_GET_DWW,       /* Get the CRC Data Write Width */
     IO_IOCTL_CRC_SET_TOT,         /* Set Type of Transpose */
     IO_IOCTL_CRC_GET_TOT,         /* Get Type of Transpose */
     IO_IOCTL_CRC_SET_TOTR,        /* Set Type of Transpose for Read */
@@ -274,21 +276,31 @@ enum {
     IO_IOCTL_CRC_GET_SEED,        /* Get the CRC Seed */
     IO_IOCTL_CRC_SET_POLY,        /* Set the CRC Polynomial */
     IO_IOCTL_CRC_GET_POLY,        /* Get the CRC Polynomial */
-    IO_IOCTL_CRC_SET_WIDTH,       /* Set the CRC Protocol Width */
-    IO_IOCTL_CRC_GET_WIDTH,       /* Get the CRC Protocol Width */
+    IO_IOCTL_CRC_SET_PRO_WIDTH,       /* Set the CRC Protocol Width */
+    IO_IOCTL_CRC_GET_PRO_WIDTH,       /* Get the CRC Protocol Width */
     MAX_IO_IOCTRL_CRC_CMDS
 };
+                        /* DWW - CRC DATA WRITE WIDTH */
+typedef enum {
+    CRC_DWW_BYTE   = 0, /* CRC data writes are 1 byte wide
+                           -CRC16/32 modes, data must be 8bit aligned */
+    CRC_DWW_2BYTE = 1, /* CRC data writes are 2 bytes wide
+                           -CRC16/32 modes, data must be 16bit aligned */
+    CRC_DWW_4BYTE = 2, /* CRC data writes are 4 bytes wide
+                           -CRC32 mode only, data must be 32bit aligned */
+    MAX_CRC_DWW,
+} crcDww_t;
 
-                                           /* TOT - CRC Type of Transposition */
+                                /* TOT - CRC Type of Transposition */
 typedef enum {
     CRC_TOT_NONE           = 0, /* No transposition */
     CRC_TOT_BITS           = 1, /* Only Bits in bytes are transposed */
     CRC_TOT_BITS_AND_BYTES = 2, /* Bits in bytes and bytes are transposed */
-    CRC_TOT_ONLY_BYTES     = 3, /* Only Bytes are transposed */
+    CRC_TOT_BYTES          = 3, /* Only Bytes are transposed */
     MAX_CRC_TOT,
 } crcTot_t;
 
-                                  /* TOTR - CRC Type of Transposition for Read*/
+                                 /* TOTR - CRC Type of Transposition for Read*/
 typedef enum {
     CRC_TOTR_NONE           = 0, /* No transposition */
     CRC_TOTR_BITS           = 1, /* Only Bits in bytes are transposed */
@@ -304,7 +316,22 @@ typedef enum {
     MAX_CRC_FXOR,
 } crcFxor_t;
 
-                                                 /* WIDTH - CRC Protocol Width*/
+
+typedef enum {
+    CRC_POLY_CRC32      = 0x04C11DB7,
+    CRC_POLY_CRC16      = 0x8005,
+    CRC_POLY_CRC16CITT  = 0x1021,
+} crcPoly_t;
+
+typedef enum {
+    CRC_SEED_CRC32            = 0xFFFFFFFF,
+    CRC_SEED_CRC16            = 0x0000,
+    CRC_SEED_CRC16_MODBUS     = 0xFFFF,
+    CRC_SEED_CRC16CITT        = 0xFFFF,
+    CRC_SEED_CRC16CITT_XMODEM = 0x0000,
+} crcSeed_t;
+
+                           /* WIDTH - CRC Protocol Width*/
 typedef enum {
     CRC_WIDTH_16      = 0, /* 16-bit CRC Checksum */
     CRC_WIDTH_32      = 1, /* 32-bit CRC Checksum */

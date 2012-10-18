@@ -1077,6 +1077,7 @@ typedef enum {
 #define SPI0_RXFR1 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x80))
 #define SPI0_RXFR2 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x84))
 #define SPI0_RXFR3 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x88))
+#define SPI0_BB_BASE_ADDR 0x4202C000
 
 /* SPI1 */
 #define SPI1_BASE_ADDR 0x4002D000
@@ -1433,15 +1434,27 @@ typedef enum {
 
 #define CRC_CRC_ADDR     0x40032000
 #define CRC_CRC_PTR      (volatile uint32_t *) CRC_CRC_ADDR
+#define CRC_CRC32_PTR    (volatile uint32_t *) CRC_CRC_ADDR
+#define CRC_CRC16_PTR    (volatile uint16_t *) CRC_CRC_ADDR
+#define CRC_CRC8_PTR     (volatile uint8_t  *) CRC_CRC_ADDR
 #define CRC_CRC          (*(volatile uint32_t *) CRC_CRC_ADDR)
 #define CRC_GPOLY_ADDR   0x40032004
-#define CRC_GPOLY32_PTR  (volatile uint32_t *) CRC_GPOLY_ADDR
-#define CRC_GPOLY32      (*(volatile uint32_t *) CRC_GPOLY_ADDR)
-#define CRC_GPOLY16_PTR  (volatile uint16_t *) CRC_GPOLY_ADDR
-#define CRC_GPOLY16      (*(volatile uint16_t *) CRC_GPOLY_ADDR)
+#define CRC_GPOLY32_PTR    (volatile uint32_t *) CRC_GPOLY_ADDR
+#define CRC_GPOLY16_PTR    (volatile uint16_t *) CRC_GPOLY_ADDR
+#define CRC_GPOLY        (*(volatile uint32_t *) CRC_GPOLY_ADDR)
+
 #define CRC_CTRL_ADDR    0x40032008
 #define CRC_CTRL_PTR     (volatile uint32_t *) CRC_CTRL_ADDR
 #define CRC_CTRL         (*(volatile uint32_t *) CRC_CTRL_ADDR)
+
+/* Bit banded regions */
+#define CRC_BB_BASE_CTRL_ADDR (0x42000000 +(0x32008 * 32))
+
+#define CRC_BB_CTRL_WAS_ADDR  (CRC_BB_BASE_CTRL_ADDR +(25 * 4))
+#define CRC_BB_CTRL_TCRC_ADDR (CRC_BB_BASE_CTRL_ADDR +(24 * 4))
+
+#define CRC_BB_CTRL_WAS   (*(volatile uint32_t *) CRC_BB_CTRL_WAS_ADDR)
+#define CRC_BB_CTRL_TCRC  (*(volatile uint32_t *) CRC_BB_CTRL_TCRC_ADDR)
 
 /*******************************************************************************
 * MPU
@@ -1721,7 +1734,6 @@ enum {
 enum {
     FTM_CH_CS_CHF_BIT   = 1 << 7,
     FTM_CH_CS_CHIE_BIT  = 1 << 6,
-    FTM_CH_CS_MSB_BIT   = 1 << 5,
     FTM_CH_CS_MSA_BIT   = 1 << 4,
     FTM_CH_CS_ELSB_BIT  = 1 << 3,
     FTM_CH_CS_ELSA_BIT  = 1 << 2,
@@ -1962,7 +1974,6 @@ enum {
     FTM_FLTPOL_FLT3_POL_BIT     = 1 << 3,
     FTM_FLTPOL_FLT2_POL_BIT     = 1 << 2,
     FTM_FLTPOL_FLT1_POL_BIT     = 1 << 1,
-    FTM_FLTPOL_FLT0_POL_BIT     = 1 << 0,
 };
 
 /* FTMx_SYNCONF */

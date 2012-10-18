@@ -14,7 +14,7 @@ ASM_PIECES = startcode libc_stubs
 
 # List your c files here (minus the .c):
 
-C_PIECES  = hardware devoptab gpio util flash
+C_PIECES  = hardware devoptab gpio util flash crc
 C_PIECES += loaderUart xmodem loader
 C_PIECES += demoLoader
 

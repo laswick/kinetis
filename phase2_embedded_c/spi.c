@@ -6,6 +6,8 @@
 *
 * Low level driver for the Kinetis SPI module.
 *
+* TODO: Bit banding
+*
 * Copyright (C) 2012 www.laswick.net
 *
 * This program is free software.  It comes without any warranty, to the extent
@@ -84,6 +86,7 @@ spi_t spiList[NUM_SPI_MODULES] = {
                | SPI_CTAR_DT0     | SPI_CTAR_DT1      | SPI_CTAR_DT2,
         .rser  = 0,
         .pushr = 0,
+        .addr  = SPI0_BASE_ADDR,
         .simScgcPtr = SIM_SCGC6_PTR,
         .simScgcEnBit = SIM_SCGC6_SPI0_ENABLE,
     },
@@ -151,15 +154,22 @@ static unsigned spiWrite(devoptab_t *dot, const void *data, unsigned len)
 {
     unsigned i;
     uint8_t *dataPtr = (uint8_t *) data;
+    uint16_t *data16Ptr = (uint16_t *) data;
     uint32_t pushr = 0;
+    unsigned big_size = FALSE;
     spi_t *spi;
 
     if (!dot || !dot->priv) return FALSE;
     else spi = (spi_t *) dot->priv;
 
+    if (((spi->ctar0 >> 27) & 0xF) > 8) big_size = TRUE;
+
     for(i = 0; i < len; i++) {
 
-        pushr = (spi->pushr | (uint32_t)(*dataPtr++));
+        if (big_size)
+            pushr = (spi->pushr | (uint32_t)(*dataPtr++));
+        else
+            pushr = (spi->pushr | (uint32_t)(*data16Ptr++));
 
         /* Write to the TX FIFO if there is room */
 

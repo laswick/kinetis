@@ -4,6 +4,10 @@
 *
 * Shaun Weise
 *
+* Low level driver for the Kinetis SPI module.
+*
+* TODO: Bit banding
+*
 * Copyright (C) 2012 www.laswick.net
 *
 * This program is free software.  It comes without any warranty, to the extent
@@ -22,26 +26,35 @@
 
 typedef struct crc_s {
     volatile uint32_t * crc;
+    volatile uint32_t * crc32;
+    volatile uint16_t * crc16;
+    volatile uint8_t  * crc8;
     volatile uint32_t * gpoly32;
     volatile uint16_t * gpoly16;
     volatile uint32_t * ctrl;
     volatile uint32_t * simScgc;
     uint32_t            seed;
+    unsigned            dww;
+    unsigned            (*write)(struct crc_s *crc, const void *data, unsigned len);
     unsigned            simScgcEnBit;
 } crc_t;
 
-#define CRC32       0x82608EDB
-#define CRC15CAN    0x62CC
-#define CRC16       0xC002
-#define CRC16ARINC  0xD015
+static unsigned crcWriteByteWide (crc_t *crc, const void *data, unsigned len);
+static unsigned crcWrite2ByteWide(crc_t *crc, const void *data, unsigned len);
+static unsigned crcWrite4ByteWide(crc_t *crc, const void *data, unsigned len);
 
 crc_t crcDflt = {
     .crc          = CRC_CRC_PTR,
+    .crc32        = CRC_CRC32_PTR,
+    .crc16        = CRC_CRC16_PTR,
+    .crc8         = CRC_CRC8_PTR,
     .gpoly32      = CRC_GPOLY32_PTR,
     .gpoly16      = CRC_GPOLY16_PTR,
     .ctrl         = CRC_CTRL_PTR,
     .simScgc      = SIM_SCGC6_PTR,
     .seed         = 0xA535A535,
+    .dww          = CRC_DWW_BYTE,
+    .write        = crcWriteByteWide,
     .simScgcEnBit = SIM_SCGC6_CRC_ENABLE,
 };
 
@@ -69,60 +82,75 @@ static int crcOpen(devoptab_t *dot)
 }
 
 /*******************************************************************************/
-static unsigned crcWrite(devoptab_t *dot, const void *data, unsigned len)
+static unsigned crcWriteByteWide(crc_t *crc, const void *data, unsigned len)
 /*******************************************************************************/
 {
-    crc_t *crc;
+    volatile uint8_t *crcPtr;
+    uint8_t *dataPtr;
     unsigned i;
-    union {
-        uint32_t *u32;
-        uint16_t *u16;
-    } dataPtr;
 
-    if (!dot || !dot->priv) return FALSE;
-    else crc = (crc_t *) dot->priv;
-
-    if (*crc->ctrl & CRC_CTRL_TCRC) {               /* 32 Bit Mode */
-        if ((len % 4) != 0) return FALSE;        /* Unaligned Data */
-        dataPtr.u32 = (uint32_t *) data;
-        for (i = 0; i < len/4; i++)
-            *crc->crc = *(dataPtr.u32)++;
-    }
-    else {                                          /* 16 Bit Mode */
-        if ((len % 2) != 0) return FALSE;        /* Unaligned Data */
-        dataPtr.u16 = (uint16_t *) data;
-        for (i = 0; i < len/2; i++)
-            *crc->crc = *(dataPtr.u16)++;
+    /* Write */
+    dataPtr = (uint8_t *) data;
+    crcPtr = (uint8_t *) crc->crc;
+    if ( *crc->ctrl & CRC_CTRL_TCRC ) {  /* CRC32 Mode */
+        for (i = 0; i < len; i++)
+            crcPtr[i%4] = *(dataPtr)++;
+    } else {                             /* CRC16 Mode */
+        for (i = 0; i < len; i++)
+            crcPtr[i%2] = *(dataPtr)++;
     }
 
     return len;
 }
 
 /*******************************************************************************/
-static unsigned crcRead(devoptab_t *dot, void *data, unsigned len)
+static unsigned crcWrite2ByteWide(crc_t *crc, const void *data, unsigned len)
 /*******************************************************************************/
 {
-    crc_t *crc;
-    union {
-        uint32_t *u32;
-        uint16_t *u16;
-    } dataPtr;
+    volatile uint16_t *crcPtr;
+    uint16_t *dataPtr;
+    unsigned i;
 
-    if (!dot || !dot->priv) return FALSE;
-    else crc = (crc_t *) dot->priv;
+    /* Checks */
+    if ( ((unsigned)data % 2) != 0)
+        return FALSE;   /* Data ptr must be 16bit align*/
+    else if ( (len % 2) != 0 )
+        return FALSE;   /* Data must be of multiple 2 bytes */
 
-    if (*crc->ctrl & CRC_CTRL_TCRC) {               /* 32 Bit Mode */
-        dataPtr.u32 = (uint32_t *) data;
-        *(dataPtr.u32) = *crc->crc;
-        len = 4;
+    /* Write */
+    dataPtr = (uint16_t *) data;
+    crcPtr = (uint16_t *) crc->crc;
+    if ( *crc->ctrl & CRC_CTRL_TCRC ) {  /* CRC32 Mode */
+        for (i = 0; i < len/2; i++)
+            crcPtr[i%2] = *(dataPtr)++;
+    } else {                             /* CRC16 Mode */
+        for (i = 0; i < len/2; i++)
+            *(crcPtr) = *(dataPtr)++;
     }
-    else {                                          /* 16 Bit Mode */
-        dataPtr.u16 = (uint16_t *) data;
-        *(dataPtr.u16) = *crc->crc;
-        len = 2;
-    }
 
-    return len;
+    return i;
+}
+
+/*******************************************************************************/
+static unsigned crcWrite4ByteWide(crc_t *crc, const void *data, unsigned len)
+/*******************************************************************************/
+{
+    unsigned i;
+    uint32_t *dataPtr;
+
+    /* Checks */
+    if ( !(*crc->ctrl & CRC_CTRL_TCRC) )
+        return FALSE;   /* CRC mode must be CRC32 */
+    else if ( ((unsigned)data % 4) != 0)
+        return FALSE;   /* Data ptr must be 32bit align*/
+    else if ( (len % 4) != 0 )
+        return FALSE;   /* Data must be of multiple 4 bytes */
+
+    /* Write */
+    dataPtr = (uint32_t *) data;
+    for (i = 0; i < len/4; i++)
+        *(crc->crc) = *(dataPtr)++;
+    return i;
 }
 
 /*******************************************************************************
@@ -160,7 +188,6 @@ static int crc_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 /*******************************************************************************/
 static int crc_ioctl(devoptab_t *dot, int cmd,  int flags)
 /*******************************************************************************/
-/* TODO: return errors if flags or cmd is bad */
 {
     crc_t *crc;
     unsigned reg;
@@ -171,6 +198,30 @@ static int crc_ioctl(devoptab_t *dot, int cmd,  int flags)
     if (cmd < 0 || cmd > MAX_IO_IOCTRL_CRC_CMDS) return FALSE;
 
     switch (cmd) {
+    case IO_IOCTL_CRC_SET_DWW:
+        if (flags >= 0 && flags < MAX_CRC_DWW) {
+            crc->dww = flags;
+            switch (flags) {
+            default:
+            case CRC_DWW_BYTE:
+                crc->write = crcWriteByteWide;
+            break;
+            case CRC_DWW_2BYTE:
+                crc->write = crcWrite2ByteWide;
+            break;
+            case CRC_DWW_4BYTE:
+                crc->write = crcWrite4ByteWide;
+            break;
+            }
+        }
+        else {
+            assert(0);
+            return FALSE;
+        }
+    break;
+    case IO_IOCTL_CRC_GET_DWW:
+        return (crc->dww);
+    break;
     case IO_IOCTL_CRC_SET_TOT:
         if (flags >= 0 && flags < MAX_CRC_TOT) {
             reg = *crc->ctrl & ~(CRC_CTRL_TOT);
@@ -214,7 +265,13 @@ static int crc_ioctl(devoptab_t *dot, int cmd,  int flags)
     break;
     case IO_IOCTL_CRC_SET_SEED:
         *crc->ctrl |= CRC_CTRL_WAS;
-        *crc->crc = flags;
+        //CRC_BB_CTRL_WAS = 1;
+        if ( *crc->ctrl & CRC_CTRL_TCRC ) {  /* CRC32 Mode */
+            *crc->crc32 = (uint32_t) flags;
+        } else {                             /* CRC16 Mode */
+            *crc->crc16 = (uint16_t) flags;
+        }
+        //CRC_BB_CTRL_WAS = 0;
         *crc->ctrl &= ~(CRC_CTRL_WAS);
         crc->seed = flags;
     break;
@@ -222,18 +279,16 @@ static int crc_ioctl(devoptab_t *dot, int cmd,  int flags)
         return crc->seed;
     break;
     case IO_IOCTL_CRC_SET_POLY:
-        if (*crc->ctrl & CRC_CTRL_TCRC)
+         if ( *crc->ctrl & CRC_CTRL_TCRC ) {  /* CRC32 Mode */
             *crc->gpoly32 = (uint32_t) flags;
-        else
+        } else {                              /* CRC16 Mdoe */
             *crc->gpoly16 = (uint16_t) flags;
+        }
     break;
     case IO_IOCTL_CRC_GET_POLY:
-        if (*crc->ctrl & CRC_CTRL_TCRC)
-            return (int)*crc->gpoly32;
-        else
-            return (int)*crc->gpoly16;
+        return (int)*crc->gpoly32;
     break;
-    case IO_IOCTL_CRC_SET_WIDTH:
+    case IO_IOCTL_CRC_SET_PRO_WIDTH:
         if (flags >= 0 && flags < MAX_CRC_WIDTH) {
             if (flags == CRC_WIDTH_16)
                 *crc->ctrl &= ~(CRC_CTRL_TCRC);
@@ -245,7 +300,7 @@ static int crc_ioctl(devoptab_t *dot, int cmd,  int flags)
             return FALSE;
         }
     break;
-    case IO_IOCTL_CRC_GET_WIDTH:
+    case IO_IOCTL_CRC_GET_PRO_WIDTH:
         return ((*crc->ctrl >> 24) & 0x1);
     break;
     default:
@@ -278,17 +333,41 @@ static int crc_close_r (void *reent, devoptab_t *dot )
 static long crc_write_r (void *reent, devoptab_t *dot, const void *buf, int len )
 /*******************************************************************************/
 {
-    /* You could just put your write function here, but I want switch between
-     * polled & interupt functions here */
-    return crcWrite(dot, buf, len);
+    crc_t *crc;
+    if (!dot || !dot->priv) return FALSE;
+    else crc = (crc_t *) dot->priv;
+    return crc->write(crc, buf, len);
 }
 /*******************************************************************************/
 static long crc_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 /*******************************************************************************/
 {
-    /* You could just put your read function here, but I want switch between
-     * polled & interupt functions here */
-    return crcRead(dot, buf, len);
+    crc_t *crc;
+    union {
+        uint32_t *u32;
+        uint16_t *u16;
+    } dataPtr;
+
+    if (!dot || !dot->priv) return FALSE;
+    else crc = (crc_t *) dot->priv;
+
+    if (*crc->ctrl & CRC_CTRL_TCRC && len == 4) {               /* 32 Bit Mode */
+        dataPtr.u32 = (uint32_t *)buf;
+        *(dataPtr.u32) = (uint32_t)(*crc->crc);
+        return 4;
+    } else if (len == 2) {                                      /* 16 Bit Mode */
+        dataPtr.u16 = (uint16_t *)buf;
+        if ( *crc->ctrl & CRC_CTRL_TOTR1 ) {
+            /* Bytes were transposed, read HU[31:240], HL[23:16] Instead*/
+            *(dataPtr.u16) = (uint16_t)(*crc->crc >> 16);
+        } else {
+            /* Read LU[15:8], LL[7:0] Only*/
+            *(dataPtr.u16) = (uint16_t)(*crc->crc & 0x0000FFFF);
+        }
+        return 2;
+    } else {
+        return 0;
+    }
 }
 
 /******************************************************************************/
@@ -297,7 +376,7 @@ int crc_install(void)
 {
     if (!(deviceInstall(DEV_MAJ_CRC, crc_open_r,  crc_ioctl, crc_close_r,
                                                         crc_write_r, crc_read_r)
-                                && deviceRegister("crc", DEV_MAJ_CRC, 0, NULL)))
+                     && deviceRegister(DEVOPTAB_CRC_STR, DEV_MAJ_CRC, 0, NULL)))
         return FALSE;
     else
         return TRUE;
