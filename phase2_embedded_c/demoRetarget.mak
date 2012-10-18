@@ -31,6 +31,7 @@ AS = arm-none-eabi-as
 LD = arm-none-eabi-ld
 GDB = arm-none-eabi-gdb
 OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
 
 ASM_FLAGS = -g
 ASM_FILES = ${ASM_PIECES:%=%.s}
@@ -64,6 +65,10 @@ all: ${TARGET}.axf
 	@echo Executable: ${TARGET}.axf, sym-linked to out.axf
 	@echo
 	@echo Disassembly Listing: ${TARGET}.out.s, sym-linked to out.s
+	@echo
+	@${SIZE} ${O_FILES}
+	@echo
+	@${SIZE} ${TARGET}.axf
 	@echo
 	@${CC} --version
 
