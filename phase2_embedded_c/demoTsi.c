@@ -21,20 +21,28 @@
 
 #include "hardware.h"
 #include "globalDefs.h"
+#include "util.h"
 
-#define MODE_4PIN                 /* Use touch pads on TWR-K60N512 main board */
-/* #define MODE_KEYPAD */    /* Use touch pads on TWRPI-KEYPAD daughter board */
+/*******************************************************************************
+* TSI Demo Configuration
+*
+* TSI_MODE: Selects the TSI configuration:
+*   TSI_MODE_4PIN:    Use the touch pads on the TWR-K60N512 main board.
+*                     Uses the raw TSI API.
+*   TSI_MODE_KEYPAD:  Use the touch pads on the TWRPI-KEYPAD duaghter board.
+*                     Uses the POSIX TSI API.
+*
+* CALIBRATE:
+*   TRUE:  Display the raw TSI counts on the serial port (UART3 115200 8N1).
+*   FALSE: Toggle the LEDs based on TSI inputs.
+*******************************************************************************/
+#define TSI_MODE_4PIN   1
+#define TSI_MODE_KEYPAD 2
 
-/*#define CALIBRATE */              /* Display raw TSI counts on serial port */
+#define TSI_MODE  TSI_MODE_4PIN
+#define CALIBRATE FALSE
 
-static void delay(void)
-{
-    volatile uint32_t time = 0x0003ffff;
-    while (time)
-        --time;
-}
-
-#if defined(MODE_4PIN)
+#if TSI_MODE == TSI_MODE_4PIN
 static const tsiConfig_t tsiConfig = {
     .pinEnable = BIT_5 | BIT_8 | BIT_7 | BIT_9,
     .scanc = TSI_SCANC_DEFAULT,
@@ -46,14 +54,22 @@ static const tsiConfig_t tsiConfig = {
         [TSI_BLUE_INDEX]   = 100,
     },
 };
-#elif defined(MODE_KEYPAD)
+#elif TSI_MODE == TSI_MODE_KEYPAD
+/*******************************************************************************
+* Keypad layout:    TSI Inputs:        LED Output:
+*
+*   1  2  3           0  6  7            1  2  3
+*   4  5  6           8 13 14            4  5  6
+*   7  8  9          15  5  9            7  8  9
+*   *  0  #          10 11 12           11 10 12
+*******************************************************************************/
 static const uint8_t keymap[TSI_COUNT] = {
 /*   0   1   2   3   4   5   6   7 */
      1,  0,  0,  0,  0,  8,  2,  3,
 /*   8   9  10  11  12  13  14  15 */
      4,  9, 11, 10, 12,  5,  6,  7,
 };
-#if defined(CALIBRATE)
+#if CALIBRATE
 static const tsiConfig_t tsiConfig = {
     .pinEnable = BIT_0 | BIT_5 | BIT_6 | BIT_7 | BIT_8 | BIT_9 | BIT_10
                           | BIT_11 | BIT_12 | BIT_13 | BIT_14 | BIT_15 | BIT_15,
@@ -96,63 +112,59 @@ static void setClock(void)
     return;
 }
 
-#if defined(CALIBRATE)
+#if CALIBRATE
+/*******************************************************************************
+* CALIBRATE mode demo.
+*
+* Periodically scans the enabled TSI inputs and displays the raw "count" value
+* for each electrode. Use this mode to determine appropriate values to use
+* for the threshold.
+*******************************************************************************/
 int main(void)
 {
     int fd;
     int pin;
     uint32_t value;
-    char buf[32];
 
     setClock();
 
     uart_install();
+    fd = fdevopen(stdin,  "uart3", 0, 0);
+    ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
+    assert(fd != -1);
+    fd = fdevopen(stdout, "uart3", 0, 0);
+    assert(fd != -1);
+    fd = fdevopen(stderr, "uart3", 0, 0);
+    assert(fd != -1);
 
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
 
     tsiInit(&tsiConfig);
-
-    fd = open("uart3", 0, 0);
-    if (fd == -1) {
-        assert(0);
-    }
-    ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
 
     for (;;) {
         for (pin=0; pin < TSI_COUNT; pin ++) {
             if (tsiConfig.pinEnable & (1 << pin)) {
                 value = tsiReadRaw(pin);
 
-                buf[0] = (pin / 10) + '0';
-                buf[1] = (pin % 10) + '0';
-                buf[2] = ':';
-                buf[3] = ' ';
-                buf[8] = (value % 10) + '0';
-                value /= 10;
-                buf[7] = (value % 10) + '0';
-                value /= 10;
-                buf[6] = (value % 10) + '0';
-                value /= 10;
-                buf[5] = (value % 10) + '0';
-                value /= 10;
-                buf[4] = (value % 10) + '0';
-                value /= 10;
-                buf[9] = ' ';
-                buf[10] = 0;
-                write(fd, buf, 10);
-
-                gpioToggle(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
+                printf("%2d: %5d ", pin, value);
             }
         }
-        buf[0] = '\r';
-        buf[1] = '\n';
-        buf[2] = 0;
-        write(fd, buf, 2);
+        printf("\r\n");
         delay();
+        delay();
+        gpioToggle(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
     }
 }
 #else
-#if defined(MODE_4PIN)
+
+#if TSI_MODE == TSI_MODE_4PIN
+/*******************************************************************************
+* 4PIN mode demo.
+*
+* When a key is pressed, the corresponding LED is toggled.
+*
+* This demo uses the raw API to access TSI.
+*******************************************************************************/
 int main(void)
 {
     uint32_t state, lastState = 0, pressed;
@@ -191,7 +203,16 @@ int main(void)
 
     return 0;
 }
-#elif defined(MODE_KEYPAD)
+
+#elif TSI_MODE == TSI_MODE_KEYPAD
+/*******************************************************************************
+* KEYPAD mode demo.
+*
+* When a square on the keypad is pressed, displays the binary value of that
+* key on the LEDs. See the keymap above.
+*
+* This demo uses the POSIX API to access TSI.
+*******************************************************************************/
 int main(void)
 {
     uint32_t state, lastState = 0, pressed;

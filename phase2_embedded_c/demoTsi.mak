@@ -10,11 +10,11 @@ TARGET = demoTsi
 
 # List your asm files here (minus the .s):
 
-ASM_PIECES = startcode libc_stubs
+ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware gpio demoTsi tsi devoptab uart clocks
+C_PIECES = hardware gpio demoTsi tsi devoptab uart clocks util syscalls
 
 # Define Hardware Platform
 
@@ -49,6 +49,7 @@ LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
 
 LIBS  = ${LIBPATH}/libc.a
+LIBS += /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.6.1/thumb2/libgcc.a
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
