@@ -74,10 +74,9 @@ int main(void)
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
 
-	/* While no button pressed smack the watchdog around */
-	if (gpioRead(N_SWITCH_1_PORT, N_SWITCH_1_PIN) != 0) {
+        /* While no button pressed smack the bitch around */
+        if (gpioRead(N_SWITCH_1_PORT, N_SWITCH_1_PIN) != 0)
             watchDogKick();
-	}
     }
 
     return 0;
