@@ -63,6 +63,50 @@ static void tsiEnablePin(int pin)
     minCntr[pin] = 0xFFFF;
 }
 
+static uint32_t tsiCheckClock(uint32_t scanc)
+{
+    uint32_t clockFreq;
+    uint32_t prescaler;
+    /***************************************************************************
+    * Maximum reference oscillator frequency is 12.7 MHz. Nominal is 5.5.
+    * Maximum electrode oscillator frequency is 4 MHz. Nominal is 0.5.
+    * - This depends on the electrode capacitance. Might need to adjust
+    *   any and all fields in SCANC to accomodate. The defaults in
+    *   TSI_SCANC_DEFAULT handle the evaluation board electrodes correctly.
+    *
+    * Maximum TSI input clock frequency appears to be 25 MHz, although
+    * this isn't documented anywhere.
+    *
+    * Force the maximum input clock frequency constraint.
+    ***************************************************************************/
+    switch (scanc & TSI_SCANC_AMCLKS_MASK) {
+    case TSI_SCANC_AMCLKS_BUS_CLK:
+        clockFreq = clockGetFreq(CLOCK_BUS);
+        break;
+    case TSI_SCANC_AMCLKS_MCGIRCLK:
+        clockFreq = clockGetFreq(CLOCK_MCGPLLCLK);
+        break;
+    case TSI_SCANC_AMCLKS_OSCERCLK:
+        clockFreq = clockGetFreq(CLOCK_OSCERCLK);
+        break;
+    default:
+        /* Do nothing. You selected a bad clock input. You're on your own */
+        return scanc;
+    }
+    prescaler = (scanc & TSI_SCANC_AMPSC_MASK) >> TSI_SCANC_AMPSC_SHIFT;
+
+    clockFreq >>= prescaler;
+    while (clockFreq > 25000000) {
+        clockFreq >>= 1;
+        prescaler++;
+    }
+    assert(prescaler <= (TSI_SCANC_AMPSC_MASK >> TSI_SCANC_AMPSC_SHIFT));
+
+    scanc = (scanc & ~TSI_SCANC_AMPSC_MASK)
+                | ((prescaler << TSI_SCANC_AMPSC_SHIFT) & TSI_SCANC_AMPSC_MASK);
+    return scanc;
+}
+
 static void tsiSetScanc(uint32_t scanc)
 {
     TSI0_SCANC = scanc;
@@ -90,7 +134,15 @@ int32_t tsiInit(const tsiConfig_t *cfg)
         minCntr[pin] = 0xFFFF;
     }
 
-    tsiSetScanc(cfg->scanc);
+    tsiSetScanc(tsiCheckClock(cfg->scanc));
+
+    /***************************************************************************
+    * Select:
+    * - 1 scan per electrode
+    * - Periodic Scan
+    * - No low-power configuration
+    * - User-defined prescale
+    ***************************************************************************/
     TSI0_GENCS = ((1-1) << TSI_GENCS_NSCN_SHIFT) | TSI_GENCS_STM;
     tsiSetPrescale(cfg->prescale);
 
@@ -178,7 +230,7 @@ static int tsi_ioctl(devoptab_t *dot, int cmd, int flags)
 
     switch (cmd) {
     case IO_IOCTL_TSI_CONFIGURE:
-        priv->tsiConfig.scanc = flags;
+        priv->tsiConfig.scanc = tsiCheckClock(flags);
 
         tsiDisable();
         tsiSetScanc(priv->tsiConfig.scanc);

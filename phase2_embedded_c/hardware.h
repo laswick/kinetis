@@ -235,12 +235,12 @@ typedef struct {
 } tsiConfig_t;
 
 #define TSI_SCANC_DEFAULT                (((12-1) << TSI_SCANC_REFCHRG_SHIFT) \
-                                        |            TSI_SCANC_CAPTRM_1p0 \
+                                        |            TSI_SCANC_CAPTRM_1p2     \
                                         | ((12-1) << TSI_SCANC_EXTCHRG_SHIFT) \
-                                        |            TSI_SCANC_DELVOL_600mV \
-                                        | (1      << TSI_SCANC_SMOD_SHIFT) \
+                                        |            TSI_SCANC_DELVOL_600mV   \
+                                        | (1      << TSI_SCANC_SMOD_SHIFT)    \
                                         |            TSI_SCANC_AMCLKS_BUS_CLK \
-                                        | (1      << TSI_SCANC_AMPSC_SHIFT))
+                                        | (0      << TSI_SCANC_AMPSC_SHIFT))
 
 extern int32_t tsiInit(const tsiConfig_t *cfg);
 extern uint32_t tsiRead(const tsiConfig_t *cfg);

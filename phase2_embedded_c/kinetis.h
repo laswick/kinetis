@@ -1339,7 +1339,7 @@ typedef enum {
     TSI_SCANC_SMOD_MASK       = 0xFF << 8, /* R/W - 0 */
     TSI_SCANC_SMOD_SHIFT      = 8,
     TSI_SCANC_AMCLKDIV        = 1 << 5,    /* R/W - 0 */
-    TSI_SCANC_AMCLKS_MASk     = 3 << 3,    /* R/W - 0 */
+    TSI_SCANC_AMCLKS_MASK     = 3 << 3,    /* R/W - 0 */
     TSI_SCANC_AMCLKS_BUS_CLK  = 0 << 3,
     TSI_SCANC_AMCLKS_MCGIRCLK = 1 << 3,
     TSI_SCANC_AMCLKS_OSCERCLK = 2 << 3,
