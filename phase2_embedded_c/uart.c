@@ -496,7 +496,9 @@ int32_t uartRead(devoptab_t *dot, const void *data, unsigned len)
 
     bufferPtr = &uartDev[uart->minor].uartRxBuffer;
 
-    for (i = 0; i < bufferPtr->length && i < len; i++) {
+    while (bufferPtr->length < len); /* spin, spin, sugar */
+
+    for (i = 0; i < len; i++) {
         *dataPtr++ = bufferPtr->buffer[bufferPtr->headIdx];
         bufferPtr->headIdx = (bufferPtr->headIdx + 1)
             & UART_BUFFER_WRAP;

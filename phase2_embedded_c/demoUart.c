@@ -179,10 +179,13 @@ int main(void)
     /* Install uart into the device table before using it */
     uart_install();
 
-    fd = open("uart3", 0, 0);
-    if (fd==-1) {
-        assert(0);
-    }
+    /*
+     * Register the standard I/O streams with a particular deivce driver.
+     */
+
+    fd = fdevopen(stdout, "uart3", 0, 0);
+    ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
+    assert(fd != -1);
 
 
     /*
@@ -275,30 +278,35 @@ int main(void)
 
     /* 'Quiting' to echo mode.  Turn off callback and use reads */
     ioctl(fd, IO_IOCTL_UART_CALL_BACK_SET, (int)NULL);
-    for (;;) {
-        delay();
-        gpioClear(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
-#if 0
+#if 1
         printf("Whoop...\n\n");
         printf("\tWhoop...\n\n");
         printf("\t\tWhoop...\n\n");
         printf("\t\t\t  Gangnam Style!\n\n");
 #endif
+
+    for (;;) {
+        delay();
+        gpioClear(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
 
-                                                /* read a maximum of 10 bytes */
+#if 0
+        /* TODO scanf doesn't work */
+        int d;
+        printf("Enter a value:");
+        scanf("%d", &d);
+        printf("/n Sorry, %d is wrong... \n", d);
+#endif
+
+
+        printf("Enter 10 chars: \n");
+                                                /* read 10 bytes */
         len = read(fd, (uint8_t *)readString, 10);
         if (len < 254) {
             readString[len + 1] = '\0';
         }
-        if (len) {
-            write(fd, readString, len);
-            write(fd, "\r\n", strlen("\r\n"));
-            readString[0] = '\0';
-        }
-
-
+        printf("Sorry, %s is wrong. \n", readString);
     }
 
     close(fd);
