@@ -41,10 +41,8 @@ int main(void)
         gpioClear(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
         delay();
         gpioClear(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
-#if 0
         delay();
         gpioClear(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
-#endif
 
         delay();
         gpioSet(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
@@ -52,17 +50,16 @@ int main(void)
         gpioSet(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
         delay();
         gpioSet(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
-#if 0
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
-#endif
 
         if (gpioRead(N_SWITCH_1_PORT, N_SWITCH_1_PIN) == 0) {
-            /* Initialize peripherals */
+            int fd;
             uart_install();
-            open("uart3", 0, 0); /* STDIN  */
-            open("uart3", 0, 0); /* STDOUT */
-            open("uart3", 0, 0); /* STDERR */
+            fd = fdevopen(stdin,  "uart3", 0, 0);
+            fd = fdevopen(stdout, "uart3", 0, 0);
+            fd = fdevopen(stderr, "uart3", 0, 0);
+            ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
             loader();
         }
     }

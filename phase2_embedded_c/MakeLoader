@@ -10,12 +10,12 @@ TARGET = loader
 
 # List your asm files here (minus the .s):
 
-ASM_PIECES = startcode libc_stubs
+ASM_PIECES = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES  = hardware devoptab util loaderUart
-C_PIECES += gpio flash xmodem loader
+C_PIECES  = hardware devoptab util loaderUart syscalls
+C_PIECES += gpio flash xmodem loader crc
 
 # Define Hardware Platform
 
@@ -39,7 +39,14 @@ ASM_FLAGS = -g
 ASM_FILES = ${ASM_PIECES:%=%.s}
 ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
+DEBUG = FALSE
+
+ifeq ($(DEBUG), TRUE)
 OPT_LEVEL = 0
+else
+#Optimize for minimal size
+OPT_LEVEL = s
+endif
 
 C_FLAGS  = -Wall -c -ggdb -MD -O${OPT_LEVEL} -D${PLATFORM} -mlong-calls
 C_FLAGS += -DBOOTLOADER
@@ -64,10 +71,11 @@ LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/l
 endif
 
 LIBS  = ${LIBPATH}/libc.a
+LIBS += /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.6.1/thumb2/libgcc.a
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
-	@${OBJCOPY} -Obinary ${TARGET}.axf ${TARGET}.bin
+	@${OBJCOPY} -Osrec ${TARGET}.axf ${TARGET}.hex
 	@ln -fs ${TARGET}.out.s out.s
 	@ln -fs ${TARGET}.axf out.axf
 	@echo

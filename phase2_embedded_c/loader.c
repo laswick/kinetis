@@ -50,10 +50,109 @@ typedef struct {
     uint32_t signature;
     uint32_t codeAddr;
     uint32_t codeSize;
+    uint32_t codeLen;
     uint32_t codeChecksum;
 } codeInfo_t;
 
-static flashConfig_t flashConfig;
+#if 0 /* Redefine malloc? libc version is huge and not necessary for loader */
+void *_malloc(size_t size)
+{
+    extern uint8_t _heap_start;
+    extern uint8_t _heap_end;
+
+    static uint8_t *ptr = &_heap_start;
+    uint8_t *allocPtr;
+
+    if ((ptr + size) > (uint8_t *)&_heap_end) {
+        allocPtr = 0;
+    }
+    else {
+        allocPtr = ptr;
+        ptr += size;
+    }
+
+    return (void *)allocPtr;
+}
+
+void free(void *ptr)
+{
+    return;
+}
+#endif
+
+/*****************************************************************************
+ * print
+ *      Lightweight print function to stdout
+ ****************************************************************************/
+static void print(char *ptr)
+{
+    static const char *newLine = "\r\n";
+    write(STDOUT_FILENO, ptr, strlen(ptr));
+    write(STDOUT_FILENO, newLine, strlen(newLine));
+}
+
+/****************************************************************************
+ * errorLED
+ *      Indicate an unrecoverable error has occured using the orange led
+ ***************************************************************************/
+static void errorLED(void)
+{
+    gpioClear (N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
+    gpioSet   (N_LED_BLUE_PORT,   N_LED_BLUE_PIN);
+    gpioSet   (N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
+    gpioSet   (N_LED_GREEN_PORT,  N_LED_GREEN_PIN);
+    while(1)
+        ;
+}
+
+/*****************************************************************************
+ * gpioInit
+ *      Initializes GPIOs
+ ****************************************************************************/
+static void gpioInit(void)
+{
+    gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
+    gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_PIN,   GPIO_OUTPUT | GPIO_LOW);
+    gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_PIN,  GPIO_OUTPUT | GPIO_HIGH);
+    gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_HIGH);
+    gpioConfig(N_SWITCH_1_PORT,   N_SWITCH_1_PIN,   GPIO_INPUT);
+}
+
+/*****************************************************************************
+ * periphInit
+ *      Retarget std streams to 115200 baud uart.
+ *      Initialize multimedia drivers
+ ****************************************************************************/
+static void periphInit(int retarget)
+{
+    flashConfig_t flashConfig;
+    xmodemCfg_t   xmodemConfig = {
+        .numRetries = 50,
+    };
+
+    if (retarget) {
+        int fd;
+
+        uart_install();
+        fd = fdevopen(stdin,  "uart3", 0, 0);
+        assert(fd == STDIN_FILENO);
+
+        fd = fdevopen(stdout, "uart3", 0, 0);
+        assert(fd == STDOUT_FILENO);
+
+        fd = fdevopen(stderr, "uart3", 0, 0);
+        assert(fd == STDERR_FILENO);
+
+        ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
+    }
+
+    xmodemConfig.uartFd = STDIN_FILENO;
+
+    if (xmodemInit(&xmodemConfig) == ERROR
+      || flashInit(&flashConfig)  == ERROR) {
+        errorLED();
+    }
+}
 
 /*****************************************************************************
  * SREC Parser Functions
@@ -237,21 +336,6 @@ static int srecParse(uint8_t *data, int len, srecData_t *srecOut)
     return returnVal;
 }
 
-/****************************************************************************
- * errorLED
- *      Indicate an unrecoverable error has occured using the orange led
- ***************************************************************************/
-static void errorLED(void)
-{
-    gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
-    gpioClear (N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
-    gpioSet   (N_LED_BLUE_PORT,   N_LED_BLUE_PIN);
-    gpioSet   (N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
-    gpioSet   (N_LED_GREEN_PORT,  N_LED_GREEN_PIN);
-    while(1)
-        ;
-}
-
 /*****************************************************************************
  *
  * validateCode
@@ -272,15 +356,16 @@ static bool32_t validateCode(const volatile codeInfo_t *codeInfoPtr,
     if (codeInfoPtr->signature != CODE_INFO_SIGNATURE)
         return FALSE;
 
-    if (codeInfoPtr->codeChecksum == 0xffffffff)
+    if (codeInfoPtr->codeChecksum == 0xffffffff
+          && codeInfoPtr->codeLen == 0xffffffff) {
         return FALSE;
+    }
 
-    for (i = 0; i < codeInfoPtr->codeSize; i++)
+    for (i = 0; i < codeInfoPtr->codeLen; i++)
         checksum += *codePtr++;
 
     return (checksum == codeInfoPtr->codeChecksum);
 }
-
 
 /*****************************************************************************
  * UART Transfer
@@ -288,16 +373,6 @@ static bool32_t validateCode(const volatile codeInfo_t *codeInfoPtr,
  *      Erases flash and receives a new SREC image to parse and program
  *  over UART3. Supports CRC XMODEM 128Byte/1K interface only
  ****************************************************************************/
-static int fd;
-static void print(char *str)
-{
-    write(fd, str, strlen(str));
-}
-
-static xmodemCfg_t xmodemConfig = {
-    .numRetries = 50,
-};
-
 static int uartTransfer(codeInfo_t *codeInfoPtr, uint32_t codeOffset)
 {
     static uint8_t rxBuffer[1024];
@@ -306,11 +381,11 @@ static int uartTransfer(codeInfo_t *codeInfoPtr, uint32_t codeOffset)
     if (codeInfoPtr) {
         codeInfoPtr->signature    = CODE_INFO_SIGNATURE;
         codeInfoPtr->codeAddr     = -1;
-        codeInfoPtr->codeSize     =  0;
+        codeInfoPtr->codeLen      =  0;
         codeInfoPtr->codeChecksum =  0;
     }
 
-    print("Waiting for XMODEM Transfer\r\n");
+    print("Waiting for XMODEM Transfer");
     gpioSet(N_LED_GREEN_PORT,  N_LED_GREEN_PIN);
     gpioSet(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN);
 
@@ -318,7 +393,7 @@ static int uartTransfer(codeInfo_t *codeInfoPtr, uint32_t codeOffset)
         int len = xmodemRecv(rxBuffer, sizeof(rxBuffer));
 
         if (len == 0) {
-            print("\r\nProgramming succesfull!\r\n");
+            print("Programming succesfull!");
             break;
         }
         else if (len > 0) {
@@ -330,8 +405,8 @@ static int uartTransfer(codeInfo_t *codeInfoPtr, uint32_t codeOffset)
                 int value = srecParse(&rxBuffer[offset], len, &srecData);
                 if (value == ERROR) {
                     xmodemAbort();
-                    print("\r\nSREC FILE ERROR!\r\n");
-                    print("Waiting for re-transfer...\r\n");
+                    print("SREC FILE ERROR!");
+                    print("Waiting for re-transfer");
                     break;
                 }
                 else {
@@ -339,7 +414,7 @@ static int uartTransfer(codeInfo_t *codeInfoPtr, uint32_t codeOffset)
                         if (codeInfoPtr) {
                             int i;
                             /* Calculate checkum for the image being loaded */
-                            codeInfoPtr->codeSize += srecData.numBytes;
+                            codeInfoPtr->codeLen += srecData.numBytes;
                             for (i = 0; i < srecData.numBytes; i++)
                                 codeInfoPtr->codeChecksum += srecData.data[i];
 
@@ -384,8 +459,9 @@ static int uartTransfer(codeInfo_t *codeInfoPtr, uint32_t codeOffset)
 static const volatile
 __attribute__ ((section(".nvStorage"))) codeInfo_t codeInfo = {
     .signature    = CODE_INFO_SIGNATURE,
-    .codeAddr     = 0x4000,
-    .codeSize     = 0x20000,
+    .codeAddr     = 0x8000,     /* 32kB Bootloader  */
+    .codeSize     = 0x40000,    /* 256kB code space */
+    .codeLen      = 0xffffffff,
     .codeChecksum = 0xffffffff,
 };
 
@@ -404,17 +480,25 @@ static void writeCodeInfo(codeInfo_t *codeInfoPtr)
  ***************************************************************************/
 static void jumpToApp(void)
 {
-    uint32_t codeAddr = *(uint32_t *)(codeInfo.codeAddr + 0x4);
+    uint32_t stackAddr = *(uint32_t *)(codeInfo.codeAddr);
+    uint32_t codeAddr  = *(uint32_t *)(codeInfo.codeAddr + 0x4);
 
     gpioSet(N_LED_GREEN_PORT, N_LED_GREEN_PIN);
 
-    /* NVIC offset register has to be 64bit word aligned as per the ARM TRM
-     * in order to support a maximum of 128 vectors. Rather then waste flash
-     * space implementing the application code address to start at this
-     * boundary use the flash IRQ's from this loader. It is up to
-     * the applications startup code to remap its vector map into
-     * SRAM and update VTOR */
-    NVIC_VTOR_SET(0);
+    /* NVIC offset register has to be 64bit aligned as per the ARM TRM
+     * in order to support a maximum of 128 vectors. */
+    if ((codeInfo.codeAddr & 0x7)) {
+        assert(FALSE);
+        errorLED();
+        while(1)
+            ;
+    }
+
+    /* Remap vectors */
+    NVIC_VTOR_SET(codeInfo.codeAddr);
+    /* Update Stack Pointer */
+    asm volatile  ("mov sp, %[addr]" : : [addr] "r" (stackAddr));
+    /* Jump to application code */
     asm volatile  ("bx %[addr]" : : [addr] "r" (codeAddr));
     /* Should be running in application land now.
      * Getting here is bad news bears */
@@ -432,10 +516,7 @@ int main(void)
     bool32_t codePresent = validateCode(&codeInfo, 0);
     uint8_t menuSel = 0;
 
-    gpioConfig(N_LED_BLUE_PORT,   N_LED_BLUE_PIN,   GPIO_OUTPUT | GPIO_LOW);
-    gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_PIN,  GPIO_OUTPUT | GPIO_HIGH);
-    gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_HIGH);
-    gpioConfig(N_SWITCH_1_PORT,   N_SWITCH_1_PIN,   GPIO_INPUT);
+    gpioInit();
 
     /* Jump to application code if its present and SWITCH_1 isn't pressed */
     if (codePresent && gpioRead(N_SWITCH_1_PORT, N_SWITCH_1_PIN) != 0) {
@@ -444,45 +525,33 @@ int main(void)
         errorLED();
     }
 
-    /* Initialize peripherals */
-    uart_install();
-    fd = open("uart3", 0, 0); /* STDIN  */
-    fd = open("uart3", 0, 0); /* STDOUT */
-    fd = open("uart3", 0, 0); /* STDERR */
-    fd = open("uart3", 0, 0);
-    ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
-    xmodemConfig.uartFd = fd;
-
-    if (fd == -1 || xmodemInit(&xmodemConfig) == ERROR
-                 || flashInit(&flashConfig)   == ERROR) {
-        errorLED();
-    }
+    periphInit(TRUE);
 
     /* Loader Menu
      * TODO: Add options to display codeInfo. Requires varg print */
     while (1) {
         codePresent = validateCode(&codeInfo, 0);
 
-        print("\r\nLoader Menu\r\n");
-        print("1. Erase Flash\r\n");
-        print("2. Load new SREC image from UART\r\n");
+        print("Loader Menu");
+        print("1. Erase Flash");
+        print("2. Load new SREC image from UART");
         if (codePresent) {
-            print("3. Jump to application\r\n");
+            print("3. Jump to application");
         }
 
-        while (read(fd, &menuSel, 1) < 1)
+        while (read(STDIN_FILENO, &menuSel, 1) < 1)
             ;
-        write(fd, &menuSel, 1);
-        print("\r\n");
+        write(STDOUT_FILENO, &menuSel, 1);
+        print(" ");
 
         switch (menuSel) {
         case '1':
             if (flashErase(codeInfo.codeAddr, codeInfo.codeSize) == ERROR){
-                print("Flash Failed to erase\r\n");
+                print("Flash Failed to erase");
                 errorLED();
             }
             else {
-                print("Done\r\n");
+                print("Done");
             }
             break;
         case '2':
@@ -495,14 +564,14 @@ int main(void)
             break;
         case '3':
             if (codePresent) {
-                print("Jumping to app. Bye Bye\r\n");
+                print("Jumping to app. Bye Bye");
                 jumpToApp();
                 assert(FALSE);
                 errorLED();
             }
             /* No Break */
         default:
-            print("Invalid Selection\r\n");
+            print("Invalid Selection");
             break;
         }
     }
@@ -524,43 +593,41 @@ int loader(void)
         STATE_CODE_LOADED,
         STATE_DONE,
     };
-    static codeInfo_t codeInfo;
+    static codeInfo_t codeInfo = {
+        .signature = CODE_INFO_SIGNATURE,
+        .codeLen      = 0xffffffff,
+        .codeChecksum = 0xffffffff,
+    };
     uint32_t state = STATE_INIT;
     uint32_t menuSel = 0;
 
-    fd = open("uart3", 0, 0);
-    ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
-    xmodemConfig.uartFd = fd;
-
-    if (fd == -1 || xmodemInit(&xmodemConfig) == ERROR
-                 || flashInit(&flashConfig)   == ERROR) {
-        errorLED();
-    }
+    gpioInit();
+    periphInit(FALSE);
 
     /* Loader Menu */
     while (state != STATE_DONE) {
-        print("\r\nLoader Menu\r\n");
-        print("1. Return to Calling Code\r\n");
+        print("Loader Menu");
+        print("1. Return to Calling Code");
         switch (state) {
         case STATE_INIT:
         case STATE_SWAP_INIT:
-            print("2. Erase Flash\r\n");
+            print("2. Erase Flash");
             break;
         case STATE_CODE_ERASED:
-            print("2. Load new SREC image from UART\r\n");
+            print("2. Load new SREC image from UART");
             break;
         case STATE_CODE_LOADED:
-            print("2. Remap Code\r\n");
+            print("2. Remap Code");
             break;
         default:
             print("?????");
             break;
         }
 
-        while (read(fd, &menuSel, 1) < 1)
+        while (read(STDIN_FILENO, &menuSel, 1) < 1)
             ;
-        write(fd, &menuSel, 1);
-        print("\r\n");
+        write(STDOUT_FILENO, &menuSel, 1);
+        print(" ");
 
         switch (menuSel) {
         case '1':
@@ -570,14 +637,14 @@ int loader(void)
             switch (state) {
             case STATE_INIT:
                 if (flashSwapInit() == ERROR) {
-                    print("Failed to Init Flash Swap\r\n");
+                    print("Failed to Init Flash Swap");
                     break;
                 }
                 state = STATE_SWAP_INIT;
                 /* No Break */
             case STATE_SWAP_INIT:
                 if (flashEraseBlock(FLASH_BLOCK_1) == ERROR) {
-                    print("Failed to Erase Flash Block\r\n");
+                    print("Failed to Erase Flash Block");
                     break;
                 }
                 state = STATE_CODE_ERASED;
@@ -585,23 +652,23 @@ int loader(void)
             case STATE_CODE_ERASED:
                 uartTransfer(&codeInfo,     FTFL_FLASH_BLOCK_SIZE);
                 if (validateCode(&codeInfo, FTFL_FLASH_BLOCK_SIZE) == FALSE) {
-                    print("Programming Checksum Error\r\n");
+                    print("Programming Checksum Error");
                     break;
                 }
                 state = STATE_CODE_LOADED;
                 break;
             case STATE_CODE_LOADED:
                 if (flashSwap() == ERROR) {
-                    print("Failed to remap flash\r\n");
+                    print("Failed to remap flash");
                     break;
                 }
-                print("Flash remapped. Safe to Power Cycle\r\n");
+                print("Flash remapped. Safe to Power Cycle");
                 state = STATE_DONE;
                 break;
             }
             break;
         default:
-            print("Invalid Selection\r\n");
+            print("Invalid Selection");
             break;
         }
 

@@ -39,7 +39,7 @@ enum {
 
 extern uint32_t _flash_swap_addr;
 
-static __RAMCODE__ void executeFlashCmd(void)
+static inline __RAMCODE__ void executeFlashCmd(void)
 {
     /* Execute command */
     FTFL_FSTAT |= FTFL_CCIF;
@@ -84,7 +84,7 @@ int32_t flashInit(const flashConfig_t *cfg)
     return checkErrors();
 }
 
-static __RAMCODE__ int32_t flashEraseCmd(uint32_t addr, uint32_t numBytes)
+static int32_t flashEraseCmd(uint32_t addr, uint32_t numBytes)
 {
     int numSectors;
     int i;
@@ -106,12 +106,7 @@ static __RAMCODE__ int32_t flashEraseCmd(uint32_t addr, uint32_t numBytes)
         FTFL_FCCOB2 = (uint8_t)(addr >>  8);
         FTFL_FCCOB3 = (uint8_t)(addr);
 
-        /* Execute command */
-        FTFL_FSTAT |= FTFL_CCIF;
-
-        /* Wait until hardware is idle */
-        while (!(FTFL_FSTAT & FTFL_CCIF))
-            ;
+        executeFlashCmd();
 
         addr += FTFL_FLASH_SECTOR_SIZE;
 

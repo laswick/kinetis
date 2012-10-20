@@ -71,6 +71,25 @@ static void initCRC(void)
     ioctl(crcFd, IO_IOCTL_CRC_SET_POLY,      CRC_POLY_CRC16CITT);
 }
 
+#if 0 /* Software CRC */
+static uint16_t crctab[256];
+static void initCRC(void)
+{
+    uint16_t count;
+    for (count = 0; count < 256; count++) {
+        uint16_t crc = (count << 8) ^ 0;
+        int i;
+        for (i = 0; i < 8; i++) {
+            if (crc & 0x8000)
+                crc = (crc << 1) ^ 0x1021;
+            else
+                crc <<= 1;
+        }
+        crctab[count] = crc;
+    }
+}
+#endif
+
 /******************************************************************************
  * calcCRC
  *
@@ -86,6 +105,15 @@ static int16_t calcCRC(uint8_t *dataPtr, int numBytes)
     read(crcFd, &crc, 2);
     return crc;
 }
+#if 0 /* Software CRC */
+static int16_t calcCRC(uint8_t *dataPtr, int numBytes)
+{
+    int16_t crc = 0;
+    while (numBytes--)
+        crc = (crc << 8) ^ crctab[(crc >> 8) ^ *dataPtr++];
+    return crc;
+}
+#endif
 
 /******************************************************************************
  * xmodemInit
