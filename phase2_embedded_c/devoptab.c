@@ -119,8 +119,6 @@
 #include "hardware.h"
 
 /* Error Stuff, WIP */
-/* TODO: This doesnt link. If theres a trick to this please add comment */
-#if 0
 #define errno (*__errno())
 extern int *__errno ( void );
 //static struct _reent impure_data = { 0, 0, "", 0, "C" };
@@ -128,7 +126,6 @@ extern int *__errno ( void );
 int * __errno () {
     return &_impure_ptr->_errno;
 }
-#endif
 
 /*
  * File Descriptor Table
