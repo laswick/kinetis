@@ -144,7 +144,7 @@ static uart_t uartList[NUM_UART_MODULES] = {
 };
 
 
-#define UART_BUFFER_SIZE 256
+#define UART_BUFFER_SIZE 2048
 #define UART_BUFFER_WRAP (UART_BUFFER_SIZE - 1)
 
 enum {
@@ -153,9 +153,9 @@ enum {
 };
 typedef struct {
     volatile uint8_t buffer[UART_BUFFER_SIZE];
-    volatile uint8_t tailIdx;
-    volatile uint8_t headIdx;
-    volatile uint8_t length;
+    volatile uint32_t tailIdx;
+    volatile uint32_t headIdx;
+    volatile uint32_t length;
     int32_t state; /* used for escape sequences */
 } uartBuffer_t;
 

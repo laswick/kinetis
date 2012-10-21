@@ -168,7 +168,7 @@ int main(void)
     int blink = FALSE;
 
     int32_t len;
-    char readString[256] = {'\0'};
+    char readString[2048] = {'\0'};
 
     setClock();
 
@@ -182,6 +182,15 @@ int main(void)
     /*
      * Register the standard I/O streams with a particular deivce driver.
      */
+
+    int fd0 = fdevopen(stdin, "uart3", 0, 0);
+    ioctl(fd0, IO_IOCTL_UART_BAUD_SET, 115200);
+    assert(fd0 != -1);
+    int fd2 = fdevopen(stderr, "uart3", 0, 0);
+    ioctl(fd0, IO_IOCTL_UART_BAUD_SET, 115200);
+    assert(fd0 != -1);
+
+
 
     fd = fdevopen(stdout, "uart3", 0, 0);
     ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);
@@ -291,12 +300,12 @@ int main(void)
         delay();
         gpioSet(N_LED_BLUE_PORT, N_LED_BLUE_PIN);
 
-#if 0
+#if 1
         /* TODO scanf doesn't work */
-        int d;
+        int d[1024];
         printf("Enter a value:");
-        scanf("%d", &d);
-        printf("/n Sorry, %d is wrong... \n", d);
+        scanf("%d", d);
+        printf("/n Sorry, %d is wrong... \n", d[0]);
 #endif
 
 
