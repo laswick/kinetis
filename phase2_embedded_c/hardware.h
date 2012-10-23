@@ -411,12 +411,13 @@ int  uart_install(void);
 enum {
     /* CALL_BACK can be used with ESCAPE & TERMINATOR to manage framed messages.
      * ESCAPE & TERMINATOR have no effect without a registered CALL_BACK */
-    IO_IOCTL_UART_CALL_BACK_SET,    /* Register a RX call back function. */
-    IO_IOCTL_UART_TERMINATOR_SET,   /* Specify a RX termination character.*/
-    IO_IOCTL_UART_ESCAPE_SET,       /* Specify an escape char to start rx capture.*/
-    IO_IOCTL_UART_FLUSH_RX_FIFO,    /* Flush driver's RX FIFO */
-    IO_IOCTL_UART_LOOPBACK_ENABLE,  /* Set the loopback mode */
-    IO_IOCTL_UART_BAUD_SET,         /* Set the baud rate */
+    IO_IOCTL_UART_CALL_BACK_SET,         /* Register a RX call back function. */
+    IO_IOCTL_UART_TERMINATOR_SET,       /* Specify a RX termination character.*/
+    IO_IOCTL_UART_ESCAPE_SET,   /* Specify an escape char to start rx capture.*/
+    IO_IOCTL_UART_FLUSH_RX_FIFO,                    /* Flush driver's RX FIFO */
+    IO_IOCTL_UART_LOOPBACK_ENABLE,                   /* Set the loopback mode */
+    IO_IOCTL_UART_BAUD_SET,                              /* Set the baud rate */
+    IO_IOCTL_UART_ECHO,                                  /* Enable local echo */
 };
 
 /* WATCH DOG ******************************************************************/

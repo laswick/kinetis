@@ -5,6 +5,13 @@
 * Simple demonstration of the configuration and use of the standard I/O
 * streams.
 *
+* XXX   NOTE: If you're getting unexpected results on your terminal, ensure
+*             your terminal is configured correctly.  i.e. ensure it
+*             interprets CR as CR LF (and/or vise versa) when receiving data,
+*             and ensure you know how to send a full CR LF as well, i.e. I'm
+*             using putty, and to satisfy fgets() you need to use <ctrl><j>,
+*             not <enter>, as <enter> only sends LF.
+*
 * Rob Laswick
 * Sept 17 2012
 *
@@ -63,6 +70,7 @@ int main(void)
      */
 
     ioctl(fd0, IO_IOCTL_UART_BAUD_SET, 115200);
+    ioctl(fd0, IO_IOCTL_UART_ECHO, TRUE);
 
     /*
      * Clear Screen.
@@ -109,14 +117,40 @@ int main(void)
 
     /*
      * scanf test.
-     *
-     * FIXME  Scanf is broken at the moment.
-     *        Probably something to do with uartRead() and/or the uart config.
      */
 
-    printf("Enter your name: ");
-    scanf ("%s", str);
+    printf("Enter your first name: ");
+    scanf (" %s", str);
     printf("\nYour name is %s!\n\n", str);
+
+    printf("Enter your last name and age: ");
+    int age;
+    char str2[20];
+    char tmp;
+    scanf ("%s %d%c", str2, &age, &tmp);
+    strcat(str, " ");
+    strcat(str, str2);
+    printf("\nYour name is %s, and your are %d years old!\n\n", str, age);
+
+    /*
+     * fputs/fgets test.
+     */
+
+    fputs("Where are you?\n> ", stderr);
+    fgets(str2, sizeof(str2), stdin);
+
+    /*
+     * fgets seems to keep CR LF in the returned buffer for
+     * some reason, so strip them out.
+     */
+
+    for (i = 0; i < sizeof(str2); i++) {
+        if ((str2[i] == '\r') || (str2[i] == '\n'))
+            str2[i] = 0;
+    }
+
+    sprintf(str, "\nYou are at %s!\n\n", str2);
+    fputs(str, stdout);
 
     /*
      * Stream sharing.
@@ -132,9 +166,9 @@ int main(void)
      * iprintf test.
      */
 
-    iprintf("iprintf is lighter weight than printf: %d\n\n", 77);
+    iprintf("note: iprintf is lighter weight than printf: %d\n\n", 77);
 
-    puts("...end of demo...\n\n");
+    puts("End of demo :)\n\n");
 
     /*
      * Book keeping.

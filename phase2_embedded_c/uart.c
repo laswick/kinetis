@@ -29,12 +29,12 @@
 #include "hardware.h"
 #include "globalDefs.h"
 
-
-/* TODO refactor into a dev dependent portion (uartDev_t) and a
- * multiple instance (uart_t) structure.  There is no need
- * to malloc and memcpy stuff that will be constant to all
- * instances of uart accessors.
- */
+    /*
+     * TODO refactor into a dev dependent portion (uartDev_t) and a
+     * multiple instance (uart_t) structure.  There is no need
+     * to malloc and memcpy stuff that will be constant to all
+     * instances of uart accessors.
+     */
 
 typedef struct {
     int32_t              minor;
@@ -48,6 +48,7 @@ typedef struct {
     uint32_t             rxPin;
     uint32_t             txPortCtrlBits;
     uint32_t             rxPortCtrlBits;
+    bool32_t             echo;
 } uart_t;
 
 typedef enum uartModule_e{
@@ -59,8 +60,6 @@ typedef enum uartModule_e{
     UART_MODULE_5,
     NUM_UART_MODULES,
 } uartModule_t;
-
-
 
 static uart_t uartList[NUM_UART_MODULES] = {
     [UART_MODULE_0] = {
@@ -143,7 +142,6 @@ static uart_t uartList[NUM_UART_MODULES] = {
     },
 };
 
-
 #define UART_BUFFER_SIZE 2048
 #define UART_BUFFER_WRAP (UART_BUFFER_SIZE - 1)
 
@@ -200,33 +198,32 @@ static uartDev_t uartDev[NUM_UART_MODULES] = {
     },
 };
 
-
 static void rxMsgNotify(uart_t *uart, uartBuffer_t *bufferPtr)
 {
     uint8_t buf[bufferPtr->length];
     int i;
     for (i = 0; i < bufferPtr->length; i++) {
         buf[i] = bufferPtr->buffer[bufferPtr->headIdx];
-        bufferPtr->headIdx = (bufferPtr->headIdx + 1)
-            & UART_BUFFER_WRAP;
+        bufferPtr->headIdx = (bufferPtr->headIdx + 1) & UART_BUFFER_WRAP;
     }
     uartDev[uart->minor].callBack(buf, bufferPtr->length);
     bufferPtr->length = 0;
-    return;
 }
-/******************************************************************************
+
+/*******************************************************************************
+*
 * isrrUartX _status_sources(void)
 *
 * Status ISR definition.
 *
-******************************************************************************/
+*******************************************************************************/
 static void isrHandler(int minor)
 {
     uart_t *uart = &uartList[minor];
     char d;
     uartBuffer_t *bufferPtr = &uartDev[minor].uartRxBuffer;
 
-    /* A good sw develper would not let the if statements get 4 levels deep... */
+    /* A good sw develper would not let the if statements get 4 levels deep...*/
     if (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
         while (uart->reg->s1 & UART_S1_RX_DATA_FULL) {
             d = uart->reg->d;
@@ -235,16 +232,16 @@ static void isrHandler(int minor)
                     if (d == uartDev[minor].escape) {
                         bufferPtr->state = BUFFER_ESCAPE_STARTED;
                     }
-                }
-                else {
+
+                } else {
                     if (bufferPtr->state == BUFFER_ESCAPE_STARTED
                             && d == uartDev[minor].terminator) {
                         if (uartDev[minor].escape
                                 != uartDev[minor].terminator) {
                             bufferPtr->state = BUFFER_ESCAPE_PENDING;
                             rxMsgNotify(uart, bufferPtr);
-                        }
-                        else if (bufferPtr->length) {
+
+                        } else if (bufferPtr->length) {
                             /* When escape and terminator are the same,
                              * some data shows you are escape|data|term
                              * and not data|term|escape.
@@ -252,8 +249,8 @@ static void isrHandler(int minor)
                             bufferPtr->state = BUFFER_ESCAPE_PENDING;
                             rxMsgNotify(uart, bufferPtr);
                         }
-                    }
-                    else {
+
+                    } else {
                         bufferPtr->buffer[bufferPtr->tailIdx] = d;
                         bufferPtr->tailIdx = (bufferPtr->tailIdx + 1)
                             & UART_BUFFER_WRAP;
@@ -264,11 +261,10 @@ static void isrHandler(int minor)
                         }
                     }
                 }
-            }
-            else {
+
+            } else {
                 bufferPtr->buffer[bufferPtr->tailIdx] = d;
-                bufferPtr->tailIdx = (bufferPtr->tailIdx + 1)
-                    & UART_BUFFER_WRAP;
+                bufferPtr->tailIdx = (bufferPtr->tailIdx+1) & UART_BUFFER_WRAP;
                 bufferPtr->length++;
             }
         }
@@ -321,13 +317,11 @@ static void isrUart5(void)
 *
 ******************************************************************************/
 extern void _isr_uart3_error_sources(void)
-
 {
-
    return;
 }
-
 #endif
+
 static void setBaud(uart_t *uart)
 {
     uint16_t sbr;
@@ -346,7 +340,6 @@ static void setBaud(uart_t *uart)
         clockHz = clockGetFreq(CLOCK_BUS);
         break;
     }
-
 
     uart->reg->c2 &= ~(UART_C2_RX_ENABLE | UART_C2_TX_ENABLE);
 
@@ -372,15 +365,16 @@ static int uartOpen(devoptab_t *dot)
     uart_t *uart;
     void   *isrPtr;
 
-    if (dot->priv) return TRUE; /* Device is already open */
+    if (dot->priv)
+        return TRUE;                                /* Device is already open */
 
     /* Create 'private' uart structure and point devoptab's
      * private pointer to it */
     uart = (uart_t *) malloc(sizeof(uart_t));
-    if (!uart) return FALSE;
-    else dot->priv = uart;
-
-
+    if (!uart)
+        return FALSE;
+    else
+        dot->priv = uart;
 
     /* Load init & default info into private spi structure */
     memcpy(uart, &uartList[dot->min], sizeof(uart_t));
@@ -445,7 +439,6 @@ static int uartOpen(devoptab_t *dot)
     return TRUE;
 }
 
-
 /*******************************************************************************
 *
 * uartWrite
@@ -462,13 +455,15 @@ int32_t uartWrite(devoptab_t *dot, const void *data, unsigned len)
     uint8_t *dataPtr = (uint8_t *) data;
     uart_t *uart;
 
-    if (!dot || !dot->priv) return FALSE;
-    else uart = (uart_t *) dot->priv;
+    if (!dot || !dot->priv)
+        return FALSE;
+    else
+        uart = (uart_t *) dot->priv;
 
 
     for (i = 0; i < len; i++) {
-        /* Wait for space in the FIFO */
-        while(!(uart->reg->s1 & UART_S1_TX_DATA_LOW));
+        while (!(uart->reg->s1 & UART_S1_TX_DATA_LOW))
+            ;                                   /* Wait for space in the FIFO */
         uart->reg->d = *dataPtr++;
     }
 
@@ -486,41 +481,56 @@ int32_t uartWrite(devoptab_t *dot, const void *data, unsigned len)
 *******************************************************************************/
 int32_t uartRead(devoptab_t *dot, const void *data, unsigned len)
 {
-    int32_t i;
+    int32_t length = 0;
     uint8_t *dataPtr = (uint8_t *) data;
     uart_t *uart;
     uartBuffer_t *bufferPtr;
+    int32_t timer = 0xffffffff;
 
-    if (!dot || !dot->priv) return FALSE;
-    else uart = (uart_t *) dot->priv;
+    if (!dot || !dot->priv)
+        return 0;
+    else
+        uart = (uart_t *) dot->priv;
 
     bufferPtr = &uartDev[uart->minor].uartRxBuffer;
 
-    while (bufferPtr->length < len); /* spin, spin, sugar */
+    while ((bufferPtr->tailIdx == bufferPtr->headIdx) && timer)
+        --timer;
 
-    for (i = 0; i < len; i++) {
-        *dataPtr++ = bufferPtr->buffer[bufferPtr->headIdx];
-        bufferPtr->headIdx = (bufferPtr->headIdx + 1)
-            & UART_BUFFER_WRAP;
+    if (!timer)
+        return 0;
+
+    while (bufferPtr->tailIdx != bufferPtr->headIdx) {
+        *dataPtr = bufferPtr->buffer[bufferPtr->headIdx];
+        bufferPtr->headIdx = (bufferPtr->headIdx + 1) & UART_BUFFER_WRAP;
+        if (uart->echo)
+            uartWrite(dot, dataPtr, 1);
+        ++dataPtr;
+        ++length;
     }
-    bufferPtr->length -= i;
-    return dataPtr - (uint8_t *)data;
+
+    hwInterruptsDisable();
+    {
+        bufferPtr->length -= length;
+    }
+    hwInterruptsEnable();
+
+    return length;
 }
 
+/* POSIX FUNCTION *************************************************************/
 
-/*=============================================================================*/
-/* POSIX FUNCTIONS                                                             */
-/*=============================================================================*/
-
-/*******************************************************************************/
-/* uart_open_r                                                                  */
-/*******************************************************************************/
-/* Jobs of the 'open' syscall:
- *      Check device name
- *      Create a device 'state' structure, hook it to the devoptab private ptr
- *      Enable the SIM SCGC for the device
- *      Initialize the device with a default configuration
- ********************************************************************************/
+/*******************************************************************************
+*
+* uart_open_r
+*
+* Jobs of the 'open' syscall:
+*      Check device name
+*      Create a device 'state' structure, hook it to the devoptab private ptr
+*      Enable the SIM SCGC for the device
+*      Initialize the device with a default configuration
+*
+*******************************************************************************/
 static int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
 {
     if (!dot || !dot->name) {
@@ -544,29 +554,32 @@ static int uart_open_r (void *reent, devoptab_t *dot, int mode, int flags )
     }
 }
 
-/*******************************************************************************/
-/* uart_ioctl                                                                  */
-/*******************************************************************************/
-/* Jobs of the 'ioctl' syscall:
- *      Implement any device specific commands.
- *          Commands are listed in hardware.h in the specific driver section
- *          Commands are NOT standardized however:
- *              See MQX's I/O drivers guide for commands that it supports
- *              These can provide a guide of which commands to implement
- *          Some common commands funtions:
- *              Set baud rate
- *              Set device registers to specific values
- *              Configure I/O pins
- *******************************************************************************/
+/*******************************************************************************
+*
+* uart_ioctl
+*
+* Jobs of the 'ioctl' syscall:
+*      Implement any device specific commands.
+*          Commands are listed in hardware.h in the specific driver section
+*          Commands are NOT standardized however:
+*              See MQX's I/O drivers guide for commands that it supports
+*              These can provide a guide of which commands to implement
+*          Some common commands funtions:
+*              Set baud rate
+*              Set device registers to specific values
+*              Configure I/O pins
+*
+*******************************************************************************/
 static int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
 /* TODO: return errors if flags or cmd is bad */
 {
     uart_t *uart;
     uartBuffer_t *bufferPtr;
 
-
-    if (!dot || !dot->priv) return FALSE;
-    else uart = (uart_t *) dot->priv;
+    if (!dot || !dot->priv)
+        return FALSE;
+    else
+        uart = (uart_t *) dot->priv;
 
     bufferPtr = &uartDev[uart->minor].uartRxBuffer;
 
@@ -576,7 +589,10 @@ static int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
         break;
     case IO_IOCTL_UART_ESCAPE_SET:
         uartDev[uart->minor].escape = (char) flags;
-        /* If no terminator assigned, assume escape is used to frame the message */
+        /*
+         * If no terminator assigned, assume escape is used to frame
+         * the message.
+         */
         if (!uartDev[uart->minor].terminator) {
             uartDev[uart->minor].terminator = (char) flags;
         }
@@ -605,12 +621,15 @@ static int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
         }
         break;
     case IO_IOCTL_UART_BAUD_SET:
-                            /*
-                             * I'm not checking standard baud rates.
-                             * Just don't be an a$$hole... :)
-                             */
+        /*
+         * I'm not checking standard baud rates.
+         * Just don't be an a$$hole... :)
+         */
         uartDev[uart->minor].baud = flags;
         setBaud(uart);
+        break;
+    case IO_IOCTL_UART_ECHO:
+        uart->echo = flags != 0;
         break;
     default:
         assert(0);
@@ -621,13 +640,15 @@ static int uart_ioctl(devoptab_t *dot, int cmd,  int flags)
     return TRUE;
 }
 
-/*******************************************************************************/
-/* uart_close_r                                                                 */
-/*******************************************************************************/
-/* Jobs of the 'close' syscall:
- *      Disable the SIM SCGC for the device
- *      Free the device 'state' structure, unhook it to the devoptab private ptr
- *******************************************************************************/
+/*******************************************************************************
+*
+* uart_close_r
+*
+* Jobs of the 'close' syscall:
+*      Disable the SIM SCGC for the device
+*      Free the device 'state' structure, unhook it to the devoptab private ptr
+*
+*******************************************************************************/
 static int uart_close_r (void *reent, devoptab_t *dot )
 {
     uart_t *uart = dot->priv;
@@ -645,28 +666,31 @@ static int uart_close_r (void *reent, devoptab_t *dot )
     }
 }
 
-/*******************************************************************************/
-/* uart_write_r                                                                 */
-/*******************************************************************************/
-/* Jobs of the 'write' syscall:
- *      Write data to the device.
- *      Return the number of bytes written
- *******************************************************************************/
-static long uart_write_r (void *reent, devoptab_t *dot,
-                                       const void *buf, int len)
+/*******************************************************************************
+*
+* uart_write_r
+*
+* Jobs of the 'write' syscall:
+*      Write data to the device.
+*      Return the number of bytes written
+*
+*******************************************************************************/
+static long uart_write_r (void *reent, devoptab_t *dot, const void *buf,int len)
 {
     /* You could just put your write function here, but I want switch between
      * polled & interupt functions here at a later point.*/
     return uartWrite(dot, buf, len);
 }
 
-/*******************************************************************************/
-/* uart_read_r                                                                  */
-/*******************************************************************************/
-/* Jobs of the 'read' syscall:
- *      Read data from the device
- *      Return the number of bytes read
- *******************************************************************************/
+/*******************************************************************************
+*
+* uart_read_r
+*
+* Jobs of the 'read' syscall:
+*      Read data from the device
+*      Return the number of bytes read
+*
+*******************************************************************************/
 static long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
 {
     /* You could just put your read function here, but I want switch between
@@ -674,32 +698,31 @@ static long uart_read_r (void *reent, devoptab_t *dot, void *buf, int len )
     return uartRead(dot, buf, len);
 }
 
-
 int uart_install(void)
 {
     int ret = TRUE;
 
-    if( !deviceInstall(DEV_MAJ_UART,uart_open_r, uart_ioctl, uart_close_r,
+    if (!deviceInstall(DEV_MAJ_UART,uart_open_r, uart_ioctl, uart_close_r,
                                                  uart_write_r, uart_read_r) ){
         ret = FALSE;
     }
 
-    if( !deviceRegister("uart0", DEV_MAJ_UART, UART_MODULE_0,  NULL) ) {
+    if (!deviceRegister("uart0", DEV_MAJ_UART, UART_MODULE_0,  NULL)) {
         ret =  FALSE;
     }
-    if( !deviceRegister("uart1", DEV_MAJ_UART, UART_MODULE_1,  NULL) ) {
+    if (!deviceRegister("uart1", DEV_MAJ_UART, UART_MODULE_1,  NULL)) {
         ret =  FALSE;
     }
-    if( !deviceRegister("uart2", DEV_MAJ_UART, UART_MODULE_2,  NULL) ) {
+    if (!deviceRegister("uart2", DEV_MAJ_UART, UART_MODULE_2,  NULL)) {
         ret =  FALSE;
     }
-    if( !deviceRegister("uart3", DEV_MAJ_UART, UART_MODULE_3,  NULL) ) {
+    if (!deviceRegister("uart3", DEV_MAJ_UART, UART_MODULE_3,  NULL)) {
         ret =  FALSE;
     }
-    if( !deviceRegister("uart4", DEV_MAJ_UART, UART_MODULE_4,  NULL) ) {
+    if (!deviceRegister("uart4", DEV_MAJ_UART, UART_MODULE_4,  NULL)) {
         ret =  FALSE;
     }
-    if( !deviceRegister("uart5", DEV_MAJ_UART, UART_MODULE_5,  NULL) ) {
+    if (!deviceRegister("uart5", DEV_MAJ_UART, UART_MODULE_5,  NULL)) {
         ret =  FALSE;
     }
 
