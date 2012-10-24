@@ -22,12 +22,10 @@ PHASE 1: Assembly Programming
 
 PHASE 2: Embedded C Programming
 
-    Everyone has the entire summer to complete their project(s).
-    The deadline for _ALL_ projects to be in git is September 1 2012.
-    The presentation schedule for phase 2 will be determined in September.
-
     Start Code & Linker Scripts (3)     June 21 : Rob
     GPIO                                June 21 : Rob
+
+    /* Summer Break */
 
     Refocus Kickoff (p2/p3/qna/grpPrj)  Sept.20 : Rob
     POSIX Device Driver Model           Sept.20 : Shaun/Daryl
@@ -46,33 +44,41 @@ PHASE 2: Embedded C Programming
     ADC                                 Oct.11 : James
     Watchdog                            Oct.11 : Andrew
 
-    SPI                                 Oct.18 : Shaun
-    CRC                                 Oct.18 : Shaun
     SDHC                                Oct.18 : Geoff
 
+    SPI                                 Oct.25 : Shaun
+    CRC                                 Oct.25 : Shaun
     Touch Sensor Interface (TSI)        Oct.25 : David
-    USB                                 Oct.25 : Neil
 
-    Interrupts                          Nov.1 : Rob
-    Interfacing C & Assembly            Nov.1 : Rob
+    USB                                 Nov.1 : Neil
     I2C                                 Nov.1 : Chris
 
     Ethernet                            Nov.8 : Steve
     DMA                                 Nov.8 : Steve
     Power Modes                         Nov.8 : Andrew
 
+    Interfacing C & Assembly            Nov.15 : Rob
+    FTM/PWM                             Nov.15 : James
+
 
 PHASE 3: Real Time Embedded C Programing
 
-    RTOS Initialization & Scheduler
-    RTOS Semaphores (including Mutexes)
-    RTOS Message Queues
-    RTOS Interrupts
-    RTOS Events
-    Loadable Modules
-    Interactive Target-Resident Command Line Interface (ITR-CLI)
+    RTOS Introduction, Build System, & Scheduler    Nov.22 : Rob
+    RTOS Interrupts, & Event Flags                  Nov.29 :
+    RTOS Semaphores, & Message Queues               Dec.6  :
+
+    /* Christmas Break */
+
+    Loadable Module Design                          TBD :
+
+    Target Resident Command Line Interface          TBD :
 
 
-PHASE 4: Group Project
+PHASE 4: Interactive Web
+
+    Interactive Web based control                   TBD :
+
+
+PHASE 5: Group Project
 
 
