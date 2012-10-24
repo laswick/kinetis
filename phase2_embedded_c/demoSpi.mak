@@ -10,11 +10,17 @@ TARGET = spi_demo
 
 # List your asm files here (minus the .s):
 
-ASM_PIECES = startcode libc_stubs
+ASM_PIECES  = startcode
 
 # List your c files here (minus the .c):
 
-C_PIECES = hardware spi demoSpi gpio devoptab
+C_PIECES  = syscalls
+C_PIECES += hardware clocks
+C_PIECES += devoptab
+C_PIECES += uart
+C_PIECES += spi
+C_PIECES += util
+C_PIECES += demoSpi
 
 # Define Hardware Platform
 
@@ -33,7 +39,7 @@ ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
 OPT_LEVEL = 0
 
-C_FLAGS = -c -g -Wall -MD -O${OPT_LEVEL} -D${PLATFORM}
+C_FLAGS = -c -ggdb3 -Wall -MD -O${OPT_LEVEL} -D${PLATFORM}
 C_FILES = ${C_PIECES:%=%.c}
 C_O_FILES = ${C_FILES:%.c=%.o}
 
@@ -48,11 +54,13 @@ LD_FLAGS = -nostartfiles -Map=${TARGET}.map
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
 
 LIBS  = ${LIBPATH}/libc.a
+LIBS += /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/lib/gcc/arm-none-eabi/4.6.1/thumb2/libgcc.a
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
 	@ln -fs ${TARGET}.out.s out.s
 	@ln -fs ${TARGET}.axf out.axf
+	@ln -fs ${TARGET}.map out.map
 	@echo
 	@echo Executable: ${TARGET}.axf, sym-linked to out.axf
 	@echo
@@ -70,6 +78,8 @@ ${TARGET}.axf: ${O_FILES}
 %.o: %.c
 	${CC} ${C_FLAGS} ${CPU_FLAGS} -o $@ $<
 
+rebuild: clean all
+
 clean:
 	@echo
 	@echo Cleaning up...
@@ -81,6 +91,7 @@ clean:
 	rm -f out.axf
 	rm -f out.s
 	rm -f ${TARGET}.map
+	rm -f out.map
 
 openocd:
 	@echo

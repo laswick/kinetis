@@ -18,6 +18,39 @@
 #include "globalDefs.h"
 
 /*******************************************************************************
+* Memory Map
+*******************************************************************************/
+#define MEMMAP_READ_ONLY_ADDR       0x00000000
+#define MEMMAP_FLEXNVM_ADDR         0x12000000
+#define MEMMAP_FLEXRAM_ADDR         0x14000000
+#define MEMMAP_PROG_ACCEL_RAM_ADDR  MEMMAP_FLEXRAM_ADDR
+#define MEMMAP_SRAM_L_ADDR          0x18000000
+#define MEMMAP_SRAM_U_ADDR          0x20000000
+#define MEMMAP_BB_SRAM_U_ADDR       0x22000000  /* Bit Band Alias Region */
+#define MEMMAP_PBRIDGE0_BASE_ADDR   0x40000000
+#define MEMMAP_PBRIDGE1_BASE_ADDR   0x40080000
+#define MEMMAP_GPIO_BASE_ADDR       0x400FF000
+#define MEMMAP_BB_GPIO_PBRIDGE_ADDR 0x42000000  /* Bit Band Alias Region */
+#define MEMMAP_PRIV_PERIPH_ADD      0xE0000000
+
+
+/*******************************************************************************
+* Bit Bands
+*******************************************************************************/
+
+#define BB1_ADDR (MEMMAP_BB_SRAM_U_ADDR)
+#define BB1_SRC_ADDR (MEMMAP_SRAM_U_ADDR)
+#define BB2_ADDR (MEMMAP_BB_GPIO_PBRIDGE_ADDR)
+#define BB2_SRC_ADDR (MEMMAP_PBRIDGE0_BASE_ADDR)
+
+/* Bit To Bit-Band Address Macro */
+#define BIT_2_BB1_ADDR(regAddr, bitNum) ((((regAddr)-BB1_SRC_ADDR)*32U) + \
+                                                       BB1_ADDR + ((bitNum)*4U))
+#define BIT_2_BB2_ADDR(regAddr, bitNum) ((((regAddr)-BB2_SRC_ADDR)*32U) + \
+                                                       BB2_ADDR + ((bitNum)*4U))
+
+
+/*******************************************************************************
 * ARM NVIC
 *******************************************************************************/
 
@@ -267,24 +300,45 @@ enum {
 #define SIM_SOPT2_MCGCLKSEL  BIT_0
 
 
-/* System Clock Gate Control Registers */
+/********** SIM_SCGC1 **********/
 #define SIM_SCGC1_ADDR  0x40048028
 #define SIM_SCGC1_PTR     (volatile uint32_t *) SIM_SCGC1_ADDR
 #define SIM_SCGC1       (*(volatile uint32_t *) SIM_SCGC1_ADDR)
 #define SIM_SCGC1_UART5_ENABLE  BIT_11
 #define SIM_SCGC1_UART4_ENABLE  BIT_10
 
+/********** SIM_SCGC2 **********/
 #define SIM_SCGC2_ADDR  0x4004802C
 #define SIM_SCGC2_PTR     (volatile uint32_t *) SIM_SCGC2_ADDR
 #define SIM_SCGC2       (*(volatile uint32_t *) SIM_SCGC2_ADDR)
 #define SIM_SCGC2_DAC0_ENABLE  BIT_12
 
-#define SIM_SCGC3_ADDR  0x40048030
-#define SIM_SCGC3_PTR     (volatile uint32_t *) SIM_SCGC3_ADDR
-#define SIM_SCGC3       (*(volatile uint32_t *) SIM_SCGC3_ADDR)
+/***** SIM System Clock Gate Control Register 3 *****/
+                                           /* Register Address & Bit Numbers */
+#define SIM_SCGC3_ADDR           0x40048030
+#define SIM_SCGC3_PTR            ((volatile uint32_t *) SIM_SCGC3_ADDR)
+#define SIM_SCGC3                (*(SIM_SCGC3_PTR))
+#define SIM_SCGC3_BB_ADDR        (MEMMAP_BB_GPIO_PBRIDGE_ADDR + (0x48030 * 32U))
+                                                              /* Bit Numbers */
+#define SIM_SCGC3_ADC1_BIT       23
+#define SIM_SCGC3_SPI2_BIT       12
+                                                                    /* Masks */
+#define SIM_SCGC3_ADC1_MSK       (1<<SIM_SCGC3_ADC1_BIT)
+#define SIM_SCGC3_SPI2_MSK       (1<<SIM_SCGC3_SPI2_BIT)
+                                                     /* Bit-Banded Addresses */
+#define SIM_SCGC3_ADC1_BB_ADDR   (SIM_SCGC3_BB_ADDR +(SIM_SCGC3_ADC1_BIT  * 4))
+#define SIM_SCGC3_SPI2_BB_ADDR   (SIM_SCGC3_BB_ADDR +(SIM_SCGC3_SPI2_BIT * 4))
+                                                      /* Bit-Banded Pointers */
+#define SIM_SCGC3_ADC1_BB_PTR    ((volatile uint32_t *) SIM_SCGC3_ADC1_BB_ADDR)
+#define SIM_SCGC3_SPI2_BB_PTR    ((volatile uint32_t *) SIM_SCGC3_SPI2_BB_ADDR)
+                                         /* Bit-Banded Dereferenced Pointers */
+#define SIM_SCGC3_ADC1_BB        (*(SIM_SCGC3_ADC1_BB_PTR))
+#define SIM_SCGC3_SPI2_BB        (*(SIM_SCGC3_SPI2_BB_PTR))
+
 #define SIM_SCGC3_SPI2_ENABLE  BIT_12
 #define SIM_SCGC3_ADC1_ENABLE  BIT_27
 
+/********** SIM_SCGC4 **********/
 #define SIM_SCGC4_ADDR  0x40048034
 #define SIM_SCGC4_PTR     (volatile uint32_t *) SIM_SCGC4_ADDR
 #define SIM_SCGC4       (*(volatile uint32_t *) SIM_SCGC4_ADDR)
@@ -301,6 +355,7 @@ enum {
 #define SIM_SCGC4_VREF_ENABLE   BIT_20
 #define SIM_SCGC4_LLWU_ENABLE   BIT_28
 
+/********** SIM_SCGC5 **********/
 #define SIM_SCGC5_ADDR  0x40048038
 #define SIM_SCGC5_PTR     (volatile uint32_t *) SIM_SCGC5_ADDR
 #define SIM_SCGC5       (*(volatile uint32_t *) SIM_SCGC5_ADDR)
@@ -311,19 +366,63 @@ enum {
 #define SIM_SCGC5_PORTD_ENABLE BIT_12
 #define SIM_SCGC5_PORTE_ENABLE BIT_13
 
-#define SIM_SCGC6_ADDR  0x4004803C
-#define SIM_SCGC6_PTR     (volatile uint32_t *) SIM_SCGC6_ADDR
-#define SIM_SCGC6       (*(volatile uint32_t *) SIM_SCGC6_ADDR)
-#define SIM_SCGC6_SPI0_ENABLE  BIT_12
-#define SIM_SCGC6_SPI1_ENABLE  BIT_13
-#define SIM_SCGC6_CRC_ENABLE   BIT_18
+/***** SIM System Clock Gate Control Register 6 *****/
+                                           /* Register Address & Bit Numbers */
+#define SIM_SCGC6_ADDR          0x4004803C
+#define SIM_SCGC6_PTR           ((volatile uint32_t *) SIM_SCGC6_ADDR)
+#define SIM_SCGC6               (*(SIM_SCGC6_PTR))
+#define SIM_SCGC6_BB_ADDR       (MEMMAP_BB_GPIO_PBRIDGE_ADDR + (0x4803C * 32U))
+                                                              /* Bit Numbers */
+#define SIM_SCGC6_PIT_BIT       23
+#define SIM_SCGC6_CRC_BIT       18
+#define SIM_SCGC6_SPI1_BIT      13
+#define SIM_SCGC6_SPI0_BIT      12
 #define SIM_SCGC6_PIT_ENABLE   BIT_23
 #define SIM_SCGC6_ADC0_ENABLE  BIT_27
 #define SIM_SCGC6_FTFL_ENABLE  BIT_0
-#define SIM_SCGC7_ADDR  0x40048040
-#define SIM_SCGC7_PTR (volatile uint32_t *) SIM_SCGC7_ADDR
-#define SIM_SCGC7   (*(volatile uint32_t *) SIM_SCGC7_ADDR)
+#define SIM_SCGC6_DMAMUX_BIT    1
+                                                                    /* Masks */
+#define SIM_SCGC6_PIT_MSK       (1<<SIM_SCGC6_PIT_BIT)
+#define SIM_SCGC6_CRC_MSK       (1<<SIM_SCGC6_CRC_BIT)
+#define SIM_SCGC6_SPI1_MSK      (1<<SIM_SCGC6_SPI1_BIT)
+#define SIM_SCGC6_SPI0_MSK      (1<<SIM_SCGC6_SPI0_BIT)
+#define SIM_SCGC6_DMAMUX_MSK    (1<<SIM_SCGC6_DMAMUX_BIT)
+                                                     /* Bit-Banded Addresses */
+#define SIM_SCGC6_CRC_BB_ADDR    (SIM_SCGC6_BB_ADDR +(SIM_SCGC6_CRC_BIT  * 4))
+#define SIM_SCGC6_SPI1_BB_ADDR   (SIM_SCGC6_BB_ADDR +(SIM_SCGC6_SPI1_BIT * 4))
+#define SIM_SCGC6_SPI0_BB_ADDR   (SIM_SCGC6_BB_ADDR +(SIM_SCGC6_SPI0_BIT * 4))
+#define SIM_SCGC6_DMAMUX_BB_ADDR (SIM_SCGC6_BB_ADDR +(SIM_SCGC6_DMAMUX_BIT * 4))
+                                                      /* Bit-Banded Pointers */
+#define SIM_SCGC6_CRC_BB_PTR    ((volatile uint32_t *) SIM_SCGC6_CRC_BB_ADDR)
+#define SIM_SCGC6_SPI1_BB_PTR   ((volatile uint32_t *) SIM_SCGC6_SPI1_BB_ADDR)
+#define SIM_SCGC6_SPI0_BB_PTR   ((volatile uint32_t *) SIM_SCGC6_SPI0_BB_ADDR)
+#define SIM_SCGC6_DMAMUX_BB_PTR ((volatile uint32_t *) SIM_SCGC6_DMAMUX_BB_ADDR)
+                                         /* Bit-Banded Dereferenced Pointers */
+#define SIM_SCGC6_CRC_BB        (*(SIM_SCGC6_CRC_BB_PTR))
+#define SIM_SCGC6_SPI1_BB       (*(SIM_SCGC6_SPI1_BB_PTR))
+#define SIM_SCGC6_SPI0_BB       (*(SIM_SCGC6_SPI0_BB_PTR))
+#define SIM_SCGC6_DMAMUX_BB     (*(SIM_SCGC6_DMAMUX_BB_PTR))
+
+
+/***** SIM System Clock Gate Control Register 7 *****/
+                                           /* Register Address & Bit Numbers */
+
+#define SIM_SCGC7_ADDR          0x40048040
+#define SIM_SCGC7_PTR           ((volatile uint32_t *) SIM_SCGC7_ADDR)
+#define SIM_SCGC7               (*(SIM_SCGC7_PTR))
+#define SIM_SCGC7_BB_ADDR       (MEMMAP_BB_GPIO_PBRIDGE_ADDR + (0x48040 * 32U))
+                                                              /* Bit Numbers */
+#define SIM_SCGC7_DMA_BIT       1
 #define SIM_SCGC7_FLEXBUS_ENABLE BIT_0
+                                                                    /* Masks */
+#define SIM_SCGC7_DMA_MSK       (1<<SIM_SCGC7_DMA_BIT)
+                                                     /* Bit-Banded Addresses */
+#define SIM_SCGC7_DMA_BB_ADDR    (SIM_SCGC7_BB_ADDR +(SIM_SCGC7_DMA_BIT  * 4))
+                                                      /* Bit-Banded Pointers */
+#define SIM_SCGC7_DMA_BB_PTR    ((volatile uint32_t *) SIM_SCGC7_DMA_BB_ADDR)
+                                         /* Bit-Banded Dereferenced Pointers */
+
+
 
 /* System Clock Divider Registers */
 #define SIM_CLKDIV1_ADDR  0x40048044
@@ -924,207 +1023,311 @@ typedef enum {
     UART_SFIFO_RXOF     = BIT_0,
 } uartSfifo_t;
 
-
 /*******************************************************************************
 * SPI
 *******************************************************************************/
-typedef enum {
-    SPI_MCR_MSTR      =    1 << 31, /* R/W - 0*/
-    SPI_MCR_CONT_SCKE =    1 << 30, /* R/W - 0*/
-    SPI_MCR_DCONF1    =    1 << 29, /* R/W - 0*/
-    SPI_MCR_DCONF0    =    1 << 28, /* R/W - 0*/
-    SPI_MCR_DCONF     =  0x3 << 28, /* R/W - 0*/
-    SPI_MCR_FRZ       =    1 << 27, /* R/W - 0*/
-    SPI_MCR_MTFE      =    1 << 26, /* R/W - 0*/
-    SPI_MCR_PCSSE     =    1 << 25, /* R/W - 0*/
-    SPI_MCR_ROOE      =    1 << 24, /* R/W - 0*/
-    SPI_MCR_PCSIS5    =    1 << 21, /* R/W - 0*/
-    SPI_MCR_PCSIS4    =    1 << 20, /* R/W - 0*/
-    SPI_MCR_PCSIS3    =    1 << 19, /* R/W - 0*/
-    SPI_MCR_PCSIS2    =    1 << 18, /* R/W - 0*/
-    SPI_MCR_PCSIS1    =    1 << 17, /* R/W - 0*/
-    SPI_MCR_PCSIS0    =    1 << 16, /* R/W - 0*/
-    SPI_MCR_PCSIS     = 0x3F << 16, /* R/W - 0*/
-    SPI_MCR_DOZE      =    1 << 15, /* R/W - 0*/
-    SPI_MCR_MDIS      =    1 << 14, /* R/W - 1*/
-    SPI_MCR_DIS_TXF   =    1 << 13, /* R/W - 0*/
-    SPI_MCR_DIS_RXF   =    1 << 12, /* R/W - 0*/
-    SPI_MCR_CLR_TXF   =    1 << 11, /*   W - 0*/
-    SPI_MCR_CLR_RXF   =    1 << 10, /*   W - 0*/
-    SPI_MCR_SMPL_PT1  =    1 << 9,  /* R/W - 0*/
-    SPI_MCR_SMPL_PT0  =    1 << 8,  /* R/W - 0*/
-    SPI_MCR_SMPL_PT   =  0x3 << 8,  /* R/W - 0*/
-    SPI_MCR_HALT      =    1 << 0,  /* R/W - 1*/
-} spiMcr_t;
 
-typedef enum {
-    SPI_CTAR_DBR      =    1 << 31, /* R/W - 0*/
-    SPI_CTAR_FMSZ3    =    1 << 30, /* R/W - 1*/
-    SPI_CTAR_FMSZ2    =    1 << 29, /* R/W - 1*/
-    SPI_CTAR_FMSZ1    =    1 << 28, /* R/W - 1*/
-    SPI_CTAR_FMSZ0    =    1 << 27, /* R/W - 1*/
-    SPI_CTAR_FMSZ     =  0xF << 27, /* R/W - 1*/
-    SPI_CTAR_CPOL     =    1 << 26, /* R/W - 0*/
-    SPI_CTAR_CPHA     =    1 << 25, /* R/W - 0*/
-    SPI_CTAR_LSBFE    =    1 << 24, /* R/W - 0*/
-    SPI_CTAR_PCSSCK1  =    1 << 23, /* R/W - 0*/
-    SPI_CTAR_PCSSCK0  =    1 << 22, /* R/W - 0*/
-    SPI_CTAR_PCSSCK   =  0x3 << 22, /* R/W - 0*/
-    SPI_CTAR_PASC1    =    1 << 21, /* R/W - 0*/
-    SPI_CTAR_PASC0    =    1 << 20, /* R/W - 0*/
-    SPI_CTAR_PASC     =  0x3 << 20, /* R/W - 0*/
-    SPI_CTAR_PDT1     =    1 << 19, /* R/W - 0*/
-    SPI_CTAR_PDT0     =    1 << 18, /* R/W - 0*/
-    SPI_CTAR_PDT      =  0x3 << 18, /* R/W - 0*/
-    SPI_CTAR_PBR1     =    1 << 17, /* R/W - 0*/
-    SPI_CTAR_PBR0     =    1 << 16, /* R/W - 0*/
-    SPI_CTAR_PBR      =  0x3 << 16, /* R/W - 0*/
-    SPI_CTAR_CSSCLK3  =    1 << 15, /* R/W - 0*/
-    SPI_CTAR_CSSCLK2  =    1 << 14, /* R/W - 0*/
-    SPI_CTAR_CSSCLK1  =    1 << 13, /* R/W - 0*/
-    SPI_CTAR_CSSCLK0  =    1 << 12, /* R/W - 0*/
-    SPI_CTAR_CSSCLK   =  0xF << 12, /* R/W - 0*/
-    SPI_CTAR_ASC3     =    1 << 11, /* R/W - 0*/
-    SPI_CTAR_ASC2     =    1 << 10, /* R/W - 0*/
-    SPI_CTAR_ASC1     =    1 << 9,  /* R/W - 0*/
-    SPI_CTAR_ASC0     =    1 << 8,  /* R/W - 0*/
-    SPI_CTAR_ASC      =  0xF << 8,  /* R/W - 0*/
-    SPI_CTAR_DT3      =    1 << 7 , /* R/W - 0*/
-    SPI_CTAR_DT2      =    1 << 6,  /* R/W - 0*/
-    SPI_CTAR_DT1      =    1 << 5,  /* R/W - 0*/
-    SPI_CTAR_DT0      =    1 << 4,  /* R/W - 0*/
-    SPI_CTAR_DT       =  0xF << 4,  /* R/W - 0*/
-    SPI_CTAR_BR3      =    1 << 3 , /* R/W - 0*/
-    SPI_CTAR_BR2      =    1 << 2,  /* R/W - 0*/
-    SPI_CTAR_BR1      =    1 << 1,  /* R/W - 0*/
-    SPI_CTAR_BR0      =    1 << 0,  /* R/W - 0*/
-    SPI_CTAR_BR       =  0xF << 0,  /* R/W - 0*/
-} spiCtar_t;
+/***** Common to All SPI *****/
+                                                              /* Bit Numbers */
+/* MCR */
+#define SPI_MCR_MSTR_BIT         31U /* R/W - 0*/
+#define SPI_MCR_CONT_SCKE_BIT    30U /* R/W - 0*/
+#define SPI_MCR_DCONF1_BIT       29U /* R/W - 0*/
+#define SPI_MCR_DCONF0_BIT       28U /* R/W - 0*/
+#define SPI_MCR_FRZ_BIT          27U /* R/W - 0*/
+#define SPI_MCR_MTFE_BIT         26U /* R/W - 0*/
+#define SPI_MCR_PCSSE_BIT        25U /* R/W - 0*/
+#define SPI_MCR_ROOE_BIT         24U /* R/W - 0*/
+#define SPI_MCR_PCSIS5_BIT       21U /* R/W - 0*/
+#define SPI_MCR_PCSIS4_BIT       20U /* R/W - 0*/
+#define SPI_MCR_PCSIS3_BIT       19U /* R/W - 0*/
+#define SPI_MCR_PCSIS2_BIT       18U /* R/W - 0*/
+#define SPI_MCR_PCSIS1_BIT       17U /* R/W - 0*/
+#define SPI_MCR_PCSIS0_BIT       16U /* R/W - 0*/
+#define SPI_MCR_DOZE_BIT         15U /* R/W - 0*/
+#define SPI_MCR_MDIS_BIT         14U /* R/W - 1*/
+#define SPI_MCR_DIS_TXF_BIT      13U /* R/W - 0*/
+#define SPI_MCR_DIS_RXF_BIT      12U /* R/W - 0*/
+#define SPI_MCR_CLR_TXF_BIT      11U /*   W - 0*/
+#define SPI_MCR_CLR_RXF_BIT      10U /*   W - 0*/
+#define SPI_MCR_SMPL_PT1_BIT     9U  /* R/W - 0*/
+#define SPI_MCR_SMPL_PT0_BIT     8U  /* R/W - 0*/
+#define SPI_MCR_HALT_BIT         0U  /* R/W - 1*/
+/* CTAR */
+#define SPI_CTAR_DBR_BIT         31U /* R/W - 0*/
+#define SPI_CTAR_FMSZ3_BIT       30U /* R/W - 1*/
+#define SPI_CTAR_FMSZ2_BIT       29U /* R/W - 1*/
+#define SPI_CTAR_FMSZ1_BIT       28U /* R/W - 1*/
+#define SPI_CTAR_FMSZ0_BIT       27U /* R/W - 1*/
+#define SPI_CTAR_CPOL_BIT        26U /* R/W - 0*/
+#define SPI_CTAR_CPHA_BIT        25U /* R/W - 0*/
+#define SPI_CTAR_LSBFE_BIT       24U /* R/W - 0*/
+#define SPI_CTAR_PCSSCK1_BIT     23U /* R/W - 0*/
+#define SPI_CTAR_PCSSCK0_BIT     22U /* R/W - 0*/
+#define SPI_CTAR_PASC1_BIT       21U /* R/W - 0*/
+#define SPI_CTAR_PASC0_BIT       20U /* R/W - 0*/
+#define SPI_CTAR_PDT1_BIT        19U /* R/W - 0*/
+#define SPI_CTAR_PDT0_BIT        18U /* R/W - 0*/
+#define SPI_CTAR_PBR1_BIT        17U /* R/W - 0*/
+#define SPI_CTAR_PBR0_BIT        16U /* R/W - 0*/
+#define SPI_CTAR_CSSCLK3_BIT     15U /* R/W - 0*/
+#define SPI_CTAR_CSSCLK2_BIT     14U /* R/W - 0*/
+#define SPI_CTAR_CSSCLK1_BIT     13U /* R/W - 0*/
+#define SPI_CTAR_CSSCLK0_BIT     12U /* R/W - 0*/
+#define SPI_CTAR_ASC3_BIT        11U /* R/W - 0*/
+#define SPI_CTAR_ASC2_BIT        10U /* R/W - 0*/
+#define SPI_CTAR_ASC1_BIT        9U  /* R/W - 0*/
+#define SPI_CTAR_ASC0_BIT        8U  /* R/W - 0*/
+#define SPI_CTAR_DT3_BIT         7U  /* R/W - 0*/
+#define SPI_CTAR_DT2_BIT         6U  /* R/W - 0*/
+#define SPI_CTAR_DT1_BIT         5U  /* R/W - 0*/
+#define SPI_CTAR_DT0_BIT         4U  /* R/W - 0*/
+#define SPI_CTAR_BR3_BIT         3U  /* R/W - 0*/
+#define SPI_CTAR_BR2_BIT         2U  /* R/W - 0*/
+#define SPI_CTAR_BR1_BIT         1U  /* R/W - 0*/
+#define SPI_CTAR_BR0_BIT         0U  /* R/W - 0*/
+/* PUSHR */
+#define SPI_PUSHR_CONT_BIT       31U /* R/W - 0*/
+#define SPI_PUSHR_CTAS2_BIT      30U /* R/W - 0*/
+#define SPI_PUSHR_CTAS1_BIT      29U /* R/W - 0*/
+#define SPI_PUSHR_CTAS0_BIT      28U /* R/W - 0*/
+#define SPI_PUSHR_EOQ_BIT        27U /* R/W - 0*/
+#define SPI_PUSHR_CTCNT_BIT      26U /* R/W - 0*/
+#define SPI_PUSHR_PCS5_BIT       21U /* R/W - 0*/
+#define SPI_PUSHR_PCS4_BIT       20U /* R/W - 0*/
+#define SPI_PUSHR_PCS3_BIT       19U /* R/W - 0*/
+#define SPI_PUSHR_PCS2_BIT       18U /* R/W - 0*/
+#define SPI_PUSHR_PCS1_BIT       17U /* R/W - 0*/
+#define SPI_PUSHR_PCS0_BIT       16U /* R/W - 0*/
+/* RSER */
+#define SPI_RSER_TCF_RE_BIT      31U /* R/W - 0*/
+#define SPI_RSER_EOQF_RE_BIT     28U /* R/W - 0*/
+#define SPI_RSER_TFUF_RE_BIT     27U /* R/W - 0*/
+#define SPI_RSER_TFFF_RE_BIT     25U /* R/W - 0*/
+#define SPI_RSER_TFFF_DIRS_BIT   24U /* R/W - 0*/
+#define SPI_RSER_RFOF_RE_BIT     19U /* R/W - 0*/
+#define SPI_RSER_RFDF_RE_BIT     17U /* R/W - 0*/
+#define SPI_RSER_RFDF_DIRS_BIT   16U /* R/W - 0*/
+/* SR - Status Register */
+#define SPI_SR_TCF_BIT           31U /* R/W - 0*/
+#define SPI_SR_TXRXS_BIT         30U /* R/W - 0*/
+#define SPI_SR_EOQF_BIT          28U /* R/W - 0*/
+#define SPI_SR_TFUF_BIT          27U /* R/W - 0*/
+#define SPI_SR_TFFF_BIT          25U /* R/W - 0*/
+#define SPI_SR_RFOF_BIT          19U /* R/W - 0*/
+#define SPI_SR_RFDF_BIT          17U /* R/W - 0*/
+#define SPI_SR_TXCTR3_BIT        15U /* R/W - 0*/
+#define SPI_SR_TXCTR2_BIT        14U /* R/W - 0*/
+#define SPI_SR_TXCTR1_BIT        13U /* R/W - 0*/
+#define SPI_SR_TXCTR0_BIT        12U /* R/W - 0*/
+#define SPI_SR_TXNXTPTR3_BIT     11U /* R/W - 0*/
+#define SPI_SR_TXNXTPTR2_BIT     10U /* R/W - 0*/
+#define SPI_SR_TXNXTPTR1_BIT     9U  /* R/W - 0*/
+#define SPI_SR_TXNXTPTR0_BIT     8U  /* R/W - 0*/
+#define SPI_SR_RXCTR3_BIT        7U  /* R/W - 0*/
+#define SPI_SR_RXCTR2_BIT        6U  /* R/W - 0*/
+#define SPI_SR_RXCTR1_BIT        5U  /* R/W - 0*/
+#define SPI_SR_RXCTR0_BIT        4U  /* R/W - 0*/
+#define SPI_SR_POPNXTPTR3_BIT    3U  /* R/W - 0*/
+#define SPI_SR_POPNXTPTR2_BIT    2U  /* R/W - 0*/
+#define SPI_SR_POPNXTPTR1_BIT    1U  /* R/W - 0*/
+#define SPI_SR_POPNXTPTR0_BIT    0U  /* R/W - 0*/
+                                                                    /* Masks */
+#define SPI_MCR_MSTR_MSK         (1U<<SPI_MCR_MSTR_BIT)
+#define SPI_MCR_CONT_SCKE_MSK    (1U<<SPI_MCR_CONT_SCKE_BIT)
+#define SPI_MCR_DCONF1_MSK       (1U<<SPI_MCR_DCONF1_BIT)
+#define SPI_MCR_DCONF0_MSK       (1U<<SPI_MCR_DCONF0_BIT)
+#define SPI_MCR_DCONF_MSK        (SPI_MCR_DCONF0_MSK | SPI_MCR_DCONF1_MSK)
+#define SPI_MCR_FRZ_MSK          (1U<<SPI_MCR_FRZ_BIT)
+#define SPI_MCR_MTFE_MSK         (1U<<SPI_MCR_MTFE_BIT)
+#define SPI_MCR_PCSSE_MSK        (1U<<SPI_MCR_PCSSE_BIT)
+#define SPI_MCR_ROOE_MSK         (1U<<SPI_MCR_ROOE_BIT)
+#define SPI_MCR_PCSIS5_MSK       (1U<<SPI_MCR_PCSIS5_BIT)
+#define SPI_MCR_PCSIS4_MSK       (1U<<SPI_MCR_PCSIS4_BIT)
+#define SPI_MCR_PCSIS3_MSK       (1U<<SPI_MCR_PCSIS3_BIT)
+#define SPI_MCR_PCSIS2_MSK       (1U<<SPI_MCR_PCSIS2_BIT)
+#define SPI_MCR_PCSIS1_MSK       (1U<<SPI_MCR_PCSIS1_BIT)
+#define SPI_MCR_PCSIS0_MSK       (1U<<SPI_MCR_PCSIS0_BIT)
+#define SPI_MCR_PCSIS_MSK        (SPI_MCR_PCSIS0_MSK | SPI_MCR_PCSIS1_MSK |\
+                                  SPI_MCR_PCSIS2_MSK | SPI_MCR_PCSIS3_MSK |\
+                                  SPI_MCR_PCSIS4_MSK | SPI_MCR_PCSIS5_MSK  )
+#define SPI_MCR_DOZE_MSK         (1U<<SPI_MCR_DOZE_BIT)
+#define SPI_MCR_MDIS_MSK         (1U<<SPI_MCR_MDIS_BIT)
+#define SPI_MCR_DIS_TXF_MSK      (1U<<SPI_MCR_DIS_TXF_BIT)
+#define SPI_MCR_DIS_RXF_MSK      (1U<<SPI_MCR_DIS_RXF_BIT)
+#define SPI_MCR_CLR_TXF_MSK      (1U<<SPI_MCR_CLR_TXF_BIT)
+#define SPI_MCR_CLR_RXF_MSK      (1U<<SPI_MCR_CLR_RXF_BIT)
+#define SPI_MCR_SMPL_PT1_MSK     (1U<<SPI_MCR_SMPL_PT1_BIT)
+#define SPI_MCR_SMPL_PT0_MSK     (1U<<SPI_MCR_SMPL_PT0_BIT)
+#define SPI_MCR_SMPL_PT_MSK      (SPI_MCR_SMPL_PT0_MSK | SPI_MCR_SMPL_PT1_MSK)
+#define SPI_MCR_HALT_MSK         (1U<<SPI_MCR_HALT_BIT)
 
-typedef enum {
-    SPI_PUSHR_CONT     =    1 << 31, /* R/W - 0*/
-    SPI_PUSHR_CTAS2    =    1 << 30, /* R/W - 0*/
-    SPI_PUSHR_CTAS1    =    1 << 29, /* R/W - 0*/
-    SPI_PUSHR_CTAS0    =    1 << 28, /* R/W - 0*/
-    SPI_PUSHR_CTAS     =  0x7 << 28, /* R/W - 0*/
-    SPI_PUSHR_EOQ      =    1 << 27, /* R/W - 0*/
-    SPI_PUSHR_CTCNT    =    1 << 26, /* R/W - 0*/
-    SPI_PUSHR_PCS5     =    1 << 21, /* R/W - 0*/
-    SPI_PUSHR_PCS4     =    1 << 20, /* R/W - 0*/
-    SPI_PUSHR_PCS3     =    1 << 19, /* R/W - 0*/
-    SPI_PUSHR_PCS2     =    1 << 18, /* R/W - 0*/
-    SPI_PUSHR_PCS1     =    1 << 17, /* R/W - 0*/
-    SPI_PUSHR_PCS0     =    1 << 16, /* R/W - 0*/
-    SPI_PUSHR_PCS      = 0x3F << 16, /* R/W - 0*/
-} spiPushr_t;
+#define SPI_CTAR_FMSZ3_MSK       (1U<<SPI_CTAR_FMSZ3_BIT)
+#define SPI_CTAR_FMSZ2_MSK       (1U<<SPI_CTAR_FMSZ2_BIT)
+#define SPI_CTAR_FMSZ1_MSK       (1U<<SPI_CTAR_FMSZ1_BIT)
+#define SPI_CTAR_FMSZ0_MSK       (1U<<SPI_CTAR_FMSZ0_BIT)
+#define SPI_CTAR_FMSZ_MSK        (SPI_CTAR_FMSZ0_MSK | SPI_CTAR_FMSZ1_MSK |\
+                                  SPI_CTAR_FMSZ2_MSK | SPI_CTAR_FMSZ3_MSK  )
+#define SPI_CTAR_CPOL_MSK        (1U<<SPI_CTAR_CPOL_BIT)
+#define SPI_CTAR_CPHA_MSK        (1U<<SPI_CTAR_CPHA_BIT)
+#define SPI_CTAR_LSBFE_MSK       (1U<<SPI_CTAR_LSBFE_BIT)
+#define SPI_CTAR_PCSSCK1_MSK     (1U<<SPI_CTAR_PCSSCK1_BIT)
+#define SPI_CTAR_PCSSCK0_MSK     (1U<<SPI_CTAR_PCSSCK0_BIT)
+#define SPI_CTAR_PCSSCK_MSK      (SPI_CTAR_PCSSCK0_MSK | SPI_CTAR_PCSSCK1_MSK)
+#define SPI_CTAR_PASC1_MSK       (1U<<SPI_CTAR_PASC1_BIT)
+#define SPI_CTAR_PASC0_MSK       (1U<<SPI_CTAR_PASC0_BIT)
+#define SPI_CTAR_PASC_MSK        (SPI_CTAR_PASC0_MSK | SPI_CTAR_PASC1_MSK)
+#define SPI_CTAR_PDT1_MSK        (1U<<SPI_CTAR_PDT1_BIT)
+#define SPI_CTAR_PDT0_MSK        (1U<<SPI_CTAR_PDT0_BIT)
+#define SPI_CTAR_PDT_MSK         (SPI_CTAR_PDT0_MSK | SPI_CTAR_PDT1_MSK)
+#define SPI_CTAR_PBR1_MSK        (1U<<SPI_CTAR_PBR1_BIT)
+#define SPI_CTAR_PBR0_MSK        (1U<<SPI_CTAR_PBR0_BIT)
+#define SPI_CTAR_PBR_MSK         (SPI_CTAR_PBR0_MSK | SPI_CTAR_PBR1_MSK)
+#define SPI_CTAR_CSSCLK3_MSK     (1U<<SPI_CTAR_CSSCLK3_BIT)
+#define SPI_CTAR_CSSCLK2_MSK     (1U<<SPI_CTAR_CSSCLK2_BIT)
+#define SPI_CTAR_CSSCLK1_MSK     (1U<<SPI_CTAR_CSSCLK1_BIT)
+#define SPI_CTAR_CSSCLK0_MSK     (1U<<SPI_CTAR_CSSCLK0_BIT)
+#define SPI_CTAR_CSSCLK_MSK      (SPI_CTAR_CSSCLK0_MSK | SPI_CTAR_CSSCLK1_MSK |\
+                                  SPI_CTAR_CSSCLK2_MSK | SPI_CTAR_CSSCLK3_MSK  )
+#define SPI_CTAR_ASC3_MSK        (1U<<SPI_CTAR_ASC3_BIT)
+#define SPI_CTAR_ASC2_MSK        (1U<<SPI_CTAR_ASC2_BIT)
+#define SPI_CTAR_ASC1_MSK        (1U<<SPI_CTAR_ASC1_BIT)
+#define SPI_CTAR_ASC0_MSK        (1U<<SPI_CTAR_ASC0_BIT)
+#define SPI_CTAR_ASC_MSK         (SPI_CTAR_ASC0_MSK | SPI_CTAR_ASC1_MSK |\
+                                  SPI_CTAR_ASC2_MSK | SPI_CTAR_ASC3_MSK  )
+#define SPI_CTAR_DT3_MSK         (1U<<SPI_CTAR_DT3_BIT)
+#define SPI_CTAR_DT2_MSK         (1U<<SPI_CTAR_DT2_BIT)
+#define SPI_CTAR_DT1_MSK         (1U<<SPI_CTAR_DT1_BIT)
+#define SPI_CTAR_DT0_MSK         (1U<<SPI_CTAR_DT0_BIT)
+#define SPI_CTAR_DT_MSK          (SPI_CTAR_DT0_MSK | SPI_CTAR_DT1_MSK |\
+                                  SPI_CTAR_DT2_MSK | SPI_CTAR_DT3_MSK  )
+#define SPI_CTAR_BR3_MSK         (1U<<SPI_CTAR_BR3_BIT)
+#define SPI_CTAR_BR2_MSK         (1U<<SPI_CTAR_BR2_BIT)
+#define SPI_CTAR_BR1_MSK         (1U<<SPI_CTAR_BR1_BIT)
+#define SPI_CTAR_BR0_MSK         (1U<<SPI_CTAR_BR0_BIT)
+#define SPI_CTAR_BR_MSK          (SPI_CTAR_BR0_MSK | SPI_CTAR_BR1_MSK |\
+                                  SPI_CTAR_BR2_MSK | SPI_CTAR_BR3_MSK  )
 
-typedef enum {
-    SPI_RSER_TCF_RE   =    1 << 31, /* R/W - 0*/
-    SPI_RSER_EOQF_RE  =    1 << 28, /* R/W - 0*/
-    SPI_RSER_TFUF_RE  =    1 << 27, /* R/W - 0*/
-    SPI_RSER_TFFF_RE  =    1 << 25, /* R/W - 0*/
-    SPI_RSER_TFFF_DIRS=    1 << 24, /* R/W - 0*/
-    SPI_RSER_RFOF_RE  =    1 << 19, /* R/W - 0*/
-    SPI_RSER_RFDF_RE  =    1 << 17, /* R/W - 0*/
-    SPI_RSER_RFDF_DIRS=    1 << 16, /* R/W - 0*/
-} spiRser_t;
+#define SPI_PUSHR_CTAS2_MSK      (1U<<SPI_PUSHR_CTAS2_BIT)
+#define SPI_PUSHR_CTAS1_MSK      (1U<<SPI_PUSHR_CTAS1_BIT)
+#define SPI_PUSHR_CTAS0_MSK      (1U<<SPI_PUSHR_CTAS0_BIT)
+#define SPI_PUSHR_CTAS_MSK       (SPI_PUSHR_CTAS0_MSK | SPI_PUSHR_CTAS1_MSK |\
+                                                        SPI_PUSHR_CTAS2_MSK  )
+#define SPI_PUSHR_EOQ_MSK        (1U<<SPI_PUSHR_EOQ_BIT)
+#define SPI_PUSHR_CTCNT_MSK      (1U<<SPI_PUSHR_CTCNT_BIT)
+#define SPI_PUSHR_PCS5_MSK       (1U<<SPI_PUSHR_PCS5_BIT)
+#define SPI_PUSHR_PCS4_MSK       (1U<<SPI_PUSHR_PCS4_BIT)
+#define SPI_PUSHR_PCS3_MSK       (1U<<SPI_PUSHR_PCS3_BIT)
+#define SPI_PUSHR_PCS2_MSK       (1U<<SPI_PUSHR_PCS2_BIT)
+#define SPI_PUSHR_PCS1_MSK       (1U<<SPI_PUSHR_PCS1_BIT)
+#define SPI_PUSHR_PCS0_MSK       (1U<<SPI_PUSHR_PCS0_BIT)
+#define SPI_PUSHR_PCS_MSK        (SPI_PUSHR_PCS0_MSK | SPI_PUSHR_PCS1_MSK |\
+                                  SPI_PUSHR_PCS2_MSK | SPI_PUSHR_PCS3_MSK |\
+                                  SPI_PUSHR_PCS4_MSK | SPI_PUSHR_PCS5_MSK  )
 
-typedef enum {
-    SPI_SR_TCF        =    1 << 31, /* R/W - 0*/
-    SPI_SR_TXRXS      =    1 << 30, /* R/W - 0*/
-    SPI_SR_EOQF       =    1 << 28, /* R/W - 0*/
-    SPI_SR_TFUF       =    1 << 27, /* R/W - 0*/
-    SPI_SR_TFFF       =    1 << 25, /* R/W - 0*/
-    SPI_SR_RFOF       =    1 << 19, /* R/W - 0*/
-    SPI_SR_RFDF       =    1 << 17, /* R/W - 0*/
-    SPI_SR_TXCTR3     =    1 << 15, /* R/W - 0*/
-    SPI_SR_TXCTR2     =    1 << 14, /* R/W - 0*/
-    SPI_SR_TXCTR1     =    1 << 13, /* R/W - 0*/
-    SPI_SR_TXCTR0     =    1 << 12, /* R/W - 0*/
-    SPI_SR_TXCTR      =  0xF << 12, /* R/W - 0*/
-    SPI_SR_TXNXTPTR3  =    1 << 11, /* R/W - 0*/
-    SPI_SR_TXNXTPTR2  =    1 << 10, /* R/W - 0*/
-    SPI_SR_TXNXTPTR1  =    1 << 9,  /* R/W - 0*/
-    SPI_SR_TXNXTPTR0  =    1 << 8,  /* R/W - 0*/
-    SPI_SR_TXNXTPTR   =  0xF << 8,  /* R/W - 0*/
-    SPI_SR_RXCTR3     =    1 << 7,  /* R/W - 0*/
-    SPI_SR_RXCTR2     =    1 << 6,  /* R/W - 0*/
-    SPI_SR_RXCTR1     =    1 << 5,  /* R/W - 0*/
-    SPI_SR_RXCTR0     =    1 << 4,  /* R/W - 0*/
-    SPI_SR_RXCTR      =  0xF << 4,  /* R/W - 0*/
-    SPI_SR_POPNXTPTR3 =    1 << 3,  /* R/W - 0*/
-    SPI_SR_POPNXTPTR2 =    1 << 2,  /* R/W - 0*/
-    SPI_SR_POPNXTPTR1 =    1 << 1,  /* R/W - 0*/
-    SPI_SR_POPNXTPTR0 =    1 << 0,  /* R/W - 0*/
-    SPI_SR_POPNXTPTR  =    1 << 0,  /* R/W - 0*/
-} spiSr_t;
+#define SPI_RSER_TCF_RE_MSK      (1U<<SPI_RSER_TCF_RE_BIT)
+#define SPI_RSER_EOQF_RE_MSK     (1U<<SPI_RSER_EOQF_RE_BIT)
+#define SPI_RSER_TFUF_RE_MSK     (1U<<SPI_RSER_TFUF_RE_BIT)
+#define SPI_RSER_TFFF_RE_MSK     (1U<<SPI_RSER_TFFF_RE_BIT)
+#define SPI_RSER_TFFF_DIRS_MSK   (1U<<SPI_RSER_TFFF_DIRS_BIT)
+#define SPI_RSER_RFOF_RE_MSK     (1U<<SPI_RSER_RFOF_RE_BIT)
+#define SPI_RSER_RFDF_RE_MSK     (1U<<SPI_RSER_RFDF_RE_BIT)
+#define SPI_RSER_RFDF_DIRS_MSK   (1U<<SPI_RSER_RFDF_DIRS_BIT)
 
-/* SPI0 */
-#define SPI0_BASE_ADDR 0x4002C000
-#define SPI0_MCR   (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x00))
-#define SPI0_TCR   (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x08))
-#define SPI0_CTAR0 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x0C))
-#define SPI0_CTAR1 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x10))
-#define SPI0_SR    (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x2C))
-#define SPI0_RSER  (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x30))
-#define SPI0_PUSHR (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x34))
-#define SPI0_POPR  (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x38))
-#define SPI0_TXFR0 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x3C))
-#define SPI0_TXFR1 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x40))
-#define SPI0_TXFR2 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x44))
-#define SPI0_TXFR3 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x48))
-#define SPI0_RXFR0 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x7C))
-#define SPI0_RXFR1 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x80))
-#define SPI0_RXFR2 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x84))
-#define SPI0_RXFR3 (*(volatile uint32_t *) (SPI0_BASE_ADDR + 0x88))
-#define SPI0_BB_BASE_ADDR 0x4202C000
+#define SPI_SR_TCF_MSK           (1U<<SPI_SR_TCF_BIT)
+#define SPI_SR_TXRXS_MSK         (1U<<SPI_SR_TXRXS_BIT)
+#define SPI_SR_EOQF_MSK          (1U<<SPI_SR_EOQF_BIT)
+#define SPI_SR_TFUF_MSK          (1U<<SPI_SR_TFUF_BIT)
+#define SPI_SR_TFFF_MSK          (1U<<SPI_SR_TFFF_BIT)
+#define SPI_SR_RFOF_MSK          (1U<<SPI_SR_RFOF_BIT)
+#define SPI_SR_RFDF_MSK          (1U<<SPI_SR_RFDF_BIT)
+#define SPI_SR_TXCTR3_MSK        (1U<<SPI_SR_TXCTR3_BIT)
+#define SPI_SR_TXCTR2_MSK        (1U<<SPI_SR_TXCTR2_BIT)
+#define SPI_SR_TXCTR1_MSK        (1U<<SPI_SR_TXCTR1_BIT)
+#define SPI_SR_TXCTR0_MSK        (1U<<SPI_SR_TXCTR0_BIT)
+#define SPI_SR_TXCTR_MSK         (SPI_SR_TXCTR0_MSK | SPI_SR_TXCTR1_MSK |\
+                                  SPI_SR_TXCTR2_MSK | SPI_SR_TXCTR3_MSK  )
+#define SPI_SR_TXNXTPTR3_MSK     (1U<<SPI_SR_TXNXTPTR3_BIT)
+#define SPI_SR_TXNXTPTR2_MSK     (1U<<SPI_SR_TXNXTPTR2_BIT)
+#define SPI_SR_TXNXTPTR1_MSK     (1U<<SPI_SR_TXNXTPTR1_BIT)
+#define SPI_SR_TXNXTPTR0_MSK     (1U<<SPI_SR_TXNXTPTR0_BIT)
+#define SPI_SR_TXNXTPTR_MSK      (SPI_SR_TXNXTPTR0_MSK | SPI_SR_TXNXTPTR1_MSK |\
+                                  SPI_SR_TXNXTPTR2_MSK | SPI_SR_TXNXTPTR3_MSK  )
+#define SPI_SR_RXCTR3_MSK        (1U<<SPI_SR_RXCTR3_BIT)
+#define SPI_SR_RXCTR2_MSK        (1U<<SPI_SR_RXCTR2_BIT)
+#define SPI_SR_RXCTR1_MSK        (1U<<SPI_SR_RXCTR1_BIT)
+#define SPI_SR_RXCTR0_MSK        (1U<<SPI_SR_RXCTR0_BIT)
+#define SPI_SR_RXCTR_MSK         (SPI_SR_RXCTR0_MSK | SPI_SR_RXCTR1_MSK |\
+                                  SPI_SR_RXCTR2_MSK | SPI_SR_RXCTR3_MSK  )
+#define SPI_SR_POPNXTPTR3_MSK    (1U<<SPI_SR_POPNXTPTR3_BIT)
+#define SPI_SR_POPNXTPTR2_MSK    (1U<<SPI_SR_POPNXTPTR2_BIT)
+#define SPI_SR_POPNXTPTR1_MSK    (1U<<SPI_SR_POPNXTPTR1_BIT)
+#define SPI_SR_POPNXTPTR0_MSK    (1U<<SPI_SR_POPNXTPTR0_BIT)
+#define SPI_SR_POPNXTPTR_MSK     (SPI_SR_POPNXTPTR0_MSK | SPI_SR_POPNXTPTR1_MSK |\
+                                  SPI_SR_POPNXTPTR2_MSK | SPI_SR_POPNXTPTR3_MSK  )
 
-/* SPI1 */
-#define SPI1_BASE_ADDR 0x4002D000
-#define SPI1_MCR   (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x00))
-#define SPI1_TCR   (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x08))
-#define SPI1_CTAR0 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x0C))
-#define SPI1_CTAR1 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x10))
-#define SPI1_SR    (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x2C))
-#define SPI1_RSER  (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x30))
-#define SPI1_PUSHR (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x34))
-#define SPI1_POPR  (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x38))
-#define SPI1_TXFR0 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x3C))
-#define SPI1_TXFR1 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x40))
-#define SPI1_TXFR2 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x44))
-#define SPI1_TXFR3 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x48))
-#define SPI1_RXFR0 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x7C))
-#define SPI1_RXFR1 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x80))
-#define SPI1_RXFR2 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x84))
-#define SPI1_RXFR3 (*(volatile uint32_t *) (SPI1_BASE_ADDR + 0x88))
+#define SPI0_ADDR           0x4002C000
+#define SPI1_ADDR           0x4002D000
+#define SPI2_ADDR           0x400AC000
 
-/* SPI2 */
-#define SPI2_BASE_ADDR 0x400AC000
-#define SPI2_MCR   (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x00))
-#define SPI2_TCR   (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x08))
-#define SPI2_CTAR0 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x0C))
-#define SPI2_CTAR1 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x10))
-#define SPI2_SR    (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x2C))
-#define SPI2_RSER  (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x30))
-#define SPI2_PUSHR (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x34))
-#define SPI2_POPR  (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x38))
-#define SPI2_TXFR0 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x3C))
-#define SPI2_TXFR1 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x40))
-#define SPI2_TXFR2 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x44))
-#define SPI2_TXFR3 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x48))
-#define SPI2_RXFR0 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x7C))
-#define SPI2_RXFR1 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x80))
-#define SPI2_RXFR2 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x84))
-#define SPI2_RXFR3 (*(volatile uint32_t *) (SPI2_BASE_ADDR + 0x88))
+#define SPI_MCR_OFFSET      0x00
+#define SPI_CTAR0_OFFSET    0x0C
+#define SPI_CTAR1_OFFSET    0x10
+#define SPI_SR_OFFSET       0x2C
+#define SPI_RSER_OFFSET     0x30
+#define SPI_PUSHR_OFFSET    0x34
+#define SPI_POPR_OFFSET     0x38
 
-#define SPI_MCR(addr)    (*(volatile uint32_t *) (addr + 0x00))
-#define SPI_CTAR0(addr)  (*(volatile uint32_t *) (addr + 0x0C))
-#define SPI_CTAR1(addr)  (*(volatile uint32_t *) (addr + 0x10))
-#define SPI_SR(addr)     (*(volatile uint32_t *) (addr + 0x2C))
-#define SPI_RSER(addr)   (*(volatile uint32_t *) (addr + 0x30))
-#define SPI_PUSHR(addr)  (*(volatile uint32_t *) (addr + 0x34))
-#define SPI_POPR(addr)   (*(volatile uint32_t *) (addr + 0x38))
+#define SPI_MCR_ADDR(a)      (a + SPI_MCR_OFFSET)
+#define SPI_MCR_PTR(a)       ((volatile uint32_t*)SPI_MCR_ADDR((a)))
+#define SPI_MCR(a)           (*(SPI_MCR_PTR((a))))
+#define SPI_MCR_BB_ADDR(a,b) (BIT_2_BB2_ADDR((SPI_MCR_ADDR((a))),(b)))
+#define SPI_MCR_BB_PTR(a,b)  ((volatile uint32_t*)SPI_MCR_BB_ADDR(a,b))
+#define SPI_MCR_BB(a,b)      (*(SPI_MCR_BB_PTR(a,b)))
 
+#define SPI_CTAR0_ADDR(a)      (a + SPI_CTAR0_OFFSET)
+#define SPI_CTAR0_PTR(a)       ((volatile uint32_t *) SPI_CTAR0_ADDR((a)))
+#define SPI_CTAR0(a)           (*(SPI_CTAR0_PTR((a))))
+#define SPI_CTAR0_BB_ADDR(a,b) (BIT_2_BB2_ADDR((SPI_CTAR0_ADDR((a))),(b)))
+#define SPI_CTAR0_BB_PTR(a,b)  ((volatile uint32_t*)SPI_CTAR0_BB_ADDR(a,b))
+#define SPI_CTAR0_BB(a,b)      (*(SPI_CTAR0_BB_PTR(a,b)))
+
+#define SPI_CTAR1_ADDR(a) (a + SPI_CTAR1_OFFSET)
+#define SPI_CTAR1_BB(a,b) (BIT_2_BB2_ADDR((SPI_CTAR1_ADDR((a))),(b)))
+#define SPI_CTAR1_PTR(a)  ((volatile uint32_t *) SPI_CTAR1_ADDR((a)))
+#define SPI_CTAR1(a)      (*(SPI_CTAR1_PTR((a))))
+
+#define SPI_SR_ADDR(a)      (a + SPI_SR_OFFSET)
+#define SPI_SR_PTR(a)       ((volatile uint32_t *) SPI_SR_ADDR((a)))
+#define SPI_SR(a)           (*(SPI_SR_PTR((a))))
+#define SPI_SR_BB_ADDR(a,b) (BIT_2_BB2_ADDR((SPI_SR_ADDR((a))),(b)))
+#define SPI_SR_BB_PTR(a,b)  ((volatile uint32_t*)SPI_SR_BB_ADDR(a,b))
+#define SPI_SR_BB(a,b)      (*(SPI_SR_BB_PTR(a,b)))
+
+#define SPI_RSER_ADDR(a) (a + SPI_RSER_OFFSET)
+#define SPI_RSER_PTR(a)  ((volatile uint32_t *) SPI_RSER_ADDR((a)))
+#define SPI_RSER(a)      (*(SPI_RSER_PTR((a))))
+#define SPI_RSER_BB_ADDR(a,b) (BIT_2_BB2_ADDR((SPI_RSER_ADDR((a))),(b)))
+#define SPI_RSER_BB_PTR(a,b)  ((volatile uint32_t*)SPI_RSER_BB_ADDR(a,b))
+#define SPI_RSER_BB(a,b)      (*(SPI_RSER_BB_PTR(a,b)))
+
+#define SPI_PUSHR_ADDR(a) (a + SPI_PUSHR_OFFSET)
+#define SPI_PUSHR_BB(a,b) (BIT_2_BB2_ADDR((SPI_PUSHR_ADDR((a))),(b)))
+#define SPI_PUSHR_PTR(a)  ((volatile uint32_t *) SPI_PUSHR_ADDR((a)))
+#define SPI_PUSHR(a)      (*(SPI_PUSHR_PTR((a))))
+
+#define SPI_POPR_ADDR(a) (a + SPI_POPR_OFFSET)
+#define SPI_POPR_BB(a,b) (BIT_2_BB2_ADDR((SPI_POPR_ADDR((a))),(b)))
+#define SPI_POPR_PTR(a)  ((volatile uint32_t *) SPI_POPR_ADDR((a)))
+#define SPI_POPR(a)      (*(SPI_POPR_PTR((a))))
+
+#if 0
+#define PIN_SIN      0
+#define PIN_SOUT     1
+#define PIN_SCK      2
+#define PIN_PCS0     3
+#define NUM_PINS     4
+#endif
 /******************************************************************************
  * FTFL FLASH
  *****************************************************************************/
@@ -1420,41 +1623,78 @@ typedef enum {
 /*******************************************************************************
 * CRC
 *******************************************************************************/
-typedef enum {
-    CRC_CTRL_TOT1     =    1 << 31, /* R/W - 0*/
-    CRC_CTRL_TOT0     =    1 << 30, /* R/W - 0*/
-    CRC_CTRL_TOT      =  0x3 << 30, /* R/W - 0*/
-    CRC_CTRL_TOTR1    =    1 << 29, /* R/W - 0*/
-    CRC_CTRL_TOTR0    =    1 << 28, /* R/W - 0*/
-    CRC_CTRL_TOTR     =  0x3 << 28, /* R/W - 0*/
-    CRC_CTRL_FXOR     =    1 << 26, /* R/W - 0*/
-    CRC_CTRL_WAS      =    1 << 25, /* R/W - 0*/
-    CRC_CTRL_TCRC     =    1 << 24, /* R/W - 0*/
-} crcCtrl_t;
 
-#define CRC_CRC_ADDR     0x40032000
-#define CRC_CRC_PTR      (volatile uint32_t *) CRC_CRC_ADDR
-#define CRC_CRC32_PTR    (volatile uint32_t *) CRC_CRC_ADDR
-#define CRC_CRC16_PTR    (volatile uint16_t *) CRC_CRC_ADDR
-#define CRC_CRC8_PTR     (volatile uint8_t  *) CRC_CRC_ADDR
-#define CRC_CRC          (*(volatile uint32_t *) CRC_CRC_ADDR)
-#define CRC_GPOLY_ADDR   0x40032004
-#define CRC_GPOLY32_PTR    (volatile uint32_t *) CRC_GPOLY_ADDR
-#define CRC_GPOLY16_PTR    (volatile uint16_t *) CRC_GPOLY_ADDR
-#define CRC_GPOLY        (*(volatile uint32_t *) CRC_GPOLY_ADDR)
+/* CRC Data Register */
+/* NOTE: Datasheet references it as CRC_CRC but I call it CRC_DATA */
+/* Contains the value of the seed, data and the checksum */
+#define CRC_DATA_ADDR      0x40032000
+#define CRC_DATA_PTR       ((volatile uint32_t *) CRC_DATA_ADDR)
+#define CRC_DATA           (*(CRC_DATA_PTR))
+                                                        /* 8/16 Bit Access */
+#define CRC_DATA_16BIT_PTR ((volatile uint16_t *) CRC_DATA_ADDR)
+#define CRC_DATA_16BIT     (*(CRC_DATA_16BIT_PTR))
+#define CRC_DATA_8BIT_PTR  ((volatile uint8_t  *) CRC_DATA_ADDR)
+#define CRC_DATA_8BIT      (*(CRC_DATA_8BIT_PTR))
 
-#define CRC_CTRL_ADDR    0x40032008
-#define CRC_CTRL_PTR     (volatile uint32_t *) CRC_CTRL_ADDR
-#define CRC_CTRL         (*(volatile uint32_t *) CRC_CTRL_ADDR)
+/* CRC Polynomial Register */
+/* Contains the value of the polynomial for the CRC calc */
+#define CRC_GPOLY_ADDR      0x40032004
+#define CRC_GPOLY_PTR       ((volatile uint32_t *) CRC_GPOLY_ADDR)
+#define CRC_GPOLY           (*(CRC_GPOLY_PTR))
+                                                             /*16 Bit Access */
+#define CRC_GPOLY_16BIT_PTR ((volatile uint16_t *) CRC_GPOLY_ADDR)
+#define CRC_GPOLY_16BIT     (*(CRC_GPOLY_16BIT_PTR))
 
-/* Bit banded regions */
-#define CRC_BB_BASE_CTRL_ADDR (0x42000000 +(0x32008 * 32))
-
-#define CRC_BB_CTRL_WAS_ADDR  (CRC_BB_BASE_CTRL_ADDR +(25 * 4))
-#define CRC_BB_CTRL_TCRC_ADDR (CRC_BB_BASE_CTRL_ADDR +(24 * 4))
-
-#define CRC_BB_CTRL_WAS   (*(volatile uint32_t *) CRC_BB_CTRL_WAS_ADDR)
-#define CRC_BB_CTRL_TCRC  (*(volatile uint32_t *) CRC_BB_CTRL_TCRC_ADDR)
+/* CRC Control Register */
+/* Controls the configuration of the CRC module */
+#define CRC_CTRL_ADDR      0x40032008
+#define CRC_CTRL_PTR       ( (volatile uint32_t *) CRC_CTRL_ADDR)
+#define CRC_CTRL           (*(CRC_CTRL_PTR))
+#define CRC_CTRL_BB_ADDR   (MEMMAP_BB_GPIO_PBRIDGE_ADDR + (0x32008 * 32U))
+                                                              /* Bit Numbers */
+#define CRC_CTRL_TOT1_BIT      31U
+#define CRC_CTRL_TOT0_BIT      30U
+#define CRC_CTRL_TOT_BIT       (CRC_CTRL_TOT0_BIT)
+#define CRC_CTRL_TOTR1_BIT     29U
+#define CRC_CTRL_TOTR0_BIT     28U
+#define CRC_CTRL_TOTR_BIT      (CRC_CTRL_TOTR0_BIT)
+#define CRC_CTRL_FXOR_BIT      26U
+#define CRC_CTRL_WAS_BIT       25U
+#define CRC_CTRL_TCRC_BIT      24U
+                                                                    /* Masks */
+#define CRC_CTRL_TOT1_MSK      (1U<<CRC_CTRL_TOT1_BIT)
+#define CRC_CTRL_TOT0_MSK      (1U<<CRC_CTRL_TOT0_BIT)
+#define CRC_CTRL_TOT_MSK       (CRC_CTRL_TOT1_MSK | CRC_CTRL_TOT0_MSK)
+#define CRC_CTRL_TOTR1_MSK     (1U<<CRC_CTRL_TOTR1_BIT)
+#define CRC_CTRL_TOTR0_MSK     (1U<<CRC_CTRL_TOTR0_BIT)
+#define CRC_CTRL_TOTR_MSK      (CRC_CTRL_TOTR1_MSK | CRC_CTRL_TOTR0_MSK)
+#define CRC_CTRL_FXOR_MSK      (1U<<CRC_CTRL_FXOR_BIT)
+#define CRC_CTRL_WAS_MSK       (1U<<CRC_CTRL_WAS_BIT)
+#define CRC_CTRL_TCRC_MSK      (1U<<CRC_CTRL_TCRC_BIT)
+                                                     /* Bit-Banded Addresses */
+#define CRC_CTRL_TOT1_BB_ADDR  (CRC_CTRL_BB_ADDR +(CRC_CTRL_TOT1_BIT  * 4U))
+#define CRC_CTRL_TOT0_BB_ADDR  (CRC_CTRL_BB_ADDR +(CRC_CTRL_TOT0_BIT  * 4U))
+#define CRC_CTRL_TOTR1_BB_ADDR (CRC_CTRL_BB_ADDR +(CRC_CTRL_TOTR1_BIT * 4U))
+#define CRC_CTRL_TOTR0_BB_ADDR (CRC_CTRL_BB_ADDR +(CRC_CTRL_TOTR0_BIT * 4U))
+#define CRC_CTRL_FXOR_BB_ADDR  (CRC_CTRL_BB_ADDR +(CRC_CTRL_FXOR_BIT  * 4U))
+#define CRC_CTRL_WAS_BB_ADDR   (CRC_CTRL_BB_ADDR +(CRC_CTRL_WAS_BIT   * 4U))
+#define CRC_CTRL_TCRC_BB_ADDR  (CRC_CTRL_BB_ADDR +(CRC_CTRL_TCRC_BIT  * 4U))
+                                                      /* Bit-Banded Pointers */
+#define CRC_CTRL_TOT1_BB_PTR   ((volatile uint32_t *) CRC_CTRL_TOT1_BB_ADDR)
+#define CRC_CTRL_TOT0_BB_PTR   ((volatile uint32_t *) CRC_CTRL_TOT0_BB_ADDR)
+#define CRC_CTRL_TOTR1_BB_PTR  ((volatile uint32_t *) CRC_CTRL_TOTR0_BB_ADDR)
+#define CRC_CTRL_TOTR0_BB_PTR  ((volatile uint32_t *) CRC_CTRL_TOTR1_BB_ADDR)
+#define CRC_CTRL_FXOR_BB_PTR   ((volatile uint32_t *) CRC_CTRL_FXOR_BB_ADDR)
+#define CRC_CTRL_WAS_BB_PTR    ((volatile uint32_t *) CRC_CTRL_WAS_BB_ADDR)
+#define CRC_CTRL_TCRC_BB_PTR   ((volatile uint32_t *) CRC_CTRL_TCRC_BB_ADDR)
+                                         /* Bit-Banded Dereferenced Pointers */
+#define CRC_CTRL_TOT1_BB       (*(CRC_CTRL_TOT1_BB_PTR))
+#define CRC_CTRL_TOT0_BB       (*(CRC_CTRL_TOT0_BB_PTR))
+#define CRC_CTRL_TOTR1_BB      (*(CRC_CTRL_TOTR1_BB_PTR))
+#define CRC_CTRL_TOTR0_BB      (*(CRC_CTRL_TOTR0_BB_PTR))
+#define CRC_CTRL_FXOR_BB       (*(CRC_CTRL_FXOR_BB_PTR))
+#define CRC_CTRL_WAS_BB        (*(CRC_CTRL_WAS_BB_PTR))
+#define CRC_CTRL_TCRC_BB       (*(CRC_CTRL_TCRC_BB_PTR))
 
 /*******************************************************************************
 * MPU
@@ -2242,5 +2482,314 @@ typedef enum {
     RTC_RAR_TSRR          = BIT_0,
 } rtcAccessReg_t;
 
+/*******************************************************************************
+* DMA MUX
+*******************************************************************************/
+
+#define DMAMUX_ENBL_BIT         7U
+#define DMAMUX_TRIG_BIT         6U
+
+#define DMAMUX_ENBL_MSK         (1U<<DMAMUX_ENBL_BIT)
+#define DMAMUX_TRIG_MSK         (1U<<DMAMUX_TRIG_BIT)
+#define DMAMUX_SOURCE_MSK       (0x3F)
+
+#define DMAMUX_SOURCE_UART0RX   2U
+#define DMAMUX_SOURCE_UART0TX   3U
+#define DMAMUX_SOURCE_UART1RX   4U
+#define DMAMUX_SOURCE_UART1TX   5U
+#define DMAMUX_SOURCE_UART2RX   6U
+#define DMAMUX_SOURCE_UART2TX   7U
+#define DMAMUX_SOURCE_UART3RX   8U
+#define DMAMUX_SOURCE_UART3TX   9U
+#define DMAMUX_SOURCE_UART4RX   10U
+#define DMAMUX_SOURCE_UART4TX   11U
+#define DMAMUX_SOURCE_UART5RX   12U
+#define DMAMUX_SOURCE_UART5TX   13U
+#define DMAMUX_SOURCE_I2S0      14U
+#define DMAMUX_SOURCE_I2S1      15U
+#define DMAMUX_SOURCE_SPI0RX    16U
+#define DMAMUX_SOURCE_SPI0TX    17U
+#define DMAMUX_SOURCE_SPI1RX    18U
+#define DMAMUX_SOURCE_SPI1TX    19U
+/* TODO: Confirm that SPI2 works, they are strangly missing
+ * in the datasheet. */
+#define DMAMUX_SOURCE_SPI2RX    20U
+#define DMAMUX_SOURCE_SPI2TX    21U
+/* TODO: Finish this list later, its on page 92 */
+
+#define DMAMUX_ADDR      0x40021000
+#define DMAMUX_CHAN0    0x0
+#define DMAMUX_CHAN1    0x1
+#define DMAMUX_CHAN2    0x2
+#define DMAMUX_CHAN3    0x3
+#define DMAMUX_CHAN4    0x4
+#define DMAMUX_CHAN5    0x5
+#define DMAMUX_CHAN6    0x6
+#define DMAMUX_CHAN7    0x7
+#define DMAMUX_CHAN8    0x8
+#define DMAMUX_CHAN9    0x9
+#define DMAMUX_CHAN10   0xA
+#define DMAMUX_CHAN11   0xB
+#define DMAMUX_CHAN12   0xC
+#define DMAMUX_CHAN13   0xD
+#define DMAMUX_CHAN14   0xE
+#define DMAMUX_CHAN15   0xF
+
+#define DMAMUX_CHCFG_ADDR(a)      (DMAMUX_ADDR + (a))
+#define DMAMUX_CHCFG_PTR(a)       ((volatile uint8_t*)DMAMUX_CHCFG_ADDR((a)))
+#define DMAMUX_CHCFG(a)           (*(DMAMUX_CHCFG_PTR((a))))
+
+#define DMAMUX_CHCFG_BB_ADDR(a,b) (BIT_2_BB2_ADDR( (DMAMUX_ADDR+(a)), (b)))
+#define DMAMUX_CHCFG_BB_PTR(a,b)  ((volatile uint8_t*)DMAMUX_CHCFG_BB_ADDR((a),(b)))
+#define DMAMUX_CHCFG_BB(a,b)      (*(DMAMUX_CHCFG_BB_PTR((a),(b))))
+
+#if 0
+#define DMAMUX_CHCFG0_ADDR          (DMAMUX_ADDR + DMAMUX_CHCFG0_OFFSET)
+#define DMAMUX_CHCFG0_PTR           ((volatile uint8_t*)DMAMUX_CHCFG0_ADDR)
+#define DMAMUX_CHCFG0               (*(DMAMUX_CHCFG0_PTR))
+#define DMAMUX_CHCFG0_ENBL_BB_ADDR  (BIT_2_BB2_ADDR(DMAMUX_CHCFG0_ADDR, DMAMUX_ENBL_BIT))
+#define DMAMUX_CHCFG0_ENBL_BB_PTR   ((volatile uint8_t*)DMAMUX_CHCFG0_ENBL_BB_ADDR)
+#define DMAMUX_CHCFG0_ENBL_BB       (*(DMAMUX_CHCFG0_ENBL_BB_PTR))
+#define DMAMUX_CHCFG0_TRIG_BB_ADDR  (BIT_2_BB2_ADDR(DMAMUX_CHCFG0_ADDR, DMAMUX_TRIG_BIT))
+#define DMAMUX_CHCFG0_TRIG_BB_PTR   ((volatile uint8_t*)DMAMUX_CHCFG0_TRIG_BB_ADDR)
+#define DMAMUX_CHCFG0_TRIG_BB       (*(DMAMUX_CHCFG0_TRIG_BB_PTR))
+
+#define DMAMUX_CHCFG1_ADDR    (DMAMUX_ADDR + DMAMUX_CHCFG1_OFFSET)
+#define DMAMUX_CHCFG1_PTR     ((volatile uint8_t*)DMAMUX_CHCFG1_ADDR)
+#define DMAMUX_CHCFG1         (*(DMAMUX_CHCFG1_PTR))
+#define DMAMUX_CHCFG2_ADDR    (DMAMUX_ADDR + DMAMUX_CHCFG2_OFFSET)
+#define DMAMUX_CHCFG2_PTR     ((volatile uint8_t*)DMAMUX_CHCFG2_ADDR)
+#define DMAMUX_CHCFG2         (*(DMAMUX_CHCFG2_PTR))
+#define DMAMUX_CHCFG3_ADDR    (DMAMUX_ADDR + DMAMUX_CHCFG3_OFFSET)
+#define DMAMUX_CHCFG3_PTR     ((volatile uint8_t*)DMAMUX_CHCFG3_ADDR)
+#define DMAMUX_CHCFG3         (*(DMAMUX_CHCFG3_PTR))
+#define DMAMUX_CHCFG4_ADDR    (DMAMUX_ADDR + DMAMUX_CHCFG4_OFFSET)
+#define DMAMUX_CHCFG4_PTR     ((volatile uint8_t*)DMAMUX_CHCFG4_ADDR)
+#define DMAMUX_CHCFG4         (*(DMAMUX_CHCFG4_PTR))
+#define DMAMUX_CHCFG5_ADDR    (DMAMUX_ADDR + DMAMUX_CHCFG5_OFFSET)
+#define DMAMUX_CHCFG5_PTR     ((volatile uint8_t*)DMAMUX_CHCFG5_ADDR)
+#define DMAMUX_CHCFG5         (*(DMAMUX_CHCFG5_PTR))
+#define DMAMUX_CHCFG6_ADDR    (DMAMUX_ADDR + DMAMUX_CHCFG6_OFFSET)
+#define DMAMUX_CHCFG6_PTR     ((volatile uint8_t*)DMAMUX_CHCFG6_ADDR)
+#define DMAMUX_CHCFG6         (*(DMAMUX_CHCFG6_PTR))
+#define DMAMUX_CHCFG7_ADDR    (DMAMUX__ADDR + DMAMUX_CHCFG7_OFFSET)
+#define DMAMUX_CHCFG7_PTR     ((volatile uint8_t*)DMAMUX_CHCFG7_ADDR)
+#define DMAMUX_CHCFG7         (*(DMAMUX_CHCFG7_PTR))
+#define DMAMUX_CHCFG8_ADDR    (DMAMUX_ADDR + DMAMUX_CHCFG8_OFFSET)
+#define DMAMUX_CHCFG8_PTR     ((volatile uint8_t*)DMAMUX_CHCFG8_ADDR)
+#define DMAMUX_CHCFG8         (*(DMAMUX_CHCFG8_PTR))
+#define DMAMUX_CHCFG9_ADDR    (DMAMUX_ADDR + DMAMUX_CHCFG9_OFFSET)
+#define DMAMUX_CHCFG9_PTR     ((volatile uint8_t*)DMAMUX_CHCFG9_ADDR)
+#define DMAMUX_CHCFG9         (*(DMAMUX_CHCFG9_PTR))
+#define DMAMUX_CHCFG10_ADDR   (DMAMUX_ADDR + DMAMUX_CHCFG10_OFFSET)
+#define DMAMUX_CHCFG10_PTR    ((volatile uint8_t*)DMAMUX_CHCFG10_ADDR)
+#define DMAMUX_CHCFG10        (*(DMAMUX_CHCFG10_PTR))
+#define DMAMUX_CHCFG11_ADDR   (DMAMUX_ADDR + DMAMUX_CHCFG11_OFFSET)
+#define DMAMUX_CHCFG11_PTR    ((volatile uint8_t*)DMAMUX_CHCFG11_ADDR)
+#define DMAMUX_CHCFG11        (*(DMAMUX_CHCFG11_PTR))
+#define DMAMUX_CHCFG12_ADDR   (DMAMUX_ADDR + DMAMUX_CHCFG12_OFFSET)
+#define DMAMUX_CHCFG12_PTR    ((volatile uint8_t*)DMAMUX_CHCFG12_ADDR)
+#define DMAMUX_CHCFG12        (*(DMAMUX_CHCFG12_PTR))
+#define DMAMUX_CHCFG13_ADDR   (DMAMUX_ADDR + DMAMUX_CHCFG13_OFFSET)
+#define DMAMUX_CHCFG13_PTR    ((volatile uint8_t*)DMAMUX_CHCFG13_ADDR)
+#define DMAMUX_CHCFG13        (*(DMAMUX_CHCFG13_PTR))
+#define DMAMUX_CHCFG14_ADDR   (DMAMUX_ADDR + DMAMUX_CHCFG14_OFFSET)
+#define DMAMUX_CHCFG14_PTR    ((volatile uint8_t*)DMAMUX_CHCFG14_ADDR)
+#define DMAMUX_CHCFG14        (*(DMAMUX_CHCFG14_PTR))
+#define DMAMUX_CHCFG15_ADDR   (DMAMUX_ADDR + DMAMUX_CHCFG15_OFFSET)
+#define DMAMUX_CHCFG15_PTR    ((volatile uint8_t*)DMAMUX_CHCFG15_ADDR)
+#define DMAMUX_CHCFG15        (*(DMAMUX_CHCFG15_PTR))
+#endif
+
+/*******************************************************************************
+* DMA
+*******************************************************************************/
+#define DMA_ADDR        0x40008000
+#define DMA_CR_OFFSET   0x04
+#define DMA_CERQ_OFFSET 0x1A
+#define DMA_SERQ_OFFSET 0x1B
+#define DMA_INT_OFFSET  0x24
+
+#define DMA_CR_ADDR       (DMA_ADDR + DMA_CR_OFFSET)
+#define DMA_CR_PTR        ((volatile uint32_t*)DMA_CR_ADDR)
+#define DMA_CR            (*(DMA_CR_PTR))
+#define DMA_ES_ADDR       (DMA_ADDR + DMA_ES_OFFSET)
+#define DMA_ES_PTR        ((volatile uint32_t*)DMA_ES_ADDR)
+#define DMA_ES            (*(DMA_ES_PTR))
+#define DMA_ERQ_ADDR      (DMA_ADDR + DMA_ERQ_OFFSET)
+#define DMA_ERQ_PTR       ((volatile uint32_t*)DMA_ERQ_ADDR)
+#define DMA_ERQ           (*(DMA_ERQ_PTR))
+#define DMA_EEI_ADDR      (DMA_ADDR + DMA_EEI_OFFSET)
+#define DMA_EEI_PTR       ((volatile uint32_t*)DMA_EEI_ADDR)
+#define DMA_EEI           (*(DMA_EEI_PTR))
+#define DMA_CEEI_ADDR     (DMA_ADDR + DMA_CEEI_OFFSET)
+#define DMA_CEEI_PTR      ((volatile uint8_t*)DMA_CEEI_ADDR)
+#define DMA_CEEI          (*(DMA_CEEI_PTR))
+#define DMA_SEEI_ADDR     (DMA_ADDR + DMA_SEEI_OFFSET)
+#define DMA_SEEI_PTR      ((volatile uint8_t*)DMA_SEEI_ADDR)
+#define DMA_SEEI          (*(DMA_SEEI_PTR))
+#define DMA_CERQ_ADDR     (DMA_ADDR + DMA_CERQ_OFFSET)
+#define DMA_CERQ_PTR      ((volatile uint8_t*)DMA_CERQ_ADDR)
+#define DMA_CERQ          (*(DMA_CERQ_PTR))
+#define DMA_SERQ_ADDR     (DMA_ADDR + DMA_SERQ_OFFSET)
+#define DMA_SERQ_PTR      ((volatile uint8_t*)DMA_SERQ_ADDR)
+#define DMA_SERQ          (*(DMA_SERQ_PTR))
+#define DMA_CDNE_ADDR     (DMA_ADDR + DMA_CDNE_OFFSET)
+#define DMA_CDNE_PTR      ((volatile uint8_t*)DMA_CDNE_ADDR)
+#define DMA_CDNE          (*(DMA_CDNE_PTR))
+#define DMA_SSRT_ADDR     (DMA_ADDR + DMA_SSRT_OFFSET)
+#define DMA_SSRT_PTR      ((volatile uint8_t*)DMA_SSRT_ADDR)
+#define DMA_SSRT          (*(DMA_SSRT_PTR))
+#define DMA_CERR_ADDR     (DMA_ADDR + DMA_CERR_OFFSET)
+#define DMA_CERR_PTR      ((volatile uint8_t*)DMA_CERR_ADDR)
+#define DMA_CERR          (*(DMA_CERR_PTR))
+#define DMA_CINT_ADDR     (DMA_ADDR + DMA_CINT_OFFSET)
+#define DMA_CINT_PTR      ((volatile uint8_t*)DMA_CINT_ADDR)
+#define DMA_CINT          (*(DMA_CINT_PTR))
+
+#define DMA_INT_ADDR       (DMA_ADDR + DMA_INT_OFFSET)
+#define DMA_INT_PTR        ((volatile uint32_t*)DMA_INT_ADDR)
+#define DMA_INT            (*(DMA_INT_PTR))
+#define DMA_INT_BB_ADDR(a) (BIT_2_BB2_ADDR(DMA_INT_ADDR,(a)))
+#define DMA_INT_BB_PTR(a)  ((volatile uint32_t*)DMA_INT_BB_ADDR((a)))
+#define DMA_INT_BB(a)      (*(DMA_INT_BB_PTR((a))))
+
+
+#define DMA_ERR_ADDR      (DMA_ADDR + DMA_ERR_OFFSET)
+#define DMA_ERR_PTR       ((volatile uint32_t*)DMA_ERR_ADDR)
+#define DMA_ERR           (*(DMA_ERR_PTR))
+#define DMA_HRS_ADDR      (DMA_ADDR + DMA_HRS_OFFSET)
+#define DMA_HRS_PTR       ((volatile uint32_t*)DMA_HRS_ADDR)
+#define DMA_HRS           (*(DMA_HRS_PTR))
+#define DMA_DCHPRI3_ADDR  (DMA_ADDR + DMA_DCHPRI3_OFFSET)
+#define DMA_DCHPRI3_PTR   ((volatile uint8_t*)DMA_DCHPRI3_ADDR)
+#define DMA_DCHPRI3       (*(DMA_DCHPRI3_PTR))
+#define DMA_DCHPRI2_ADDR  (DMA_ADDR + DMA_DCHPRI2_OFFSET)
+#define DMA_DCHPRI2_PTR   ((volatile uint8_t*)DMA_DCHPRI2_ADDR)
+#define DMA_DCHPRI2       (*(DMA_DCHPRI2_PTR))
+#define DMA_DCHPRI1_ADDR  (DMA_ADDR + DMA_DCHPRI1_OFFSET)
+#define DMA_DCHPRI1_PTR   ((volatile uint8_t*)DMA_DCHPRI1_ADDR)
+#define DMA_DCHPRI1       (*(DMA_DCHPRI1_PTR))
+#define DMA_DCHPRI0_ADDR  (DMA_ADDR + DMA_DCHPRI0_OFFSET)
+#define DMA_DCHPRI0_PTR   ((volatile uint8_t*)DMA_DCHPRI0_ADDR)
+#define DMA_DCHPRI0       (*(DMA_DCHPRI0_PTR))
+#define DMA_DCHPRI7_ADDR  (DMA_ADDR + DMA_DCHPRI7_OFFSET)
+#define DMA_DCHPRI7_PTR   ((volatile uint8_t*)DMA_DCHPRI7_ADDR)
+#define DMA_DCHPRI7       (*(DMA_DCHPRI7_PTR))
+#define DMA_DCHPRI6_ADDR  (DMA_ADDR + DMA_DCHPRI6_OFFSET)
+#define DMA_DCHPRI6_PTR   ((volatile uint8_t*)DMA_DCHPRI6_ADDR)
+#define DMA_DCHPRI6       (*(DMA_DCHPRI6_PTR))
+#define DMA_DCHPRI5_ADDR  (DMA_ADDR + DMA_DCHPRI5_OFFSET)
+#define DMA_DCHPRI5_PTR   ((volatile uint8_t*)DMA_DCHPRI5_ADDR)
+#define DMA_DCHPRI5       (*(DMA_DCHPRI5_PTR))
+#define DMA_DCHPRI4_ADDR  (DMA_ADDR + DMA_DCHPRI4_OFFSET)
+#define DMA_DCHPRI4_PTR   ((volatile uint8_t*)DMA_DCHPRI4_ADDR)
+#define DMA_DCHPRI4       (*(DMA_DCHPRI4_PTR))
+#define DMA_DCHPRI11_ADDR (DMA_ADDR + DMA_DCHPRI11_OFFSET)
+#define DMA_DCHPRI11_PTR  ((volatile uint8_t*)DMA_DCHPRI11_ADDR)
+#define DMA_DCHPRI11      (*(DMA_DCHPRI11_PTR))
+#define DMA_DCHPRI10_ADDR (DMA_ADDR + DMA_DCHPRI10_OFFSET)
+#define DMA_DCHPRI10_PTR  ((volatile uint8_t*)DMA_DCHPRI10_ADDR)
+#define DMA_DCHPRI10      (*(DMA_DCHPRI10_PTR))
+#define DMA_DCHPRI9_ADDR  (DMA_ADDR + DMA_DCHPRI9_OFFSET)
+#define DMA_DCHPRI9_PTR   ((volatile uint8_t*)DMA_DCHPRI9_ADDR)
+#define DMA_DCHPRI9       (*(DMA_DCHPRI9_PTR))
+#define DMA_DCHPRI8_ADDR  (DMA_ADDR + DMA_DCHPRI8_OFFSET)
+#define DMA_DCHPRI8_PTR   ((volatile uint8_t*)DMA_DCHPRI8_ADDR)
+#define DMA_DCHPRI8       (*(DMA_DCHPRI8_PTR))
+#define DMA_DCHPRI15_ADDR (DMA_ADDR + DMA_DCHPRI15_OFFSET)
+#define DMA_DCHPRI15_PTR  ((volatile uint8_t*)DMA_DCHPRI15_ADDR)
+#define DMA_DCHPRI15      (*(DMA_DCHPRI15_PTR))
+#define DMA_DCHPRI14_ADDR (DMA_ADDR + DMA_DCHPRI14_OFFSET)
+#define DMA_DCHPRI14_PTR  ((volatile uint8_t*)DMA_DCHPRI14_ADDR)
+#define DMA_DCHPRI14      (*(DMA_DCHPRI14_PTR))
+#define DMA_DCHPRI13_ADDR (DMA_ADDR + DMA_DCHPRI13_OFFSET)
+#define DMA_DCHPRI13_PTR  ((volatile uint8_t*)DMA_DCHPRI13_ADDR)
+#define DMA_DCHPRI13      (*(DMA_DCHPRI13_PTR))
+#define DMA_DCHPRI12_ADDR (DMA_ADDR + DMA_DCHPRI12_OFFSET)
+#define DMA_DCHPRI12_PTR  ((volatile uint8_t*)DMA_DCHPRI12_ADDR)
+#define DMA_DCHPRI12      (*(DMA_DCHPRI12_PTR))
+
+#define DMA_CHAN0     0U
+#define DMA_CHAN1     1U
+#define DMA_CHAN2     2U
+#define DMA_CHAN3     3U
+#define DMA_CHAN4     4U
+#define DMA_CHAN5     5U
+#define DMA_CHAN6     6U
+#define DMA_CHAN7     7U
+#define DMA_CHAN8     8U
+#define DMA_CHAN9     9U
+#define DMA_CHAN10    10U
+#define DMA_CHAN11    11U
+#define DMA_CHAN12    12U
+#define DMA_CHAN13    13U
+#define DMA_CHAN14    14U
+#define DMA_CHAN15    15U
+
+#define DMA_SADDR_OFFSET    (DMA_ADDR + 0x1000)
+#define DMA_SOFF_OFFSET     (DMA_ADDR + 0x1004)
+#define DMA_ATTR_OFFSET     (DMA_ADDR + 0x1006)
+#define DMA_NBYTES_OFFSET   (DMA_ADDR + 0x1008)
+#define DMA_SLAST_OFFSET    (DMA_ADDR + 0x100C)
+#define DMA_DADDR_OFFSET    (DMA_ADDR + 0x1010)
+#define DMA_DOFF_OFFSET     (DMA_ADDR + 0x1014)
+#define DMA_CITER_OFFSET    (DMA_ADDR + 0x1016)
+#define DMA_DLASTSGA_OFFSET (DMA_ADDR + 0x1018)
+#define DMA_CSR_OFFSET      (DMA_ADDR + 0x101C)
+#define DMA_BITER_OFFSET    (DMA_ADDR + 0x101E)
+
+#define DMA_SADDR_ADDR(a)    (((a)*32U) + DMA_SADDR_OFFSET)
+#define DMA_SADDR_PTR(a)     ((volatile uint32_t*)DMA_SADDR_ADDR((a)))
+#define DMA_SADDR(a)         (*(DMA_SADDR_PTR((a))))
+
+#define DMA_SOFF_ADDR(a)     (((a)*32U) + DMA_SOFF_OFFSET)
+#define DMA_SOFF_PTR(a)      ((volatile uint16_t*)DMA_SOFF_ADDR((a)))
+#define DMA_SOFF(a)          (*(DMA_SOFF_PTR((a))))
+
+#define DMA_ATTR_ADDR(a)     (((a)*32U) + DMA_ATTR_OFFSET)
+#define DMA_ATTR_PTR(a)      ((volatile uint16_t*)DMA_ATTR_ADDR((a)))
+#define DMA_ATTR(a)          (*(DMA_ATTR_PTR((a))))
+
+#define DMA_NBYTES_ADDR(a)     (((a)*32U) + DMA_NBYTES_OFFSET)
+#define DMA_NBYTES_PTR(a)      ((volatile uint32_t*)DMA_NBYTES_ADDR((a)))
+#define DMA_NBYTES(a)          (*(DMA_NBYTES_PTR((a))))
+
+#define DMA_SLAST_ADDR(a)    (((a)*32U) + DMA_SLAST_OFFSET)
+#define DMA_SLAST_PTR(a)     ((volatile uint32_t*)DMA_SLAST_ADDR((a)))
+#define DMA_SLAST(a)         (*(DMA_SLAST_PTR((a))))
+
+#define DMA_DADDR_ADDR(a)    (((a)*32U) + DMA_DADDR_OFFSET)
+#define DMA_DADDR_PTR(a)     ((volatile uint32_t*)DMA_DADDR_ADDR((a)))
+#define DMA_DADDR(a)         (*(DMA_DADDR_PTR((a))))
+
+#define DMA_DOFF_ADDR(a)     (((a)*32U) + DMA_DOFF_OFFSET)
+#define DMA_DOFF_PTR(a)      ((volatile uint16_t*)DMA_DOFF_ADDR((a)))
+#define DMA_DOFF(a)          (*(DMA_DOFF_PTR((a))))
+
+#define DMA_CITER_ADDR(a)  (((a)*32U) + DMA_CITER_OFFSET)
+#define DMA_CITER_PTR(a)   ((volatile uint16_t*)DMA_CITER_ADDR((a)))
+#define DMA_CITER(a)       (*(DMA_CITER_PTR((a))))
+
+#define DMA_DLASTSGA_ADDR(a) (((a)*32U) + DMA_DLASTSGA_OFFSET)
+#define DMA_DLASTSGA_PTR(a)  ((volatile uint32_t*)DMA_DLASTSGA_ADDR((a)))
+#define DMA_DLASTSGA(a)      (*(DMA_DLASTSGA_PTR((a))))
+
+#define DMA_CSR_DONE_BIT        7U
+#define DMA_CSR_ACTIVE_BIT      6U
+#define DMA_CSR_DREQ_BIT        3U
+#define DMA_CSR_INTMAJ_BIT      1U
+
+#define DMA_CSR_ADDR(a)      (((a)*32U) + DMA_CSR_OFFSET)
+#define DMA_CSR_PTR(a)       ((volatile uint16_t*)DMA_CSR_ADDR((a)))
+#define DMA_CSR(a)           (*(DMA_CSR_PTR((a))))
+
+#define DMA_CSR_BB_ADDR(a,b)  (BIT_2_BB2_ADDR(DMA_CSR_ADDR(a),(b)))
+#define DMA_CSR_BB_PTR(a,b)   ((volatile uint32_t*)DMA_CSR_BB_ADDR((a),(b)))
+#define DMA_CSR_BB(a,b)       (*(DMA_CSR_BB_PTR((a),(b))))
+
+#define DMA_BITER_ADDR(a) (((a)*32U) + DMA_BITER_OFFSET)
+#define DMA_BITER_PTR(a)  ((volatile uint16_t*)DMA_BITER_ADDR((a)))
+#define DMA_BITER(a)      (*(DMA_BITER_PTR((a))))
 
 #endif

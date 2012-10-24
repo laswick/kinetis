@@ -30,7 +30,8 @@
 #include "globalDefs.h"
 
 /* My name, in a character array. I like seeing my name. */
-char shaun[] = { 'S','h','a','u','n' };
+char shaun[]  = { 'S','h','a','u','n' };
+char buff[10] = { 0 };
 
 /* PmodCls Serial Commands */
 char scrCmdClear[]      = {0x1B, '[','0','j' };
@@ -42,6 +43,8 @@ char scrCmdGotoLine2[]  = {0x1B, '[','1',';','0','0','H' };
 char scrCmdScrollL1[]   = {0x1B, '[','0','1','@' };
 char scrCmdScrollR1[]   = {0x1B, '[','0','1','A' };
 char scrCmdDispEnBklghtOn[]  = {0x1B, '[','3','e' }; /* Screwed up */
+char methodStrings[NUM_SPI_METHODS][20] = { "Polled", "Interrupts", "DMA" };
+
 
 static void delay(void)
 {
@@ -52,106 +55,68 @@ static void delay(void)
 
 int main(void)
 {
-    int fd;
+    int spiFd0,spiFd1,spiFd2;
+    int uartFd;
     int i;
-    char str[10];
-    spiWriteRead_t wr;
+    int tests[NUM_SPI_METHODS] = { FALSE };
+
+    /* Configure the clock for the uarts */
+    clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_4, DIVIDE_BY_4);
+    clockConfigMcgOut(MCG_PLL_EXTERNAL_100MHZ);
+
+    /* Install Standard I/O streams, then open &
+     * configure UART3 */
+    uart_install();
+    if( fdevopen(stdin,  "uart3", 0, 0) == -1) assert(0);
+    if( fdevopen(stdout, "uart3", 0, 0) == -1) assert(0);
+    if( fdevopen(stderr, "uart3", 0, 0) == -1) assert(0);
+    uartFd = open("uart3", 0, 0);
+    assert(uartFd != -1);
+    ioctl(uartFd, IO_IOCTL_UART_BAUD_SET, 115200);
+    printf("\r\n");
+    printf("\r\n = SPI TEST APPLICATION = \r\n");
 
     /* Install spi into the device table before using it */
     spi_install();
+    spiFd0 = open("spi0", 0, 0);
+    assert(spiFd0 != -1);
+#if 0
+    spiFd1 = open("spi1", 0, 0);
+    assert(spiFd1 != -1);
+    spiFd0 = open("spi2", 0, 0);
+    assert(spiFd0 != -1);
+#endif
 
-    /* OPEN the spi2 device. Check to make sure you are given a 'good'
-     * file descriptor, ie. not -1. The file descriptor is required
-     * for any future POSIX system call. */
-    fd = open("spi2", 0, 0);
-    if (fd==-1) {
-        assert(0);
+    ioctl(spiFd0, IO_IOCTL_SPI_SET_PORT_PCRS, 0);
+    ioctl(spiFd0, IO_IOCTL_SPI_SET_BAUD, SPI_BAUDRATE_CLKDIV_1024);
+    ioctl(spiFd0, IO_IOCTL_SPI_SET_SCLK_MODE, SPI_SCLK_MODE_0);
+    ioctl(spiFd0, IO_IOCTL_SPI_SET_FMSZ, 8);
+    ioctl(spiFd0, IO_IOCTL_SPI_SET_OPTS, SPI_OPTS_MASTER);
+    ioctl(spiFd0, IO_IOCTL_SPI_SET_CS, SPI_CS_0);
+    ioctl(spiFd0, IO_IOCTL_SPI_SET_CS_INACT_STATE, SPI_CS_0_INACT_HIGH);
+
+    /* Test out all the differnt methods */
+    for(i = SPI_METHOD_POLLED; i < NUM_SPI_METHODS; i++) {
+        ioctl(spiFd0, IO_IOCTL_SPI_SET_METHOD, i);
+        write(spiFd0, shaun, sizeof(shaun));
+        delay();
+        delay();
+        read(spiFd0, buff, sizeof(shaun));
+        if (memcmp((void*)shaun, (void*)buff, sizeof(shaun)) == 0)
+            tests[i] = TRUE;
+        memset(buff, 0, sizeof(buff));
     }
 
-    /* Configure spi2 using IOCTL. There are many ways to use IOCTL
-     * commands. You can pass in numbers, flags or even pointers
-     * using the flag argument within ioctl.  */
-    ioctl(fd, IO_IOCTL_SPI_SET_PORT_PCRS, 0);
-    ioctl(fd, IO_IOCTL_SPI_SET_BAUD, SPI_BAUDRATE_CLKDIV_256);
-    ioctl(fd, IO_IOCTL_SPI_SET_SCLK_MODE, SPI_SCLK_MODE_0);
-    ioctl(fd, IO_IOCTL_SPI_SET_FMSZ, 8);
-    ioctl(fd, IO_IOCTL_SPI_SET_OPTS, SPI_OPTS_MASTER);
-    ioctl(fd, IO_IOCTL_SPI_SET_CS, SPI_CS_0);
-    ioctl(fd, IO_IOCTL_SPI_SET_CS_INACT_STATE, SPI_CS_0_INACT_HIGH);
-
-    /* WRITE to spi2. Not much to say here, just give a buffer
-     * pointer and a length. Should check to see how many bytes
-     * were actually written, but I forgot to do that here :D */
-    write(fd, scrCmdReset, sizeof(scrCmdReset));
-    delay();/* Device needs an unknown amount of time to reset .. */
-    write(fd, scrCmdDispMode40, sizeof(scrCmdDispMode40));
-    delay();
-    write(fd, scrCmdDispEnBklghtOn, sizeof(scrCmdDispEnBklghtOn));
-    delay();
-    write(fd, scrCmdClear, sizeof(scrCmdClear));
-    delay();
-    ioctl(fd, IO_IOCTL_SPI_FLUSH_RX_FIFO, 0);
-    delay();
-
-    /* Use IOCTL for a synchronus write/read since the standard
-     * system calls are not meant to do this. Notice the pointer
-     * to a structure given as the flag argument.
-     * Note: This example expects the MISO & MOSI to be connected
-     * together forming a loopback. */
-    wr.out = (uint8_t *) shaun;
-    wr.in  = (uint8_t *) str;
-    wr.len = sizeof(shaun);
-    ioctl(fd, IO_IOCTL_SPI_WRITE_READ, (int) &wr);
-    str[sizeof(shaun)] = '\0';
-    if ( strcmp(shaun,str) != 0 ) {
-          strcpy(shaun, "ERROR");
+    for(i = SPI_METHOD_POLLED; i < NUM_SPI_METHODS; i++) {
+        printf("SPI Test: %13s:", methodStrings[i]);
+        if (tests[i])
+            printf("PASS\r\n");
+        else
+            printf("FAIL\r\n");
     }
 
-    write(fd, scrCmdReset, sizeof(scrCmdReset));
-    delay();/* Device needs an unknown amount of time to reset .. */
-    write(fd, scrCmdDispMode40, sizeof(scrCmdDispMode40));
-    delay();
-    write(fd, scrCmdDispEnBklghtOn, sizeof(scrCmdDispEnBklghtOn));
-    delay();
-    for (;;) {
-        write(fd, scrCmdClear, sizeof(scrCmdClear));
-        delay();
-        delay();
-        delay();
-        write(fd, scrCmdGotoLine1, sizeof(scrCmdGotoLine1));
-        write(fd, shaun, sizeof(shaun));
-        write(fd, " ", 1);
-        write(fd, shaun, sizeof(shaun));
-        write(fd, " ", 1);
-        write(fd, shaun, sizeof(shaun));
-        write(fd, " ", 1);
-        write(fd, shaun, sizeof(shaun));
-        write(fd, " ", 1);
-        write(fd, scrCmdGotoLine2, sizeof(scrCmdGotoLine2));
-        write(fd, shaun, sizeof(shaun));
-        write(fd, " ", 1);
-        write(fd, shaun, sizeof(shaun));
-        write(fd, " ", 1);
-        write(fd, shaun, sizeof(shaun));
-        write(fd, " ", 1);
-        write(fd, shaun, sizeof(shaun));
-        write(fd, " ", 1);
-        delay();
-        delay();
-        delay();
-        for( i = 0; i < 10;i++) {
-            write(fd, scrCmdScrollL1, sizeof(scrCmdScrollL1));
-            delay();
-            delay();
-        }
-        for( i = 0; i < 10;i++) {
-            write(fd, scrCmdScrollR1, sizeof(scrCmdScrollR1));
-            delay();
-            delay();
-        }
+    while(1){
     }
 
-    /* Should never happen */
-    close(fd);
     return 0;
 }

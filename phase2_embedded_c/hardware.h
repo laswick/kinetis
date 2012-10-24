@@ -120,7 +120,11 @@ enum {
     IO_IOCTL_SPI_SET_OPTS,             /* */
     IO_IOCTL_SPI_SET_CS,               /* */
     IO_IOCTL_SPI_SET_CS_INACT_STATE,   /* */
+    IO_IOCTL_SPI_SET_METHOD,           /* */
     IO_IOCTL_SPI_FLUSH_RX_FIFO,        /* */
+    IO_IOCTL_SPI_FLUSH_TX_FIFO,        /* */
+    IO_IOCTL_SPI_FLUSH_RX_BUFF,        /* */
+    IO_IOCTL_SPI_FLUSH_TX_BUFF,        /* */
     IO_IOCTL_SPI_WRITE_READ,           /* */
     MAX_IO_IOCTRL_SPI_CMDS,            /* Name of this enum is pending... */
 };
@@ -167,6 +171,13 @@ typedef enum {
 
                                            /* Baud rate selection for the SPI */
 typedef enum {
+    SPI_METHOD_POLLED = 0,
+    SPI_METHOD_INTERRUPT,
+    SPI_METHOD_DMA,
+    NUM_SPI_METHODS,
+} spiMethods_t;
+
+typedef enum {
     SPI_BAUDRATE_CLKDIV_4,
     SPI_BAUDRATE_CLKDIV_8,
     SPI_BAUDRATE_CLKDIV_12,
@@ -184,7 +195,7 @@ typedef enum {
     SPI_BAUDRATE_CLKDIV_32768,
     SPI_BAUDRATE_CLKDIV_65536,
     NUM_SPI_BAUDRATES,
-} spiBaudRate_t;
+} spiBaudrates_t;
 
 typedef struct spiWriteRead_s {
     uint8_t *out;
@@ -198,6 +209,8 @@ typedef struct spiWriteRead_s {
 #define DEVOPTAB_SPI0_STR "spi0"
 #define DEVOPTAB_SPI1_STR "spi1"
 #define DEVOPTAB_SPI2_STR "spi2"
+
+#define SPI_FIFO_SIZE   4   /*Both Rx & Tx */
 
 int  spi_install (void);
 
@@ -264,37 +277,30 @@ typedef struct tsiConfigure_s {
 
                                   /* IO_IOCTL_ commands */
 enum {
-    IO_IOCTL_CRC_SET_DWW,       /* Set the CRC Data Write Width */
-    IO_IOCTL_CRC_GET_DWW,       /* Get the CRC Data Write Width */
+    IO_IOCTL_CRC_SET_DWW,         /* Set the CRC Data Write Width */
     IO_IOCTL_CRC_SET_TOT,         /* Set Type of Transpose */
-    IO_IOCTL_CRC_GET_TOT,         /* Get Type of Transpose */
     IO_IOCTL_CRC_SET_TOTR,        /* Set Type of Transpose for Read */
-    IO_IOCTL_CRC_GET_TOTR,        /* Get Type of Transpose for Read */
     IO_IOCTL_CRC_SET_FXOR,        /* Set Compliment Read mode (XOR'd CRC) */
-    IO_IOCTL_CRC_GET_FXOR,        /* Get Compliment Read mode (XOR'd CRC) */
     IO_IOCTL_CRC_SET_SEED,        /* Set the CRC Seed */
-    IO_IOCTL_CRC_GET_SEED,        /* Get the CRC Seed */
     IO_IOCTL_CRC_SET_POLY,        /* Set the CRC Polynomial */
-    IO_IOCTL_CRC_GET_POLY,        /* Get the CRC Polynomial */
-    IO_IOCTL_CRC_SET_PRO_WIDTH,       /* Set the CRC Protocol Width */
-    IO_IOCTL_CRC_GET_PRO_WIDTH,       /* Get the CRC Protocol Width */
+    IO_IOCTL_CRC_SET_TYPE,        /* Set the CRC Type, 16/32 bit */
     MAX_IO_IOCTRL_CRC_CMDS
 };
                         /* DWW - CRC DATA WRITE WIDTH */
 typedef enum {
-    CRC_DWW_BYTE   = 0, /* CRC data writes are 1 byte wide
-                           -CRC16/32 modes, data must be 8bit aligned */
-    CRC_DWW_2BYTE = 1, /* CRC data writes are 2 bytes wide
-                           -CRC16/32 modes, data must be 16bit aligned */
-    CRC_DWW_4BYTE = 2, /* CRC data writes are 4 bytes wide
-                           -CRC32 mode only, data must be 32bit aligned */
+    CRC_DWW_BYTE   = 0, /* CRC data writes are 1 byte wide               */
+                        /*  - CRC16/32 modes, data must be 8bit aligned  */
+    CRC_DWW_2BYTE = 1,  /* CRC data writes are 2 bytes wide              */
+                        /*  - CRC16/32 modes, data must be 16bit aligned */
+    CRC_DWW_4BYTE = 2,  /* CRC data writes are 4 bytes wide              */
+                        /*  -CRC32 mode only, data must be 32bit aligned */
     MAX_CRC_DWW,
 } crcDww_t;
 
                                 /* TOT - CRC Type of Transposition */
 typedef enum {
     CRC_TOT_NONE           = 0, /* No transposition */
-    CRC_TOT_BITS           = 1, /* Only Bits in bytes are transposed */
+    CRC_TOT_BITS_IN_BYTES  = 1, /* Only Bits in bytes are transposed */
     CRC_TOT_BITS_AND_BYTES = 2, /* Bits in bytes and bytes are transposed */
     CRC_TOT_BYTES          = 3, /* Only Bytes are transposed */
     MAX_CRC_TOT,
@@ -303,9 +309,9 @@ typedef enum {
                                  /* TOTR - CRC Type of Transposition for Read*/
 typedef enum {
     CRC_TOTR_NONE           = 0, /* No transposition */
-    CRC_TOTR_BITS           = 1, /* Only Bits in bytes are transposed */
+    CRC_TOTR_BITS_IN_BYTES  = 1, /* Only Bits in bytes are transposed */
     CRC_TOTR_BITS_AND_BYTES = 2, /* Bits in bytes and bytes are transposed */
-    CRC_TOTR_ONLY_BYTES     = 3, /* Only Bytes are transposed */
+    CRC_TOTR_BYTES     = 3, /* Only Bytes are transposed */
     MAX_CRC_TOTR,
 } crcTotr_t;
 
@@ -316,13 +322,14 @@ typedef enum {
     MAX_CRC_FXOR,
 } crcFxor_t;
 
-
+                                        /* Common CRC Polynomial */
 typedef enum {
     CRC_POLY_CRC32      = 0x04C11DB7,
     CRC_POLY_CRC16      = 0x8005,
     CRC_POLY_CRC16CITT  = 0x1021,
 } crcPoly_t;
 
+                                            /* Common CRC seeds */
 typedef enum {
     CRC_SEED_CRC32            = 0xFFFFFFFF,
     CRC_SEED_CRC16            = 0x0000,
@@ -331,12 +338,12 @@ typedef enum {
     CRC_SEED_CRC16CITT_XMODEM = 0x0000,
 } crcSeed_t;
 
-                           /* WIDTH - CRC Protocol Width*/
+                           /* CRC Protocol Width  */
 typedef enum {
-    CRC_WIDTH_16      = 0, /* 16-bit CRC Checksum */
-    CRC_WIDTH_32      = 1, /* 32-bit CRC Checksum */
-    MAX_CRC_WIDTH,
-} crcWidth_t;
+    CRC_TYPE_16      = 0, /* 16-bit CRC Checksum */
+    CRC_TYPE_32      = 1, /* 32-bit CRC Checksum */
+    MAX_CRC_TYPES,
+} crcType_t;
 
 #define DEVOPTAB_CRC_STR    "crc"
 
