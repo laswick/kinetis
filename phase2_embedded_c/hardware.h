@@ -49,6 +49,7 @@ enum {                                               /* Major Device Numbers */
     DEV_MAJ_TSI,
     DEV_MAJ_CRC,
     DEV_MAJ_ADC,
+    DEV_MAJ_SDHC,
 };
 
 typedef struct devoptab_s {                       /* Device Operations Table */
@@ -213,6 +214,62 @@ typedef struct spiWriteRead_s {
 #define SPI_FIFO_SIZE   4   /*Both Rx & Tx */
 
 int  spi_install (void);
+
+/* SDHC  ***********************************************************************/
+
+int  sdhc_install (void);
+
+enum {
+    IO_IOCTL_SDHC_SET_READ_BLOCK,      /* */
+    IO_IOCTL_SDHC_SET_WRITE_BLOCK,     /* */
+    IO_IOCTL_SDHC_ERASE_BLOCK,         /* */
+    IO_IOCTL_SDHC_GET_CID,             /* */
+    IO_IOCTL_SDHC_GET_CSD              /* */
+};
+
+typedef union {
+    struct {
+        uint8_t unused1;
+        uint8_t mfgId;
+        uint8_t unused2[7];
+        uint8_t rev;
+        uint8_t sn[4];
+        uint8_t mfgDate[2];
+    };
+    uint32_t raw[4];
+} cidReg_t;
+
+
+typedef struct {
+    uint32_t cmdIndx;
+    uint32_t cmdType;
+    uint32_t rspType;
+    uint32_t xferType;
+    uint32_t arg;
+    uint32_t read;
+    uint32_t nBlks;
+    uint32_t resp[4];
+} sdhcCmd_t;
+
+/* 
+ * Command Types 
+ */
+enum {
+    SDHC_CMD_TYPE_NORMAL,
+    SDHC_CMD_TYPE_SUSPEND,
+    SDHC_CMD_TYPE_RESUME,
+    SDHC_CMD_TYPE_ABORT,
+};
+
+/*
+ * Response Types
+ */
+enum {
+   SDHC_RSP_TYPE_NONE,
+   SDHC_RSP_TYPE_LEN_136,
+   SDHC_RSP_TYPE_LEN_48,
+   SDHC_RSP_TYPE_LEN_48_BUSY,
+};
 
 /* FLASH **********************************************************************/
 
@@ -822,7 +879,6 @@ enum {
     IO_IOCTL_ADC1_CHANNEL_FLAGS_VREFL           = 30,
     IO_IOCTL_ADC1_CHANNEL_FLAGS_MODULE_DISABLED = 31,
 };
-
 
 /******************************************************************************/
 

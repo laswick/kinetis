@@ -337,6 +337,7 @@ enum {
 
 #define SIM_SCGC3_SPI2_ENABLE  BIT_12
 #define SIM_SCGC3_ADC1_ENABLE  BIT_27
+#define SIM_SCGC3_SDHC_ENABLE  BIT_17
 
 /********** SIM_SCGC4 **********/
 #define SIM_SCGC4_ADDR  0x40048034
@@ -1328,6 +1329,271 @@ typedef enum {
 #define PIN_PCS0     3
 #define NUM_PINS     4
 #endif
+
+/*******************************************************************************
+* SDHC 
+*******************************************************************************/
+#define SDHC_BASE_ADDR 0x400B1000
+
+#define SDHC_DSADDR_REG       (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x00))
+#define SDHC_BLKATTR_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x04))
+#define SDHC_CMDARG_REG       (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x08))
+#define SDHC_XFERTYP_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x0C))
+#define SDHC_CMDRSP_REG       (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x10))
+#define SDHC_CMDRSP_REG_0     (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x10))
+#define SDHC_CMDRSP_REG_1     (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x14))
+#define SDHC_CMDRSP_REG_2     (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x18))
+#define SDHC_CMDRSP_REG_3     (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x1C))
+#define SDHC_DATPORT_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x20))
+#define SDHC_PRSSTAT_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x24))
+#define SDHC_PROCTL_REG       (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x28))
+#define SDHC_SYSCTL_REG       (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x2C))
+#define SDHC_IRQSTAT_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x30))
+#define SDHC_IRQSTATEN_REG    (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x34))
+#define SDHC_IRQSIGEN_REG     (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x38))
+#define SDHC_AC12ERR_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x3C))
+#define SDHC_HTCAPBLT_REG     (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x40))
+#define SDHC_WML_REG          (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x44))
+#define SDHC_FEVT_REG         (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x50))
+#define SDHC_ADMAES_REG       (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x54))
+#define SDHC_ADSADDR_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0x58))
+#define SDHC_VENDOR_REG       (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0xC0))
+#define SDHC_MMCBOOT_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0xC4))
+#define SDHC_HOSTVER_REG      (*(volatile uint32_t *) (SDHC_BASE_ADDR + 0xFC))
+
+/* PROCTL Bit Fields */
+enum {
+    SDHC_PROCTL_LCTL_MASK     = 1 << 0,
+    SDHC_PROCTL_LCTL_SHIFT    = 0,
+    SDHC_PROCTL_DTW_MASK      = 3 << 1,
+    SDHC_PROCTL_DTW_SHIFT     = 1,
+    SDHC_PROCTL_D3CD_MASK     = 1 << 3,
+    SDHC_PROCTL_D3CD_SHIFT    = 3,
+    SDHC_PROCTL_EMODE_MASK    = 3 << 4,
+    SDHC_PROCTL_EMODE_SHIFT   = 4,
+    SDHC_PROCTL_CDTL_MASK     = 1 << 6,
+    SDHC_PROCTL_CDTL_SHIFT    = 6,
+    SDHC_PROCTL_CDSS_MASK     = 1 << 7,
+    SDHC_PROCTL_CDSS_SHIFT    = 7,
+    SDHC_PROCTL_DMAS_MASK     = 3 << 8,
+    SDHC_PROCTL_DMAS_SHIFT    = 8,
+    SDHC_PROCTL_SABGREQ_MASK  = 1 << 16,
+    SDHC_PROCTL_SABGREQ_SHIFT = 16,
+    SDHC_PROCTL_CREQ_MASK     = 1 << 17,
+    SDHC_PROCTL_CREQ_SHIFT    = 17,
+    SDHC_PROCTL_RWCTL_MASK    = 1 << 18,
+    SDHC_PROCTL_RWCTL_SHIFT   = 18,
+    SDHC_PROCTL_IABG_MASK     = 1 << 19,
+    SDHC_PROCTL_IABG_SHIFT    = 19,
+    SDHC_PROCTL_WECINT_MASK   = 1 << 24,
+    SDHC_PROCTL_WECINT_SHIFT  = 24,
+    SDHC_PROCTL_WECINS_MASK   = 1 << 25,
+    SDHC_PROCTL_WECINS_SHIFT  = 25,
+    SDHC_PROCTL_WECRM_MASK    = 1 << 26,
+    SDHC_PROCTL_WECRM_SHIFT   = 26,
+};
+
+/* PRSSTAT Bit Fields */
+enum {
+    SDHC_PRSSTAT_CIHB_MASK     = 1 << 0,
+    SDHC_PRSSTAT_CIHB_SHIFT    = 0,
+    SDHC_PRSSTAT_CDIHB_MASK    = 1 << 1,
+    SDHC_PRSSTAT_CDIHB_SHIFT   = 1,
+    SDHC_PRSSTAT_DLA_MASK      = 1 << 2,
+    SDHC_PRSSTAT_DLA_SHIFT     = 2,
+    SDHC_PRSSTAT_SDSTB_MASK    = 1 << 3,
+    SDHC_PRSSTAT_SDSTB_SHIFT   = 3,
+    SDHC_PRSSTAT_IPGOFF_MASK   = 1 << 4,
+    SDHC_PRSSTAT_IPGOFF_SHIFT  = 4,
+    SDHC_PRSSTAT_HCKOFF_MASK   = 1 << 5,
+    SDHC_PRSSTAT_HCKOFF_SHIFT  = 5,
+    SDHC_PRSSTAT_PEROFF_MASK   = 1 << 6,
+    SDHC_PRSSTAT_PEROFF_SHIFT  = 6,
+    SDHC_PRSSTAT_SDOFF_MASK    = 1 << 7,
+    SDHC_PRSSTAT_SDOFF_SHIFT   = 7,
+    SDHC_PRSSTAT_WTA_MASK      = 1 << 8,
+    SDHC_PRSSTAT_WTA_SHIFT     = 8,
+    SDHC_PRSSTAT_RTA_MASK      = 1 << 9,
+    SDHC_PRSSTAT_RTA_SHIFT     = 9,
+    SDHC_PRSSTAT_BWEN_MASK     = 1 << 10,
+    SDHC_PRSSTAT_BWEN_SHIFT    = 10,
+    SDHC_PRSSTAT_BREN_MASK     = 1 << 11,
+    SDHC_PRSSTAT_BREN_SHIFT    = 11,
+    SDHC_PRSSTAT_CINS_MASK     = 1 << 16,
+    SDHC_PRSSTAT_CINS_SHIFT    = 16,
+    SDHC_PRSSTAT_CLSL_MASK     = 1 << 23,
+    SDHC_PRSSTAT_CLSL_SHIFT    = 23,
+    SDHC_PRSSTAT_DLSL_MASK     = 0xFF << 24,
+    SDHC_PRSSTAT_DLSL_SHIFT    = 24,
+};
+
+enum {
+    SDHC_XFERTYP_DMAEN_MASK    = 1 << 0,
+    SDHC_XFERTYP_DMAEN_SHIFT   = 0,
+    SDHC_XFERTYP_BCEN_MASK     = 1 << 1,
+    SDHC_XFERTYP_BCEN_SHIFT    = 1,
+    SDHC_XFERTYP_AC12EN_MASK   = 1 << 2,
+    SDHC_XFERTYP_AC12EN_SHIFT  = 2,
+    SDHC_XFERTYP_DTDSEL_MASK   = 1 << 4,
+    SDHC_XFERTYP_DTDSEL_SHIFT  = 4,
+    SDHC_XFERTYP_MSBSEL_MASK   = 1 << 5,
+    SDHC_XFERTYP_MSBSEL_SHIFT  = 5,
+    SDHC_XFERTYP_RSPTYP_MASK   = 3 << 16,
+    SDHC_XFERTYP_RSPTYP_SHIFT  = 16,
+    SDHC_XFERTYP_CCCEN_MASK    = 1 << 19,
+    SDHC_XFERTYP_CCCEN_SHIFT   = 19,
+    SDHC_XFERTYP_CICEN_MASK    = 1 << 20,
+    SDHC_XFERTYP_CICEN_SHIFT   = 20,
+    SDHC_XFERTYP_DPSEL_MASK    = 1 << 21,
+    SDHC_XFERTYP_DPSEL_SHIFT   = 21,
+    SDHC_XFERTYP_CMDTYP_MASK   = 3 << 22,
+    SDHC_XFERTYP_CMDTYP_SHIFT  = 22,
+    SDHC_XFERTYP_CMDINX_MASK   = 0x3F << 24,
+    SDHC_XFERTYP_CMDINX_SHIFT  = 24,
+};
+
+/* CMDARG Bit Fields */
+enum {
+    SDHC_CMDARG_CMDARG_MASK    = 0xFFFFFFFF,
+    SDHC_CMDARG_CMDARG_SHIFT   = 0,
+};
+
+/* CMDRSP Bit Fields */
+enum {
+    SDHC_CMDRSP_CMDRSP0_MASK   = 0xFFFFFFFF,
+    SDHC_CMDRSP_CMDRSP0_SHIFT  = 0,
+    SDHC_CMDRSP_CMDRSP1_MASK   = 0xFFFFFFFF,
+    SDHC_CMDRSP_CMDRSP1_SHIFT  = 0,
+    SDHC_CMDRSP_CMDRSP2_MASK   = 0xFFFFFFFF,
+    SDHC_CMDRSP_CMDRSP2_SHIFT  = 0,
+    SDHC_CMDRSP_CMDRSP3_MASK   = 0xFFFFFFFF,
+    SDHC_CMDRSP_CMDRSP3_SHIFT  = 0,
+};
+
+/* WML Bit Fields */
+enum {
+    SDHC_WML_RDWML_MASK        = 0xFF,
+    SDHC_WML_RDWML_SHIFT       = 0,
+    SDHC_WML_WRWML_MASK        = 0xFF0000,
+    SDHC_WML_WRWML_SHIFT       = 16,
+    SDHC_WML_WRBRSTLEN_MASK    = 0x1F000000,
+    SDHC_WML_WRBRSTLEN_SHIFT   = 24,
+};
+
+
+enum {
+    SDHC_IRQSTAT_CC_MASK          = 1 << 0,
+    SDHC_IRQSTAT_CC_SHIFT         = 0,
+    SDHC_IRQSTAT_TC_MASK          = 1 << 1,
+    SDHC_IRQSTAT_TC_SHIFT         = 1,
+    SDHC_IRQSTAT_BGE_MASK         = 1 << 2,
+    SDHC_IRQSTAT_BGE_SHIFT        = 2,
+    SDHC_IRQSTAT_DINT_MASK        = 1 << 3,
+    SDHC_IRQSTAT_DINT_SHIFT       = 3,
+    SDHC_IRQSTAT_BWR_MASK         = 1 << 4,
+    SDHC_IRQSTAT_BWR_SHIFT        = 4,
+    SDHC_IRQSTAT_BRR_MASK         = 1 << 5,
+    SDHC_IRQSTAT_BRR_SHIFT        = 5,
+    SDHC_IRQSTAT_CINS_MASK        = 1 << 6,
+    SDHC_IRQSTAT_CINS_SHIFT       = 6,
+    SDHC_IRQSTAT_CRM_MASK         = 1 << 7,
+    SDHC_IRQSTAT_CRM_SHIFT        = 7,
+    SDHC_IRQSTAT_CINT_MASK        = 1 << 8,
+    SDHC_IRQSTAT_CINT_SHIFT       = 8,
+    SDHC_IRQSTAT_CTOE_MASK        = 1 << 16,
+    SDHC_IRQSTAT_CTOE_SHIFT       = 16,
+    SDHC_IRQSTAT_CCE_MASK         = 1 << 17,
+    SDHC_IRQSTAT_CCE_SHIFT        = 17,
+    SDHC_IRQSTAT_CEBE_MASK        = 1 << 18,
+    SDHC_IRQSTAT_CEBE_SHIFT       = 18,
+    SDHC_IRQSTAT_CIE_MASK         = 1 << 19,
+    SDHC_IRQSTAT_CIE_SHIFT        = 19,
+    SDHC_IRQSTAT_DTOE_MASK        = 1 << 20,
+    SDHC_IRQSTAT_DTOE_SHIFT       = 20,
+    SDHC_IRQSTAT_DCE_MASK         = 1 << 21,
+    SDHC_IRQSTAT_DCE_SHIFT        = 21,
+    SDHC_IRQSTAT_DEBE_MASK        = 1 << 22,
+    SDHC_IRQSTAT_DEBE_SHIFT       = 22,
+    SDHC_IRQSTAT_AC12E_MASK       = 1 << 24,
+    SDHC_IRQSTAT_AC12E_SHIFT      = 24,
+    SDHC_IRQSTAT_DMAE_MASK        = 1 << 28,
+    SDHC_IRQSTAT_DMAE_SHIFT       = 28,
+};
+
+enum {
+    SDHC_IRQSTATEN_CCSEN_MASK     = 1 << 0,
+    SDHC_IRQSTATEN_CCSEN_SHIFT    = 0,
+    SDHC_IRQSTATEN_TCSEN_MASK     = 1 << 1,
+    SDHC_IRQSTATEN_TCSEN_SHIFT    = 1,
+    SDHC_IRQSTATEN_BGESEN_MASK    = 1 << 2,
+    SDHC_IRQSTATEN_BGESEN_SHIFT   = 2,
+    SDHC_IRQSTATEN_DINTSEN_MASK   = 1 << 3,
+    SDHC_IRQSTATEN_DINTSEN_SHIFT  = 3,
+    SDHC_IRQSTATEN_BWRSEN_MASK    = 1 << 4,
+    SDHC_IRQSTATEN_BWRSEN_SHIFT   = 4,
+    SDHC_IRQSTATEN_BRRSEN_MASK    = 1 << 5,
+    SDHC_IRQSTATEN_BRRSEN_SHIFT   = 5,
+    SDHC_IRQSTATEN_CINSEN_MASK    = 1 << 6,
+    SDHC_IRQSTATEN_CINSEN_SHIFT   = 6,
+    SDHC_IRQSTATEN_CRMSEN_MASK    = 1 << 7,
+    SDHC_IRQSTATEN_CRMSEN_SHIFT   = 7,
+    SDHC_IRQSTATEN_CINTSEN_MASK   = 1 << 8,
+    SDHC_IRQSTATEN_CINTSEN_SHIFT  = 8,
+    SDHC_IRQSTATEN_CTOESEN_MASK   = 1 << 16,
+    SDHC_IRQSTATEN_CTOESEN_SHIFT  = 16,
+    SDHC_IRQSTATEN_CCESEN_MASK    = 1 << 17,
+    SDHC_IRQSTATEN_CCESEN_SHIFT   = 17,
+    SDHC_IRQSTATEN_CEBESEN_MASK   = 1 << 18,
+    SDHC_IRQSTATEN_CEBESEN_SHIFT  = 18,
+    SDHC_IRQSTATEN_CIESEN_MASK    = 1 << 19,
+    SDHC_IRQSTATEN_CIESEN_SHIFT   = 19,
+    SDHC_IRQSTATEN_DTOESEN_MASK   = 1 << 20,
+    SDHC_IRQSTATEN_DTOESEN_SHIFT  = 20,
+    SDHC_IRQSTATEN_DCESEN_MASK    = 1 << 21,
+    SDHC_IRQSTATEN_DCESEN_SHIFT   = 21,
+    SDHC_IRQSTATEN_DEBESEN_MASK   = 1 << 22,
+    SDHC_IRQSTATEN_DEBESEN_SHIFT  = 22,
+    SDHC_IRQSTATEN_AC12ESEN_MASK  = 1 << 24,
+    SDHC_IRQSTATEN_AC12ESEN_SHIFT = 24,
+    SDHC_IRQSTATEN_DMAESEN_MASK   = 1 << 28,
+    SDHC_IRQSTATEN_DMAESEN_SHIFT  = 28,
+};
+
+/* SYSCTL Bit Fields */
+enum {
+    SDHC_SYSCTL_IPGEN_MASK        = 1 << 0,
+    SDHC_SYSCTL_IPGEN_SHIFT       = 0,
+    SDHC_SYSCTL_HCKEN_MASK        = 1 << 1,
+    SDHC_SYSCTL_HCKEN_SHIFT       = 1,
+    SDHC_SYSCTL_PEREN_MASK        = 1 << 2,
+    SDHC_SYSCTL_PEREN_SHIFT       = 2,
+    SDHC_SYSCTL_SDCLKEN_MASK      = 1 << 3,
+    SDHC_SYSCTL_SDCLKEN_SHIFT     = 3,
+    SDHC_SYSCTL_DVS_MASK          = 0xF << 4,
+    SDHC_SYSCTL_DVS_SHIFT         = 4,
+    SDHC_SYSCTL_SDCLKFS_MASK      = 0xFF << 8,
+    SDHC_SYSCTL_SDCLKFS_SHIFT     = 8,
+    SDHC_SYSCTL_DTOCV_MASK        = 0xF << 16,
+    SDHC_SYSCTL_DTOCV_SHIFT       = 16,
+    SDHC_SYSCTL_RSTA_MASK         = 1 << 24,
+    SDHC_SYSCTL_RSTA_SHIFT        = 24,
+    SDHC_SYSCTL_RSTC_MASK         = 1 << 25,
+    SDHC_SYSCTL_RSTC_SHIFT        = 25,
+    SDHC_SYSCTL_RSTD_MASK         = 1 << 26,
+    SDHC_SYSCTL_RSTD_SHIFT        = 26,
+    SDHC_SYSCTL_INITA_MASK        = 1 << 27,
+    SDHC_SYSCTL_INITA_SHIFT       = 27,
+};
+
+/* BLKATTR Bit Fields */
+enum {
+    SDHC_BLKATTR_BLKSIZE_MASK     = 0x1FFF,
+    SDHC_BLKATTR_BLKSIZE_SHIFT    = 0,
+    SDHC_BLKATTR_BLKCNT_MASK      = 0xFFFF0000,
+    SDHC_BLKATTR_BLKCNT_SHIFT     = 16,
+};
+
+
 /******************************************************************************
  * FTFL FLASH
  *****************************************************************************/
