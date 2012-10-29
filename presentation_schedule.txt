@@ -50,35 +50,34 @@ PHASE 2: Embedded C Programming
     CRC                                 Oct.25 : Shaun
     Touch Sensor Interface (TSI)        Oct.25 : David
 
-    USB                                 Nov.1 : Neil
-    I2C                                 Nov.1 : Chris
+    USB                                 Nov.8 : Neil
+    I2C                                 Nov.8 : Chris
 
-    Ethernet                            Nov.8 : Steve
-    DMA                                 Nov.8 : Steve
-    Power Modes                         Nov.8 : Andrew
+    Ethernet                            Nov.15 : Steve
+    DMA                                 Nov.15 : Steve
+    Power Modes                         Nov.15 : Andrew
 
-    Interfacing C & Assembly            Nov.15 : Rob
     FTM/PWM                             Nov.15 : James
+    SPI (2)                             Nov.22 : Shaun
+
+    /* Winter/Christmas Break */
 
 
 PHASE 3: Real Time Embedded C Programing
 
-    RTOS Introduction, Build System, & Scheduler    Nov.22 : Rob
-    RTOS Interrupts, & Event Flags                  Nov.29 :
-    RTOS Semaphores, & Message Queues               Dec.6  :
+    RTOS Introduction, Build System, & Scheduler    Jan.24 : David
+    RTOS Interrupts, & Event Flags                  Jan.31 : ?
+    RTOS Semaphores, & Message Queues               Feb.7  : ?
 
-    /* Christmas Break */
+    Loadable Module Design                          TBD : ?
 
-    Loadable Module Design                          TBD :
-
-    Target Resident Command Line Interface          TBD :
+    Target Resident Command Line Interface          TBD : ?
 
 
 PHASE 4: Interactive Web
 
-    Interactive Web based control                   TBD :
+    Interactive Web based control                   TBD : ?
 
 
 PHASE 5: Group Project
-
 
