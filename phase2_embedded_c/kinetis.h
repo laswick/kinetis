@@ -172,6 +172,35 @@ enum {
     MAX_ISR,
 };
 
+enum {
+    NVIC_SYSTICK_CONTROL_ENABLE    = BIT_0,
+    NVIC_SYSTICK_CONTROL_TICKINT   = BIT_1,
+    NVIC_SYSTICK_CONTROL_CLKSOURCE = BIT_2,
+    NVIC_SYSTICK_CONTROL_COUNTFLAG = BIT_16,
+};
+
+enum {
+    NVIC_SYSTICK_RELOAD_MASK  = 0x00FFFFFF,
+    NVIC_SYSTICK_RELOAD_SHIFT = 0,
+};
+
+enum {
+    NVIC_SYSTICK_VALUE_MASK  = 0x00FFFFFF,
+    NVIC_SYSTICK_VALUE_SHIFT = 0,
+};
+
+enum {
+    NVIC_SYSTICK_CALIBRATION_TENMS_MASK  = 0x00FFFFFF,
+    NVIC_SYSTICK_CALIBRATION_TENMS_SHIFT = 0,
+    NVIC_SYSTICK_CALIBRATION_SKEW        = BIT_30,
+    NVIC_SYSTICK_CALIBRATION_NOREF       = BIT_31,
+};
+
+#define NVIC_SYSTICK_CONTROL (*(volatile uint32_t *) 0xE000E010)
+#define NVIC_SYSTICK_RELOAD  (*(volatile uint32_t *) 0xE000E014)
+#define NVIC_SYSTICK_VALUE   (*(volatile uint32_t *) 0xE000E018)
+#define NVIC_SYSTICK_CALIBRATION (*(volatile uint32_t *) 0xE000E01C)
+
 #define NVIC_VTOR (*(volatile uint32_t *) 0xE000ED08)    /* Vector Offset Reg */
 #define NVIC_VTOR_SET(x) { NVIC_VTOR = ((x) & 0x1FFFFF80); }
 
@@ -1331,7 +1360,7 @@ typedef enum {
 #endif
 
 /*******************************************************************************
-* SDHC 
+* SDHC
 *******************************************************************************/
 #define SDHC_BASE_ADDR 0x400B1000
 
