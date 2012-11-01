@@ -1,0 +1,57 @@
+Building library
+----------------
+- Fetch ChibiOS repository
+- Select a Cortex-M4 port and build the demo:
+    ChibiOS/demos/ARMCM4-STM32F407-DISCOVERY
+- Grab the list of source files and C flags
+
+- Prune the list:
+  - Keep kernel
+  - Keep core parts of port (Cortex-M4 core-specific)
+  - Drop demo source
+  - Drop HAL
+
+Configure ChibiOS
+-----------------
+- Kernel configuration in chconf.h
+- Cortex-M4 port configuration in cmparams.h
+
+Filling in the Gaps
+-------------------
+- Start code
+  - Could use ChibiOS' crt0.c
+  - Using our startcode.s instead. Make the following changes:
+    - Point various vectors to ChibiOS entrypoints:
+      - SysTickVector
+
+      - SVCallVector
+      - PendSVVector
+        - Use weak references here. Only one of these is actually used depending
+          on kernel mode (simplified priority/compact mode vs. advanced mode)
+          - See CORTEX_SIMPLIFIED_PRIORITY
+          - Compact mode: all interrupts are masked in kernel critical sections
+          - Advanced mode: only lower priority interrupts are masked in kernel
+            critical sections. Higher priority interrupts can preempt the
+            kernel ("fast interrupts") but cannot use any kernel services.
+
+    - Add process stack initialization
+    - Switch to Process stack
+      - ChibiOS kernel uses Main stack
+
+- Linker script
+  - Could use ChibiOS' linker script as a template
+  - Using our linkerscript.ld instead. Make the following changes:
+    - Allocate an additional stack (process stack)
+    - Add __heap_base__ and __heap_end__ declarations expected by ChibiOS
+
+- Minimal HAL
+  - Initialize clocks
+  - Initialize NVIC SysTick - MUST DO!
+  - Enable interrupts - MUST DO!
+
+
+Still Don't Know
+----------------
+- Heap management. It looks like ChibiOS is willing to manage all or
+  part of the heap.
+- Floating point - additional bits from crt0.c
