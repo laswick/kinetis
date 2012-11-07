@@ -10,8 +10,8 @@
 
 MEMORY
 {
-    CODE   (rx) : ORIGIN = 0x00000000, LENGTH = 30K
-    FLASH  (rx) : ORIGIN = 0x00007800, LENGTH =  2K
+    CODE   (rx) : ORIGIN = 0x00000000, LENGTH = 28K
+    FLASH  (rx) : ORIGIN = 0x00007000, LENGTH =  4K
     SRAM_L(rwx) : ORIGIN = 0x1FFF0000, LENGTH = 64K
     SRAM  (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
@@ -21,12 +21,12 @@ SECTIONS
     .entry :
     {
         _vector_rom = .;
-        *(.vector_table)
+        KEEP(*(.vector_table))
 
-        . = 0x00000400;
-        *(.kinetis_flash_config_field)
+        . = _vector_rom + 0x400;
+        KEEP(*(.kinetis_flash_config_field))
 
-        *(.default_handlers)
+        KEEP(*(.default_handlers))
     } > CODE
 
     .text :

@@ -134,13 +134,13 @@ static void periphInit(int retarget)
         int fd;
 
         uart_install();
-        fd = fdevopen(stdin,  "uart3", 0, 0);
+        fd = fdevopen(stdin,  STDIO_UART, 0, 0);
         assert(fd == STDIN_FILENO);
 
-        fd = fdevopen(stdout, "uart3", 0, 0);
+        fd = fdevopen(stdout, STDIO_UART, 0, 0);
         assert(fd == STDOUT_FILENO);
 
-        fd = fdevopen(stderr, "uart3", 0, 0);
+        fd = fdevopen(stderr, STDIO_UART, 0, 0);
         assert(fd == STDERR_FILENO);
 
         ioctl(fd, IO_IOCTL_UART_BAUD_SET, 115200);

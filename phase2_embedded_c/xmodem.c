@@ -54,6 +54,7 @@ static void flushBuffer(void)
  * http://www.std.com/obi/Standards/FileTransfer/XMODEM-CRC.NOTE.1
  *
  *****************************************************************************/
+#if 0 /* Hardware CRC */
 static int crcFd;
 static void initCRC(void)
 {
@@ -71,7 +72,7 @@ static void initCRC(void)
     ioctl(crcFd, IO_IOCTL_CRC_SET_POLY,      CRC_POLY_CRC16CITT);
 }
 
-#if 0 /* Software CRC */
+#else /* Software CRC */
 static uint16_t crctab[256];
 static void initCRC(void)
 {
@@ -97,6 +98,7 @@ static void initCRC(void)
  *
  * RETURNS: CRC value
  *****************************************************************************/
+#if 0 /* Hardware CRC */
 static int16_t calcCRC(uint8_t *dataPtr, int numBytes)
 {
     int16_t crc = 0;
@@ -105,7 +107,7 @@ static int16_t calcCRC(uint8_t *dataPtr, int numBytes)
     read(crcFd, &crc, 2);
     return crc;
 }
-#if 0 /* Software CRC */
+#else /* Software CRC */
 static int16_t calcCRC(uint8_t *dataPtr, int numBytes)
 {
     int16_t crc = 0;

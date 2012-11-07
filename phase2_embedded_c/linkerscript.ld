@@ -20,12 +20,12 @@ SECTIONS
     .entry :
     {
         _vector_rom = .;
-        *(.vector_table)
+        KEEP(*(.vector_table))
 
-        . = 0x00000400;
-        *(.kinetis_flash_config_field)
+        . = _vector_rom + 0x400;
+        KEEP(*(.kinetis_flash_config_field))
 
-        *(.default_handlers)
+        KEEP(*(.default_handlers))
     } > FLASH
 
     .text :

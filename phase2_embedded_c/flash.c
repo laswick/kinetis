@@ -95,6 +95,8 @@ static int32_t flashEraseCmd(uint32_t addr, uint32_t numBytes)
 
     assert((numBytes % FTFL_FLASH_SECTOR_SIZE) == 0);
     numSectors = numBytes / FTFL_FLASH_SECTOR_SIZE;
+    if ((numBytes % FTFL_FLASH_SECTOR_SIZE) != 0)
+            numSectors++;
 
     for (i = 0; i < numSectors; i++) {
         /* Wait until hardware is idle */
@@ -159,6 +161,7 @@ int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords)
     while (!(FTFL_FSTAT & FTFL_CCIF))
         ;
 
+#if defined(K60N512) /* The 60N and 60F have different flash architectures */
     while (numWords--) {
         FTFL_FCCOB0 = FTFL_CMD_PRGRM_LONGWORD;
         FTFL_FCCOB1 = (uint8_t)(addr >> 16);
@@ -169,13 +172,39 @@ int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords)
         FTFL_FCCOB5 = (uint8_t)(value >> 16);
         FTFL_FCCOB6 = (uint8_t)(value >> 8);
         FTFL_FCCOB7 = (uint8_t)(value);
+        addr += 4;
 
+#elif defined(K60F120)
+    while (numWords) {
+        FTFL_FCCOB0 = FTFL_CMD_PRGRM_PHRASE;
+        FTFL_FCCOB1 = (uint8_t)(addr >> 16);
+        FTFL_FCCOB2 = (uint8_t)(addr >>  8);
+        FTFL_FCCOB3 = (uint8_t)(addr);
+        value = *dataPtr++;
+        numWords--;
+        FTFL_FCCOB4 = (uint8_t)(value >> 24);
+        FTFL_FCCOB5 = (uint8_t)(value >> 16);
+        FTFL_FCCOB6 = (uint8_t)(value >> 8);
+        FTFL_FCCOB7 = (uint8_t)(value);
+        if (numWords) {
+            value = *dataPtr++;
+            numWords--;
+        }
+        else
+            value = 0xFFFFFFFF;
+        FTFL_FCCOB8 = (uint8_t)(value >> 24);
+        FTFL_FCCOB9 = (uint8_t)(value >> 16);
+        FTFL_FCCOBA = (uint8_t)(value >> 8);
+        FTFL_FCCOBB = (uint8_t)(value);
+        addr += 8;
+#else
+
+#endif
         executeFlashCmd();
 
         if (checkErrors() == ERROR)
             return ERROR;
 
-        addr += 4;
     }
 
     flashInvalidateCache();

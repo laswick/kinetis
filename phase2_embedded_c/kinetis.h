@@ -16,6 +16,7 @@
 #define KINETIS_H
 
 #include "globalDefs.h"
+#include "kplatform.h"
 
 /*******************************************************************************
 * Memory Map
@@ -1657,10 +1658,11 @@ typedef enum {
     FTFL_CMD_READ_1S_SECT       = 0x01,
     FTFL_CMD_PRGRM_CHECK        = 0x02,
     FTFL_CMD_READ_RESOURCE      = 0x03,
-    FTFL_CMD_PRGRM_LONGWORD     = 0x06,
+    FTFL_CMD_PRGRM_LONGWORD     = 0x06, /* Only on SF2 processors 4 bytes */
+    FTFL_CMD_PRGRM_PHRASE       = 0x07, /* Only on SF3 processors 8 bytes */
     FTFL_CMD_ERASE_FLASH_BLOCK  = 0x08,
     FTFL_CMD_ERASE_FLASH_SECT   = 0x09,
-    FTFL_CMD_PRGRM_SECT         = 0x0B,
+    FTFL_CMD_PRGRM_SECT         = 0x0B, /* SF2:8-2048 bytes, SF3:16-4096 */
     FTFL_CMD_READ_1S_ALL_BLOCKS = 0x40,
     FTFL_CMD_READ_ONCE          = 0x41,
     FTFL_CMD_PRGRM_ONCE         = 0x43,
@@ -1671,7 +1673,12 @@ typedef enum {
     FTFL_CMD_SET_FLEXRAM_FN     = 0x81,
 } ftflFCMD_t;
 
+#if defined(K60N512)
 #define FTFL_FLASH_SECTOR_SIZE 0x800   /* 2   KBytes */
+#elif defined(K60F120)
+#define FTFL_FLASH_SECTOR_SIZE 0x1000   /* 4   KBytes */
+#endif
+
 #define FTFL_FLASH_BLOCK_SIZE  0x40000 /* 256 KBytes */
 
 #define FTFL_BASE_ADDR 0x40020000

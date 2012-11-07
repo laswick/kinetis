@@ -19,6 +19,7 @@
 #include <stdlib.h>
 
 #include "globalDefs.h"
+#include "kplatform.h"
 
 /* ASSERT *********************************************************************/
 
@@ -276,6 +277,10 @@ enum {
 enum {
     FLASH_BLOCK_0,
     FLASH_BLOCK_1,
+#if defined(K60F120)
+    FLASH_BLOCK_2,
+    FLASH_BLOCK_3,
+#endif
 
     MAX_FLASH_BLOCKS,
 };
@@ -291,7 +296,7 @@ extern int32_t flashSwapInit(void);
 extern int32_t flashSwap(void);
 
 /* APPLICATION LOADER *********************************************************/
-extern int32_t loader(void);
+extern int loader(void);
 
 /* TSI ************************************************************************/
 
@@ -677,7 +682,7 @@ enum {
 * CCA Hardware Defines
 *
 *******************************************************************************/
-#if defined(FREESCALE_K60N512_TOWER_HW)
+#if defined(FREESCALE_K60N512_TOWER_HW) || defined(FREESCALE_K60F120_TOWER_HW)
 
 /*
  * TODO
@@ -782,6 +787,13 @@ extern void clockConfigLpo();
 #define N_SWITCH_1_PORT  PORTA
 #define N_SWITCH_1_PIN   19
 
+/* UART for STDIO  ************************************************************/
+#if defined(FREESCALE_K60N512_TOWER_HW) 
+#define STDIO_UART "uart3"
+#elif defined(FREESCALE_K60F120_TOWER_HW)
+#define STDIO_UART "uart5"
+#endif
+
 /* TSI  ***********************************************************************/
 
 #define TSI_ORANGE_INDEX  5
@@ -882,8 +894,6 @@ enum {
 
 /******************************************************************************/
 
-#else
-#error Undefined Hardware Platform
 #endif
 
 #endif

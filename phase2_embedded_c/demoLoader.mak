@@ -35,14 +35,15 @@ LD = arm-none-eabi-ld
 GDB = arm-none-eabi-gdb
 OBJDUMP = arm-none-eabi-objdump
 OBJCOPY = arm-none-eabi-objcopy
+SZ = arm-none-eabi-size
 
 ASM_FLAGS = -g
 ASM_FILES = ${ASM_PIECES:%=%.s}
 ASM_O_FILES = ${ASM_FILES:%.s=%.o}
 
-OPT_LEVEL = 0
+OPT_LEVEL = 1
 
-C_FLAGS = -Wall -MD -c -g -O${OPT_LEVEL} -D${PLATFORM}
+C_FLAGS  = -Wall -c -ggdb -MD -O${OPT_LEVEL} -D${PLATFORM} -mlong-calls -ffunction-sections -fdata-sections
 ifeq ($(PRO_TOOLS), TRUE)
 C_FLAGS += -DPRO_TOOLS
 endif
@@ -55,7 +56,7 @@ CPU_FLAGS = -mcpu=cortex-m4 -mthumb
 
 LD_SCRIPT = linkerscript.ld
 
-LD_FLAGS = -nostartfiles -Map=${TARGET}.map
+LD_FLAGS = -nostartfiles -Wl,-Map=${TARGET}.map,--gc-sections
 
 ifeq ($(PRO_TOOLS), TRUE)
 LIBPATH = /opt/Sourcery_CodeBench_for_ARM_EABI_2011.03-66/arm-none-eabi/lib/thumb2
@@ -63,7 +64,7 @@ else
 LIBPATH = /opt/CodeSourcery/Sourcery_CodeBench_Lite_for_ARM_EABI/arm-none-eabi/lib/thumb2
 endif
 
-LIBS  = ${LIBPATH}/libc.a
+#LIBS  = ${LIBPATH}/libc.a
 
 all: ${TARGET}.axf
 	@${OBJDUMP} -DS ${TARGET}.axf >| ${TARGET}.out.s
@@ -79,7 +80,8 @@ all: ${TARGET}.axf
 
 ${TARGET}.axf: ${O_FILES}
 	@echo
-	${LD} ${O_FILES} ${LIBS} ${LD_FLAGS} -T ${LD_SCRIPT} -o ${TARGET}.axf
+	${CC} ${O_FILES} ${LIBS} -T ${LD_SCRIPT} ${LD_FLAGS} -o ${TARGET}.axf
+	${SZ} ${TARGET}.axf
 
 %.o: %.s
 	${AS} ${ASM_FLAGS} ${CPU_FLAGS} -o $@ $<

@@ -18,18 +18,17 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <ctype.h>
 #include "kinetis.h"
 #include "hardware.h"
 #include "globalDefs.h"
 #include "util.h"
 
-static unsigned int buffer[128];   /* 128 words = 512 bytes */
+static uint32_t buffer[128];   /* 128 words = 512 bytes */
 
 /*******************************************************************************
 *
 *******************************************************************************/
-void clearBuffer(unsigned int buffer[], int n)
+void clearBuffer(uint32_t buffer[], int n)
 {
     int i;
 
@@ -78,16 +77,14 @@ int main(void)
     char cYear[5];
     cidReg_t cid;
 
-    int i,j;
+    int i;
     char  menuSel   = 0;
     char  blkSel    = 0;
     char  rdBlkNum  = 0;
     char  wrBlkNum  = 0;
     char  eraseBlk  = 0;
-    
-    unsigned char *cptr;
 
-    int   lgBlkNum  = 0;
+    uint32_t lgBlkNum  = 0;
 
     uart_install();
     sdhc_install();
@@ -197,17 +194,6 @@ int main(void)
                 printf("%08x ", buffer[i + 1]);
                 printf("%08x ", buffer[i + 2]);
                 printf("%08x ", buffer[i + 3]);
-                printf("  ");
-                cptr = (unsigned char *) &buffer[i];
-		for (j = 0; j < 16; j++) {
-                    unsigned char c = *(cptr + j);
-		    if (isalnum(c)) {
-			printf("%c", c); 
-		    }
-                    else { 
-			printf("."); 
-                    }
-		}
                 printf("\r\n");
             }
             break;
