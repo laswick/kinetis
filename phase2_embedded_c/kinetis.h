@@ -149,10 +149,10 @@ enum {
     ISR_PDB                     = 88,
     ISR_USB_OTG                 = 89,
     ISR_USB_CHARGER_DETECT      = 90,
-    ISR_ETHERNET_MAC_1588_TIMER = 91,
-    ISR_ETHERNET_MAC_TX         = 92,
-    ISR_ETHERNET_MAC_RX         = 93,
-    ISR_ETHERNET_MAC_ERROR      = 94,
+    ISR_ENET_MAC_1588_TIMER     = 91,
+    ISR_ENET_MAC_TX             = 92,
+    ISR_ENET_MAC_RX             = 93,
+    ISR_ENET_MAC_ERROR          = 94,
     ISR_I2S                     = 95,
     ISR_SDHC                    = 96,
     ISR_DAC0                    = 97,
@@ -341,7 +341,13 @@ enum {
 #define SIM_SCGC2_ADDR  0x4004802C
 #define SIM_SCGC2_PTR     (volatile uint32_t *) SIM_SCGC2_ADDR
 #define SIM_SCGC2       (*(volatile uint32_t *) SIM_SCGC2_ADDR)
-#define SIM_SCGC2_DAC0_ENABLE  BIT_12
+#define SIM_SCGC2_BB_ADDR       (MEMMAP_BB_GPIO_PBRIDGE_ADDR + (0x4802C * 32U))
+#define SIM_SCGC2_DAC0_ENABLE   BIT_12
+#define SIM_SCGC2_ENET_BIT      BIT_0
+#define SIM_SCGC2_ENET_MSK      (1<<SIM_SCGC2_ENET_BIT)
+#define SIM_SCGC2_ENET_BB_ADDR  (SIM_SCGC2_BB_ADDR +(SIM_SCGC2_ENET_BIT  * 4))
+#define SIM_SCGC2_ENET_BB_PTR   ((volatile uint32_t *) SIM_SCGC2_ENET_BB_ADDR)
+#define SIM_SCGC2_ENET_BB       (*(SIM_SCGC2_ENET_BB_PTR))
 
 /***** SIM System Clock Gate Control Register 3 *****/
                                            /* Register Address & Bit Numbers */
@@ -3094,4 +3100,539 @@ typedef enum {
 #define DMA_BITER_PTR(a)  ((volatile uint16_t*)DMA_BITER_ADDR((a)))
 #define DMA_BITER(a)      (*(DMA_BITER_PTR((a))))
 
-#endif
+/*******************************************************************************
+* Ethernet
+*******************************************************************************/
+
+/* Base pointer to Ethernet Registers */
+#define ENET_ADDR (0x400C0000U)
+
+
+/* ENET - Memory Mapped Peripheral register structure */
+typedef struct enet_map {
+    uint8_t reserved_0[4];
+    uint32_t eir;               /* interrupt event, : 0x4 */
+    uint32_t eimr;              /* interrupt mask, : 0x8 */
+    uint8_t reserved_1[4];
+    uint32_t rdar;              /* receive descriptor active, : 0x10 */
+    uint32_t tdar;              /* transmit descriptor active, : 0x14 */
+    uint8_t reserved_2[12];
+    uint32_t ecr;               /* ethernet control, : 0x24 */
+    uint8_t reserved_3[24];
+    uint32_t mmfr;              /* mii management frame, : 0x40 */
+    uint32_t mscr;              /* mii speed control, : 0x44 */
+    uint8_t reserved_4[28];
+    uint32_t mibc;              /* mib control, : 0x64 */
+    uint8_t reserved_5[28];
+    uint32_t rcr;               /* receive control, : 0x84 */
+    uint8_t reserved_6[60];
+    uint32_t tcr;               /* transmit control, : 0xc4 */
+    uint8_t reserved_7[28];
+    uint32_t palr;              /* physical address lower, : 0xe4 */
+    uint32_t paur;              /* physical address upper, : 0xe8 */
+    uint32_t opd;               /* opcode/pause duration, : 0xec */
+    uint8_t reserved_8[40];
+    uint32_t iaur;              /* descriptor individual upper, : 0x118 */
+    uint32_t ialr;              /* descriptor individual lower, : 0x11c */
+    uint32_t gaur;              /* descriptor group upper, : 0x120 */
+    uint32_t galr;              /* descriptor group lower, : 0x124 */
+    uint8_t reserved_9[28];
+    uint32_t tfwr;              /* transmit fifo watermark, : 0x144 */
+    uint8_t reserved_10[56];
+    uint32_t rdsr;              /* receive descriptor ring start, : 0x180 */
+    uint32_t tdsr;              /* transmit buf descr rng start, : 0x184 */
+    uint32_t mrbr;              /* maximum receive buffer size, : 0x188 */
+    uint8_t reserved_11[4];
+    uint32_t rsfl;              /* receive fifo section full thres, : 0x190 */
+    uint32_t rsem;              /* receive fifo section empty thres, : 0x194 */
+    uint32_t raem;              /* receive fifo almost empty thres, : 0x198 */
+    uint32_t rafl;              /* receive fifo almost full thres, : 0x19c */
+    uint32_t tsem;              /* transmit fifo sect empty thres, : 0x1a0 */
+    uint32_t taem;              /* transmit fifo almost empty thres, : 0x1a4 */
+    uint32_t tafl;              /* transmit fifo almost full thres, : 0x1a8 */
+    uint32_t tipg;              /* transmit inter-packet gap, : 0x1ac */
+    uint32_t ftrl;              /* frame truncation length, : 0x1b0 */
+    uint8_t reserved_12[12];
+    uint32_t tacc;              /* transmit accel function config, : 0x1c0 */
+    uint32_t racc;              /* receive accel function config, : 0x1c4 */
+    uint8_t reserved_13[56];
+    uint32_t rmon_t_drop;       /* # frames not cnt correct (UNIMP): 0x200 */
+    uint32_t rmon_t_packets;    /* rmon tx packet cnt, : 0x204 */
+    uint32_t rmon_t_bc_pkt;     /* rmon tx broadcast packets, : 0x208 */
+    uint32_t rmon_t_mc_pkt;     /* rmon tx multicast packets, : 0x20c */
+    uint32_t rmon_t_crc_align;  /* rmon tx pkts w crc/align error, : 0x210 */
+    uint32_t rmon_t_undersize;  /* rmon tx pkts < 64 bytes, good crc, : 0x214 */
+    uint32_t rmon_t_oversize;   /* rmon tx pkts > max_fl, good crc, : 0x218 */
+    uint32_t rmon_t_frag;       /* rmon tx pkts < 64 bytes, bad crc, : 0x21c */
+    uint32_t rmon_t_jab;        /* rmon tx pkts > max_fl, bad crc, : 0x220 */
+    uint32_t rmon_t_col;        /* rmon tx collision count, : 0x224 */
+    uint32_t rmon_t_p64;        /* rmon tx 64 byte packets, : 0x228 */
+    uint32_t rmon_t_p65to127;   /* rmon tx 65 to 127 byte packets, : 0x22c */
+    uint32_t rmon_t_p128to255;  /* rmon tx 128 to 255 byte packets, : 0x230 */
+    uint32_t rmon_t_p256to511;  /* rmon tx 256 to 511 byte packets, : 0x234 */
+    uint32_t rmon_t_p512to1023; /* rmon tx 512 to 1023 byte packets, : 0x238 */
+    uint32_t rmon_t_p1024to2047;/* rmon tx 1024 to 2047 byte packets, : 0x23c */
+    uint32_t rmon_t_p_gte2048;  /* rmon tx packets w > 2048 bytes, : 0x240 */
+    uint32_t rmon_t_octets;     /* rmon tx octets (rmon_t_octets), : 0x244 */
+    uint32_t ieee_t_drop;       /* # frames not cnt correct (UNIMP), : 0x248 */
+    uint32_t ieee_t_frame_ok;   /* frames tx ok, : 0x24c */
+    uint32_t ieee_t_1col;       /* frames tx with single collision, : 0x250 */
+    uint32_t ieee_t_mcol;       /* frames tx with multiple coll, : 0x254 */
+    uint32_t ieee_t_def;        /* frames tx after deferral delay, : 0x258 */
+    uint32_t ieee_t_lcol;       /* frames tx with late collision, : 0x25c */
+    uint32_t ieee_t_excol;      /* frames tx with excessive coll, : 0x260 */
+    uint32_t ieee_t_macerr;     /* frames tx with tx fifo underrun, : 0x264 */
+    uint32_t ieee_t_cserr;      /* frames tx with carrier sense err, : 0x268 */
+    uint32_t ieee_t_sqe;        /* frames tx with sqe error (UNIMP), : 0x26c */
+    uint32_t ieee_t_fdxfc;      /* flow control pause frames tx, : 0x270 */
+    uint32_t ieee_t_octets_ok;  /* octet cnt for frames tx w/o err, : 0x274 */
+    uint8_t reserved_14[12];
+    uint32_t rmon_r_packets;    /* rmon rx packet count, : 0x284 */
+    uint32_t rmon_r_bc_pkt;     /* rmon rx broadcast packets, : 0x288 */
+    uint32_t rmon_r_mc_pkt;     /* rmon rx multicast packets, : 0x28c */
+    uint32_t rmon_r_crc_align;  /* rmon rx pkts w crc/align error, : 0x290 */
+    uint32_t rmon_r_undersize;  /* rmon rx pkts < 64 bytes, good crc, : 0x294 */
+    uint32_t rmon_r_oversize;   /* rmon rx pkts > max_fl, good crc, : 0x298 */
+    uint32_t rmon_r_frag;       /* rmon rx pkts < 64 bytes, bad crc, : 0x29c */
+    uint32_t rmon_r_jab;        /* rmon rx pkts > max_fl, bad crc, : 0x2a0 */
+    uint32_t rmon_r_resvd_0;    /* reserved, : 0x2a4 */
+    uint32_t rmon_r_p64;        /* rmon rx 64 byte packets, : 0x2a8 */
+    uint32_t rmon_r_p65to127;   /* rmon rx 65 to 127 byte packets, : 0x2ac */
+    uint32_t rmon_r_p128to255;  /* rmon rx 128 to 255 byte packets, : 0x2b0 */
+    uint32_t rmon_r_p256to511;  /* rmon rx 256 to 511 byte packets, : 0x2b4 */
+    uint32_t rmon_r_p512to1023; /* rmon rx 512 to 1023 byte pkts, : 0x2b8 */
+    uint32_t rmon_r_p1024to2047;/* rmon rx 1024 to 2047 byte pkts, : 0x2bc */
+    uint32_t rmon_r_p_gte2048;  /* rmon rx packets w > 2048 bytes, : 0x2c0 */
+    uint32_t rmon_r_octets;     /* rmon rx octets, : 0x2c4 */
+    uint32_t rmon_r_drop;       /* # frames not cnt correct (UNIMP), : 0x2c8 */
+    uint32_t rmon_r_frame_ok;   /* frames received ok, : 0x2cc */
+    uint32_t ieee_r_crc;        /* frames received with crc error, : 0x2d0 */
+    uint32_t ieee_r_align;      /* frames received with align err, : 0x2d4 */
+    uint32_t ieee_r_macerr;     /* receive fifo overflow count, : 0x2d8 */
+    uint32_t ieee_r_fdxfc;      /* flow control pause frames recved, : 0x2dc */
+    uint32_t ieee_r_octets_ok;  /* octet # for frames rcvd w/o err, : 0x2e0 */
+    uint8_t reserved_15[284];
+    uint32_t atcr;              /* timer control, : 0x400 */
+    uint32_t atvr;              /* timer value, : 0x404 */
+    uint32_t atoff;             /* timer offset, : 0x408 */
+    uint32_t atper;             /* timer period, : 0x40c */
+    uint32_t atcor;             /* timer correction, : 0x410 */
+    uint32_t atinc;             /* time-stamping clock period, : 0x414 */
+    uint32_t atstmp;            /* timestamp of last tx frame, : 0x418 */
+    uint8_t reserved_16[488];
+    uint32_t tgsr;              /* timer global status, : 0x604 */
+    struct {                    /* : 0x608, array step: 0x8 */
+        uint32_t tcsr;          /* timer control status */
+        uint32_t tccr;          /* timer compare capture */
+    } channel[4];
+} volatile *enet_map_ptr;
+
+
+/*******************************************************************************
+  ENET Register Masks
+*******************************************************************************/
+
+/* EIR Bit Fields */
+#define ENET_EIR_TS_TIMER_MASK                   0x8000U
+#define ENET_EIR_TS_TIMER_SHIFT                  15
+#define ENET_EIR_TS_AVAIL_MASK                   0x10000U
+#define ENET_EIR_TS_AVAIL_SHIFT                  16
+#define ENET_EIR_WAKEUP_MASK                     0x20000U
+#define ENET_EIR_WAKEUP_SHIFT                    17
+#define ENET_EIR_PLR_MASK                        0x40000U
+#define ENET_EIR_PLR_SHIFT                       18
+#define ENET_EIR_UN_MASK                         0x80000U
+#define ENET_EIR_UN_SHIFT                        19
+#define ENET_EIR_RL_MASK                         0x100000U
+#define ENET_EIR_RL_SHIFT                        20
+#define ENET_EIR_LC_MASK                         0x200000U
+#define ENET_EIR_LC_SHIFT                        21
+#define ENET_EIR_EBERR_MASK                      0x400000U
+#define ENET_EIR_EBERR_SHIFT                     22
+#define ENET_EIR_MII_MASK                        0x800000U
+#define ENET_EIR_MII_SHIFT                       23
+#define ENET_EIR_RXB_MASK                        0x1000000U
+#define ENET_EIR_RXB_SHIFT                       24
+#define ENET_EIR_RXF_MASK                        0x2000000U
+#define ENET_EIR_RXF_SHIFT                       25
+#define ENET_EIR_TXB_MASK                        0x4000000U
+#define ENET_EIR_TXB_SHIFT                       26
+#define ENET_EIR_TXF_MASK                        0x8000000U
+#define ENET_EIR_TXF_SHIFT                       27
+#define ENET_EIR_GRA_MASK                        0x10000000U
+#define ENET_EIR_GRA_SHIFT                       28
+#define ENET_EIR_BABT_MASK                       0x20000000U
+#define ENET_EIR_BABT_SHIFT                      29
+#define ENET_EIR_BABR_MASK                       0x40000000U
+#define ENET_EIR_BABR_SHIFT                      30
+/* EIMR Bit Fields */
+#define ENET_EIMR_TS_TIMER_MASK                  0x8000U
+#define ENET_EIMR_TS_TIMER_SHIFT                 15
+#define ENET_EIMR_TS_AVAIL_MASK                  0x10000U
+#define ENET_EIMR_TS_AVAIL_SHIFT                 16
+#define ENET_EIMR_WAKEUP_MASK                    0x20000U
+#define ENET_EIMR_WAKEUP_SHIFT                   17
+#define ENET_EIMR_PLR_MASK                       0x40000U
+#define ENET_EIMR_PLR_SHIFT                      18
+#define ENET_EIMR_UN_MASK                        0x80000U
+#define ENET_EIMR_UN_SHIFT                       19
+#define ENET_EIMR_RL_MASK                        0x100000U
+#define ENET_EIMR_RL_SHIFT                       20
+#define ENET_EIMR_LC_MASK                        0x200000U
+#define ENET_EIMR_LC_SHIFT                       21
+#define ENET_EIMR_EBERR_MASK                     0x400000U
+#define ENET_EIMR_EBERR_SHIFT                    22
+#define ENET_EIMR_MII_MASK                       0x800000U
+#define ENET_EIMR_MII_SHIFT                      23
+#define ENET_EIMR_RXB_MASK                       0x1000000U
+#define ENET_EIMR_RXB_SHIFT                      24
+#define ENET_EIMR_RXF_MASK                       0x2000000U
+#define ENET_EIMR_RXF_SHIFT                      25
+#define ENET_EIMR_TXB_MASK                       0x4000000U
+#define ENET_EIMR_TXB_SHIFT                      26
+#define ENET_EIMR_TXF_MASK                       0x8000000U
+#define ENET_EIMR_TXF_SHIFT                      27
+#define ENET_EIMR_GRA_MASK                       0x10000000U
+#define ENET_EIMR_GRA_SHIFT                      28
+#define ENET_EIMR_BABT_MASK                      0x20000000U
+#define ENET_EIMR_BABT_SHIFT                     29
+#define ENET_EIMR_BABR_MASK                      0x40000000U
+#define ENET_EIMR_BABR_SHIFT                     30
+/* RDAR Bit Fields */
+#define ENET_RDAR_RDAR_MASK                      0x1000000U
+#define ENET_RDAR_RDAR_SHIFT                     24
+/* TDAR Bit Fields */
+#define ENET_TDAR_TDAR_MASK                      0x1000000U
+#define ENET_TDAR_TDAR_SHIFT                     24
+/* ECR Bit Fields */
+#define ENET_ECR_RESET_MASK                      0x1U
+#define ENET_ECR_RESET_SHIFT                     0
+#define ENET_ECR_ETHEREN_MASK                    0x2U
+#define ENET_ECR_ETHEREN_SHIFT                   1
+#define ENET_ECR_MAGICEN_MASK                    0x4U
+#define ENET_ECR_MAGICEN_SHIFT                   2
+#define ENET_ECR_SLEEP_MASK                      0x8U
+#define ENET_ECR_SLEEP_SHIFT                     3
+#define ENET_ECR_EN1588_MASK                     0x10U
+#define ENET_ECR_EN1588_SHIFT                    4
+#define ENET_ECR_DBGEN_MASK                      0x40U
+#define ENET_ECR_DBGEN_SHIFT                     6
+#define ENET_ECR_STOPEN_MASK                     0x80U
+#define ENET_ECR_STOPEN_SHIFT                    7
+#define ENET_ECR_DBSWP_MASK                      0x100U
+#define ENET_ECR_DBSWP_SHIFT                     8
+/* MMFR Bit Fields */
+#define ENET_MMFR_DATA_MASK                      0xFFFFU
+#define ENET_MMFR_DATA_SHIFT                     0
+#define ENET_MMFR_DATA(x)                        (((uint32_t)(((uint32_t)(x))<<ENET_MMFR_DATA_SHIFT))&ENET_MMFR_DATA_MASK)
+#define ENET_MMFR_TA_MASK                        0x30000U
+#define ENET_MMFR_TA_SHIFT                       16
+#define ENET_MMFR_TA(x)                          (((uint32_t)(((uint32_t)(x))<<ENET_MMFR_TA_SHIFT))&ENET_MMFR_TA_MASK)
+#define ENET_MMFR_RA_MASK                        0x7C0000U
+#define ENET_MMFR_RA_SHIFT                       18
+#define ENET_MMFR_RA(x)                          (((uint32_t)(((uint32_t)(x))<<ENET_MMFR_RA_SHIFT))&ENET_MMFR_RA_MASK)
+#define ENET_MMFR_PA_MASK                        0xF800000U
+#define ENET_MMFR_PA_SHIFT                       23
+#define ENET_MMFR_PA(x)                          (((uint32_t)(((uint32_t)(x))<<ENET_MMFR_PA_SHIFT))&ENET_MMFR_PA_MASK)
+#define ENET_MMFR_OP_MASK                        0x30000000U
+#define ENET_MMFR_OP_SHIFT                       28
+#define ENET_MMFR_OP(x)                          (((uint32_t)(((uint32_t)(x))<<ENET_MMFR_OP_SHIFT))&ENET_MMFR_OP_MASK)
+#define ENET_MMFR_ST_MASK                        0xC0000000U
+#define ENET_MMFR_ST_SHIFT                       30
+#define ENET_MMFR_ST(x)                          (((uint32_t)(((uint32_t)(x))<<ENET_MMFR_ST_SHIFT))&ENET_MMFR_ST_MASK)
+/* MSCR Bit Fields */
+#define ENET_MSCR_MII_SPEED_MASK                 0x7EU
+#define ENET_MSCR_MII_SPEED_SHIFT                1
+#define ENET_MSCR_MII_SPEED(x)                   (((uint32_t)(((uint32_t)(x))<<ENET_MSCR_MII_SPEED_SHIFT))&ENET_MSCR_MII_SPEED_MASK)
+#define ENET_MSCR_DIS_PRE_MASK                   0x80U
+#define ENET_MSCR_DIS_PRE_SHIFT                  7
+#define ENET_MSCR_HOLDTIME_MASK                  0x700U
+#define ENET_MSCR_HOLDTIME_SHIFT                 8
+#define ENET_MSCR_HOLDTIME(x)                    (((uint32_t)(((uint32_t)(x))<<ENET_MSCR_HOLDTIME_SHIFT))&ENET_MSCR_HOLDTIME_MASK)
+/* MIBC Bit Fields */
+#define ENET_MIBC_MIB_CLEAR_MASK                 0x20000000U
+#define ENET_MIBC_MIB_CLEAR_SHIFT                29
+#define ENET_MIBC_MIB_IDLE_MASK                  0x40000000U
+#define ENET_MIBC_MIB_IDLE_SHIFT                 30
+#define ENET_MIBC_MIB_DIS_MASK                   0x80000000U
+#define ENET_MIBC_MIB_DIS_SHIFT                  31
+/* RCR Bit Fields */
+#define ENET_RCR_LOOP_MASK                       0x1U
+#define ENET_RCR_LOOP_SHIFT                      0
+#define ENET_RCR_DRT_MASK                        0x2U
+#define ENET_RCR_DRT_SHIFT                       1
+#define ENET_RCR_MII_MODE_MASK                   0x4U
+#define ENET_RCR_MII_MODE_SHIFT                  2
+#define ENET_RCR_PROM_MASK                       0x8U
+#define ENET_RCR_PROM_SHIFT                      3
+#define ENET_RCR_BC_REJ_MASK                     0x10U
+#define ENET_RCR_BC_REJ_SHIFT                    4
+#define ENET_RCR_FCE_MASK                        0x20U
+#define ENET_RCR_FCE_SHIFT                       5
+#define ENET_RCR_RMII_MODE_MASK                  0x100U
+#define ENET_RCR_RMII_MODE_SHIFT                 8
+#define ENET_RCR_RMII_10T_MASK                   0x200U
+#define ENET_RCR_RMII_10T_SHIFT                  9
+#define ENET_RCR_PADEN_MASK                      0x1000U
+#define ENET_RCR_PADEN_SHIFT                     12
+#define ENET_RCR_PAUFWD_MASK                     0x2000U
+#define ENET_RCR_PAUFWD_SHIFT                    13
+#define ENET_RCR_CRCFWD_MASK                     0x4000U
+#define ENET_RCR_CRCFWD_SHIFT                    14
+#define ENET_RCR_CFEN_MASK                       0x8000U
+#define ENET_RCR_CFEN_SHIFT                      15
+#define ENET_RCR_MAX_FL_MASK                     0x3FFF0000U
+#define ENET_RCR_MAX_FL_SHIFT                    16
+#define ENET_RCR_MAX_FL(x)                       (((uint32_t)(((uint32_t)(x))<<ENET_RCR_MAX_FL_SHIFT))&ENET_RCR_MAX_FL_MASK)
+#define ENET_RCR_NLC_MASK                        0x40000000U
+#define ENET_RCR_NLC_SHIFT                       30
+#define ENET_RCR_GRS_MASK                        0x80000000U
+#define ENET_RCR_GRS_SHIFT                       31
+/* TCR Bit Fields */
+#define ENET_TCR_GTS_MASK                        0x1U
+#define ENET_TCR_GTS_SHIFT                       0
+#define ENET_TCR_FDEN_MASK                       0x4U
+#define ENET_TCR_FDEN_SHIFT                      2
+#define ENET_TCR_TFC_PAUSE_MASK                  0x8U
+#define ENET_TCR_TFC_PAUSE_SHIFT                 3
+#define ENET_TCR_RFC_PAUSE_MASK                  0x10U
+#define ENET_TCR_RFC_PAUSE_SHIFT                 4
+#define ENET_TCR_ADDSEL_MASK                     0xE0U
+#define ENET_TCR_ADDSEL_SHIFT                    5
+#define ENET_TCR_ADDSEL(x)                       (((uint32_t)(((uint32_t)(x))<<ENET_TCR_ADDSEL_SHIFT))&ENET_TCR_ADDSEL_MASK)
+#define ENET_TCR_ADDINS_MASK                     0x100U
+#define ENET_TCR_ADDINS_SHIFT                    8
+#define ENET_TCR_CRCFWD_MASK                     0x200U
+#define ENET_TCR_CRCFWD_SHIFT                    9
+/* PALR Bit Fields */
+#define ENET_PALR_PADDR1_MASK                    0xFFFFFFFFU
+#define ENET_PALR_PADDR1_SHIFT                   0
+#define ENET_PALR_PADDR1(x)                      (((uint32_t)(((uint32_t)(x))<<ENET_PALR_PADDR1_SHIFT))&ENET_PALR_PADDR1_MASK)
+/* PAUR Bit Fields */
+#define ENET_PAUR_TYPE_MASK                      0xFFFFU
+#define ENET_PAUR_TYPE_SHIFT                     0
+#define ENET_PAUR_TYPE(x)                        (((uint32_t)(((uint32_t)(x))<<ENET_PAUR_TYPE_SHIFT))&ENET_PAUR_TYPE_MASK)
+#define ENET_PAUR_PADDR2_MASK                    0xFFFF0000U
+#define ENET_PAUR_PADDR2_SHIFT                   16
+#define ENET_PAUR_PADDR2(x)                      (((uint32_t)(((uint32_t)(x))<<ENET_PAUR_PADDR2_SHIFT))&ENET_PAUR_PADDR2_MASK)
+/* OPD Bit Fields */
+#define ENET_OPD_PAUSE_DUR_MASK                  0xFFFFU
+#define ENET_OPD_PAUSE_DUR_SHIFT                 0
+#define ENET_OPD_PAUSE_DUR(x)                    (((uint32_t)(((uint32_t)(x))<<ENET_OPD_PAUSE_DUR_SHIFT))&ENET_OPD_PAUSE_DUR_MASK)
+#define ENET_OPD_OPCODE_MASK                     0xFFFF0000U
+#define ENET_OPD_OPCODE_SHIFT                    16
+#define ENET_OPD_OPCODE(x)                       (((uint32_t)(((uint32_t)(x))<<ENET_OPD_OPCODE_SHIFT))&ENET_OPD_OPCODE_MASK)
+/* IAUR Bit Fields */
+#define ENET_IAUR_IADDR1_MASK                    0xFFFFFFFFU
+#define ENET_IAUR_IADDR1_SHIFT                   0
+#define ENET_IAUR_IADDR1(x)                      (((uint32_t)(((uint32_t)(x))<<ENET_IAUR_IADDR1_SHIFT))&ENET_IAUR_IADDR1_MASK)
+/* IALR Bit Fields */
+#define ENET_IALR_IADDR2_MASK                    0xFFFFFFFFU
+#define ENET_IALR_IADDR2_SHIFT                   0
+#define ENET_IALR_IADDR2(x)                      (((uint32_t)(((uint32_t)(x))<<ENET_IALR_IADDR2_SHIFT))&ENET_IALR_IADDR2_MASK)
+/* GAUR Bit Fields */
+#define ENET_GAUR_GADDR1_MASK                    0xFFFFFFFFU
+#define ENET_GAUR_GADDR1_SHIFT                   0
+#define ENET_GAUR_GADDR1(x)                      (((uint32_t)(((uint32_t)(x))<<ENET_GAUR_GADDR1_SHIFT))&ENET_GAUR_GADDR1_MASK)
+/* GALR Bit Fields */
+#define ENET_GALR_GADDR2_MASK                    0xFFFFFFFFU
+#define ENET_GALR_GADDR2_SHIFT                   0
+#define ENET_GALR_GADDR2(x)                      (((uint32_t)(((uint32_t)(x))<<ENET_GALR_GADDR2_SHIFT))&ENET_GALR_GADDR2_MASK)
+/* TFWR Bit Fields */
+#define ENET_TFWR_TFWR_MASK                      0x3FU
+#define ENET_TFWR_TFWR_SHIFT                     0
+#define ENET_TFWR_TFWR(x)                        (((uint32_t)(((uint32_t)(x))<<ENET_TFWR_TFWR_SHIFT))&ENET_TFWR_TFWR_MASK)
+#define ENET_TFWR_STRFWD_MASK                    0x100U
+#define ENET_TFWR_STRFWD_SHIFT                   8
+/* RDSR Bit Fields */
+#define ENET_RDSR_R_DES_START_MASK               0xFFFFFFF8U
+#define ENET_RDSR_R_DES_START_SHIFT              3
+#define ENET_RDSR_R_DES_START(x)                 (((uint32_t)(((uint32_t)(x))<<ENET_RDSR_R_DES_START_SHIFT))&ENET_RDSR_R_DES_START_MASK)
+/* TDSR Bit Fields */
+#define ENET_TDSR_X_DES_START_MASK               0xFFFFFFF8U
+#define ENET_TDSR_X_DES_START_SHIFT              3
+#define ENET_TDSR_X_DES_START(x)                 (((uint32_t)(((uint32_t)(x))<<ENET_TDSR_X_DES_START_SHIFT))&ENET_TDSR_X_DES_START_MASK)
+/* MRBR Bit Fields */
+#define ENET_MRBR_R_BUF_SIZE_MASK                0x3FF0U
+#define ENET_MRBR_R_BUF_SIZE_SHIFT               4
+#define ENET_MRBR_R_BUF_SIZE(x)                  (((uint32_t)(((uint32_t)(x))<<ENET_MRBR_R_BUF_SIZE_SHIFT))&ENET_MRBR_R_BUF_SIZE_MASK)
+/* RSFL Bit Fields */
+#define ENET_RSFL_RX_SECTION_FULL_MASK           0xFFU
+#define ENET_RSFL_RX_SECTION_FULL_SHIFT          0
+#define ENET_RSFL_RX_SECTION_FULL(x)             (((uint32_t)(((uint32_t)(x))<<ENET_RSFL_RX_SECTION_FULL_SHIFT))&ENET_RSFL_RX_SECTION_FULL_MASK)
+/* RSEM Bit Fields */
+#define ENET_RSEM_RX_SECTION_EMPTY_MASK          0xFFU
+#define ENET_RSEM_RX_SECTION_EMPTY_SHIFT         0
+#define ENET_RSEM_RX_SECTION_EMPTY(x)            (((uint32_t)(((uint32_t)(x))<<ENET_RSEM_RX_SECTION_EMPTY_SHIFT))&ENET_RSEM_RX_SECTION_EMPTY_MASK)
+/* RAEM Bit Fields */
+#define ENET_RAEM_RX_ALMOST_EMPTY_MASK           0xFFU
+#define ENET_RAEM_RX_ALMOST_EMPTY_SHIFT          0
+#define ENET_RAEM_RX_ALMOST_EMPTY(x)             (((uint32_t)(((uint32_t)(x))<<ENET_RAEM_RX_ALMOST_EMPTY_SHIFT))&ENET_RAEM_RX_ALMOST_EMPTY_MASK)
+/* RAFL Bit Fields */
+#define ENET_RAFL_RX_ALMOST_FULL_MASK            0xFFU
+#define ENET_RAFL_RX_ALMOST_FULL_SHIFT           0
+#define ENET_RAFL_RX_ALMOST_FULL(x)              (((uint32_t)(((uint32_t)(x))<<ENET_RAFL_RX_ALMOST_FULL_SHIFT))&ENET_RAFL_RX_ALMOST_FULL_MASK)
+/* TSEM Bit Fields */
+#define ENET_TSEM_TX_SECTION_EMPTY_MASK          0xFFU
+#define ENET_TSEM_TX_SECTION_EMPTY_SHIFT         0
+#define ENET_TSEM_TX_SECTION_EMPTY(x)            (((uint32_t)(((uint32_t)(x))<<ENET_TSEM_TX_SECTION_EMPTY_SHIFT))&ENET_TSEM_TX_SECTION_EMPTY_MASK)
+/* TAEM Bit Fields */
+#define ENET_TAEM_TX_ALMOST_EMPTY_MASK           0xFFU
+#define ENET_TAEM_TX_ALMOST_EMPTY_SHIFT          0
+#define ENET_TAEM_TX_ALMOST_EMPTY(x)             (((uint32_t)(((uint32_t)(x))<<ENET_TAEM_TX_ALMOST_EMPTY_SHIFT))&ENET_TAEM_TX_ALMOST_EMPTY_MASK)
+/* TAFL Bit Fields */
+#define ENET_TAFL_TX_ALMOST_FULL_MASK            0xFFU
+#define ENET_TAFL_TX_ALMOST_FULL_SHIFT           0
+#define ENET_TAFL_TX_ALMOST_FULL(x)              (((uint32_t)(((uint32_t)(x))<<ENET_TAFL_TX_ALMOST_FULL_SHIFT))&ENET_TAFL_TX_ALMOST_FULL_MASK)
+/* TIPG Bit Fields */
+#define ENET_TIPG_IPG_MASK                       0x1FU
+#define ENET_TIPG_IPG_SHIFT                      0
+#define ENET_TIPG_IPG(x)                         (((uint32_t)(((uint32_t)(x))<<ENET_TIPG_IPG_SHIFT))&ENET_TIPG_IPG_MASK)
+/* FTRL Bit Fields */
+#define ENET_FTRL_TRUNC_FL_MASK                  0x3FFFU
+#define ENET_FTRL_TRUNC_FL_SHIFT                 0
+#define ENET_FTRL_TRUNC_FL(x)                    (((uint32_t)(((uint32_t)(x))<<ENET_FTRL_TRUNC_FL_SHIFT))&ENET_FTRL_TRUNC_FL_MASK)
+/* TACC Bit Fields */
+#define ENET_TACC_SHIFT16_MASK                   0x1U
+#define ENET_TACC_SHIFT16_SHIFT                  0
+#define ENET_TACC_IPCHK_MASK                     0x8U
+#define ENET_TACC_IPCHK_SHIFT                    3
+#define ENET_TACC_PROCHK_MASK                    0x10U
+#define ENET_TACC_PROCHK_SHIFT                   4
+/* RACC Bit Fields */
+#define ENET_RACC_PADREM_MASK                    0x1U
+#define ENET_RACC_PADREM_SHIFT                   0
+#define ENET_RACC_IPDIS_MASK                     0x2U
+#define ENET_RACC_IPDIS_SHIFT                    1
+#define ENET_RACC_PRODIS_MASK                    0x4U
+#define ENET_RACC_PRODIS_SHIFT                   2
+#define ENET_RACC_LINEDIS_MASK                   0x40U
+#define ENET_RACC_LINEDIS_SHIFT                  6
+#define ENET_RACC_SHIFT16_MASK                   0x80U
+#define ENET_RACC_SHIFT16_SHIFT                  7
+/* ATCR Bit Fields */
+#define ENET_ATCR_EN_MASK                        0x1U
+#define ENET_ATCR_EN_SHIFT                       0
+#define ENET_ATCR_OFFEN_MASK                     0x4U
+#define ENET_ATCR_OFFEN_SHIFT                    2
+#define ENET_ATCR_OFFRST_MASK                    0x8U
+#define ENET_ATCR_OFFRST_SHIFT                   3
+#define ENET_ATCR_PEREN_MASK                     0x10U
+#define ENET_ATCR_PEREN_SHIFT                    4
+#define ENET_ATCR_PINPER_MASK                    0x80U
+#define ENET_ATCR_PINPER_SHIFT                   7
+#define ENET_ATCR_RESTART_MASK                   0x200U
+#define ENET_ATCR_RESTART_SHIFT                  9
+#define ENET_ATCR_CAPTURE_MASK                   0x800U
+#define ENET_ATCR_CAPTURE_SHIFT                  11
+#define ENET_ATCR_SLAVE_MASK                     0x2000U
+#define ENET_ATCR_SLAVE_SHIFT                    13
+/* ATVR Bit Fields */
+#define ENET_ATVR_ATIME_MASK                     0xFFFFFFFFU
+#define ENET_ATVR_ATIME_SHIFT                    0
+#define ENET_ATVR_ATIME(x)                       (((uint32_t)(((uint32_t)(x))<<ENET_ATVR_ATIME_SHIFT))&ENET_ATVR_ATIME_MASK)
+/* ATOFF Bit Fields */
+#define ENET_ATOFF_OFFSET_MASK                   0xFFFFFFFFU
+#define ENET_ATOFF_OFFSET_SHIFT                  0
+#define ENET_ATOFF_OFFSET(x)                     (((uint32_t)(((uint32_t)(x))<<ENET_ATOFF_OFFSET_SHIFT))&ENET_ATOFF_OFFSET_MASK)
+/* ATPER Bit Fields */
+#define ENET_ATPER_PERIOD_MASK                   0xFFFFFFFFU
+#define ENET_ATPER_PERIOD_SHIFT                  0
+#define ENET_ATPER_PERIOD(x)                     (((uint32_t)(((uint32_t)(x))<<ENET_ATPER_PERIOD_SHIFT))&ENET_ATPER_PERIOD_MASK)
+/* ATCOR Bit Fields */
+#define ENET_ATCOR_COR_MASK                      0x7FFFFFFFU
+#define ENET_ATCOR_COR_SHIFT                     0
+#define ENET_ATCOR_COR(x)                        (((uint32_t)(((uint32_t)(x))<<ENET_ATCOR_COR_SHIFT))&ENET_ATCOR_COR_MASK)
+/* ATINC Bit Fields */
+#define ENET_ATINC_INC_MASK                      0x7FU
+#define ENET_ATINC_INC_SHIFT                     0
+#define ENET_ATINC_INC(x)                        (((uint32_t)(((uint32_t)(x))<<ENET_ATINC_INC_SHIFT))&ENET_ATINC_INC_MASK)
+#define ENET_ATINC_INC_CORR_MASK                 0x7F00U
+#define ENET_ATINC_INC_CORR_SHIFT                8
+#define ENET_ATINC_INC_CORR(x)                   (((uint32_t)(((uint32_t)(x))<<ENET_ATINC_INC_CORR_SHIFT))&ENET_ATINC_INC_CORR_MASK)
+/* ATSTMP Bit Fields */
+#define ENET_ATSTMP_TIMESTAMP_MASK               0xFFFFFFFFU
+#define ENET_ATSTMP_TIMESTAMP_SHIFT              0
+#define ENET_ATSTMP_TIMESTAMP(x)                 (((uint32_t)(((uint32_t)(x))<<ENET_ATSTMP_TIMESTAMP_SHIFT))&ENET_ATSTMP_TIMESTAMP_MASK)
+/* TGSR Bit Fields */
+#define ENET_TGSR_TF0_MASK                       0x1U
+#define ENET_TGSR_TF0_SHIFT                      0
+#define ENET_TGSR_TF1_MASK                       0x2U
+#define ENET_TGSR_TF1_SHIFT                      1
+#define ENET_TGSR_TF2_MASK                       0x4U
+#define ENET_TGSR_TF2_SHIFT                      2
+#define ENET_TGSR_TF3_MASK                       0x8U
+#define ENET_TGSR_TF3_SHIFT                      3
+/* TCSR Bit Fields */
+#define ENET_TCSR_TDRE_MASK                      0x1U
+#define ENET_TCSR_TDRE_SHIFT                     0
+#define ENET_TCSR_TMODE_MASK                     0x3CU
+#define ENET_TCSR_TMODE_SHIFT                    2
+#define ENET_TCSR_TMODE(x)                       (((uint32_t)(((uint32_t)(x))<<ENET_TCSR_TMODE_SHIFT))&ENET_TCSR_TMODE_MASK)
+#define ENET_TCSR_TIE_MASK                       0x40U
+#define ENET_TCSR_TIE_SHIFT                      6
+#define ENET_TCSR_TF_MASK                        0x80U
+#define ENET_TCSR_TF_SHIFT                       7
+/* TCCR Bit Fields */
+#define ENET_TCCR_TCC_MASK                       0xFFFFFFFFU
+#define ENET_TCCR_TCC_SHIFT                      0
+#define ENET_TCCR_TCC(x)                         (((uint32_t)(((uint32_t)(x))<<ENET_TCCR_TCC_SHIFT))&ENET_TCCR_TCC_MASK)
+
+
+/*******************************************************************************
+  ENET BUFFER Descriptors control and status bits
+*******************************************************************************/
+
+/* Standard TX Buffer Descriptors */
+#define ENET_BD_TX_R        0x0080
+#define ENET_BD_TX_TO1      0x0040
+#define ENET_BD_TX_W        0x0020
+#define ENET_BD_TX_TO2      0x0010
+#define ENET_BD_TX_L        0x0008
+#define ENET_BD_TX_TC       0x0004
+#define ENET_BD_TX_ABC      0x0002
+
+/* Enhanced TX Buffer Descriptors */
+#define ENET_BD_TX_INT      0x00000040 
+#define ENET_BD_TX_TS       0x00000020 
+#define ENET_BD_TX_PINS     0x00000010 
+#define ENET_BD_TX_IINS     0x00000008 
+#define ENET_BD_TX_TXE      0x00800000 
+#define ENET_BD_TX_UE       0x00200000 
+#define ENET_BD_TX_EE       0x00100000
+#define ENET_BD_TX_FE       0x00080000 
+#define ENET_BD_TX_LCE      0x00040000 
+#define ENET_BD_TX_OE       0x00020000 
+#define ENET_BD_TX_TSE      0x00010000 
+#define ENET_BD_TX_BDU      0x00000080    
+
+/* Standard RX Buffer Descriptors */
+#define ENET_BD_RX_E        0x0080
+#define ENET_BD_RX_R01      0x0040
+#define ENET_BD_RX_W        0x0020
+#define ENET_BD_RX_R02      0x0010
+#define ENET_BD_RX_L        0x0008
+#define ENET_BD_RX_M        0x0001
+#define ENET_BD_RX_BC       0x8000
+#define ENET_BD_RX_MC       0x4000
+#define ENET_BD_RX_LG       0x2000
+#define ENET_BD_RX_NO       0x1000
+#define ENET_BD_RX_CR       0x0400
+#define ENET_BD_RX_OV       0x0200
+#define ENET_BD_RX_TR       0x0100
+
+/* Enhanced RX Buffer Descriptors */
+#define ENET_BD_RX_ME       0x00000080    
+#define ENET_BD_RX_PE       0x00000004    
+#define ENET_BD_RX_CE       0x00000002    
+#define ENET_BD_RX_UC       0x00000001
+#define ENET_BD_RX_INT      0x00008000    
+#define ENET_BD_RX_ICE      0x20000000    
+#define ENET_BD_RX_PCR      0x10000000    
+#define ENET_BD_RX_VLAN     0x04000000    
+#define ENET_BD_RX_IPV6     0x02000000    
+#define ENET_BD_RX_FRAG     0x01000000    
+#define ENET_BD_RX_BDU      0x00000080    
+
+
+#endif /* !defined(KINETIS_H) */

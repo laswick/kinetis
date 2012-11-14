@@ -51,6 +51,7 @@ enum {                                               /* Major Device Numbers */
     DEV_MAJ_CRC,
     DEV_MAJ_ADC,
     DEV_MAJ_SDHC,
+    DEV_MAJ_ENET,
 };
 
 typedef struct devoptab_s {                       /* Device Operations Table */
@@ -677,6 +678,94 @@ enum {
 #define IO_IOCTL_ADC_COMPARE_VAL_MASK 0xFFFF
 #define IO_IOCTL_ADC_COMPARE_VAL2_SHIFT 16
 
+/* ENET ***********************************************************************/
+
+#define DEVOPTAB_ENET0_STR "eth0"
+
+int  enet_install (void);
+int eth_hwaddr_match (uint8_t* a1, uint8_t* a2);
+int eth_hwaddr_zero (uint8_t* a1);
+int eth_hwaddr_eff (uint8_t* a1);
+void eth_hwaddr_copy (uint8_t* dest, uint8_t* src);
+
+/* Need these swap macros to deal with little/big endian issues */
+#define BSWAP32(inval) (__builtin_bswap32((uint32_t)(inval)))
+#define BSWAP16(inval) ((uint16_t)__builtin_bswap32(((uint32_t)(inval)) << 16 ))
+
+enum {
+    IO_IOCTL_ENET_SET_MAC_ADDRESS,      /* You have to set a MAC address */
+    IO_IOCTL_ENET_SET_ENET_STATE,       /* Turn ethernet on/off - Must have a MAC */
+    IO_IOCTL_ENET_GET_ENET_STATE,       /* Return ethernet on / off state */
+    IO_IOCTL_ENET_GET_DETAILED_ERROR,   /* Return more detailed error info */
+    IO_IOCTL_ENET_SET_AUTONEGOTIATE,    /* Set Phy autonegotiate on/off */
+    IO_IOCTL_ENET_SET_SPEED,            /* Set desired link speed */
+    IO_IOCTL_ENET_SET_DUPLEX,           /* Set desired duplex */
+    IO_IOCTL_ENET_GET_PHY_CONFIG,       /* Return current phy config struct */
+    IO_IOCTL_ENET_GET_PHY_STATUS,       /* Return current phy status struct */
+    IO_IOCTL_ENET_GET_PHY_REG,          /* Read a raw phy register */
+    IO_IOCTL_ENET_GET_LAST_RXBD,        /* Return contents of last rxbd */
+    MAX_IO_IOCTRL_ENET_CMDS,            
+};
+
+typedef enum enet_state_e {
+    ENET_OFF,
+    ENET_ON
+} enet_state_t;
+
+typedef enum enet_autoneg_e {
+    ENET_AUTONEG_ON,
+    ENET_AUTONEG_OFF
+} enet_autoneg_t;
+
+typedef enum enet_link_e {
+    ENET_LINK_DOWN,
+    ENET_LINK_UP
+} enet_link_t;
+
+typedef enum enet_speed_e {
+    ENET_10BASET,
+    ENET_100BASET
+} enet_speed_t;
+
+typedef enum enet_duplex_e {
+	ENET_DUPLEX_HALF,
+	ENET_DUPLEX_FULL
+} enet_duplex_t;
+
+typedef enum enet_loopback_e {
+    ENET_LOOPBACK_INT,
+    ENET_LOOPBACK_EXT,
+    ENET_LOOPBACK_OFF
+} enet_loopback_t;
+
+typedef enum enet_prom_e {
+    ENET_PROM_OFF,
+    ENET_PROM_ON
+} enet_prom_t;
+
+typedef struct enet_cfg_s {
+    uint8_t         phy_addr;
+    enet_autoneg_t  autoneg;
+    enet_speed_t    speed;
+    enet_duplex_t   duplex;
+    enet_loopback_t loopback;
+    enet_prom_t     prom;
+    uint8_t         mac_addr[6];
+} enet_cfg_t;
+
+typedef struct enet_status_s {
+    enet_state_t    on_off;
+    enet_link_t     link;
+    enet_speed_t    speed;
+    enet_duplex_t   duplex;
+} enet_status_t;
+
+typedef struct enet_descr_s {
+  	uint16_t status;	/* control and status */
+  	uint16_t length;	/* transfer length */
+  	uint8_t  *buf_addr;	/* buffer address NOTE Big Endian!!!*/
+} enet_descr_t;
+
 /*******************************************************************************
 *
 * CCA Hardware Defines
@@ -893,8 +982,116 @@ enum {
 };
 
 /******************************************************************************/
+/*
+ * Phy definitions in here because they are not part of the kinetis
+ * they are in the PHY on the Tower Serial Board (Micrel)
+ */
 
-#endif
+#define MII_TIMEOUT		    0x1FFFF     /* Timeout when talking MII to PHY */
+#define MII_LINK_TIMEOUT    0x1FFFF     /* Timeout when resetting PHY */
 
-#endif
+/* MII Register Addresses */
+#define PHY_BMCR                    (0x00)
+#define PHY_BMSR                    (0x01)
+#define PHY_PHYIDR1                 (0x02)
+#define PHY_PHYIDR2                 (0x03)
+#define PHY_ANAR                    (0x04)
+#define PHY_ANLPAR                  (0x05)
+#define PHY_ANLPARNP                (0x05)
+#define PHY_ANER                    (0x06)
+#define PHY_ANNPTR                  (0x07)
+#define PHY_PHYSTS                  (0x10)
+#define PHY_MICR                    (0x11)
+#define PHY_MISR                    (0x12)
+#define PHY_PAGESEL                 (0x13)
+
+/*TWR definition: Micrel*/
+#define PHY_PHYCTRL1                (0x1E)
+#define PHY_PHYCTRL2                (0x1F)
+
+/* Bit definitions and macros for PHY_BMCR */
+#define PHY_BMCR_RESET              (0x8000)
+#define PHY_BMCR_LOOP               (0x4000)
+#define PHY_BMCR_SPEED              (0x2000)
+#define PHY_BMCR_AN_ENABLE          (0x1000)
+#define PHY_BMCR_POWERDOWN          (0x0800)
+#define PHY_BMCR_ISOLATE            (0x0400)
+#define PHY_BMCR_AN_RESTART         (0x0200)
+#define PHY_BMCR_FDX                (0x0100)
+#define PHY_BMCR_COL_TEST           (0x0080)
+
+/* Bit definitions and macros for PHY_BMSR */
+#define PHY_BMSR_100BT4             (0x8000)
+#define PHY_BMSR_100BTX_FDX         (0x4000)
+#define PHY_BMSR_100BTX             (0x2000)
+#define PHY_BMSR_10BT_FDX           (0x1000)
+#define PHY_BMSR_10BT               (0x0800)
+#define PHY_BMSR_NO_PREAMBLE        (0x0040)
+#define PHY_BMSR_AN_COMPLETE        (0x0020)
+#define PHY_BMSR_REMOTE_FAULT       (0x0010)
+#define PHY_BMSR_AN_ABILITY         (0x0008)
+#define PHY_BMSR_LINK               (0x0004)
+#define PHY_BMSR_JABBER             (0x0002)
+#define PHY_BMSR_EXTENDED           (0x0001)
+
+/* Bit definitions and macros for PHY_ANAR */
+#define PHY_ANAR_NEXT_PAGE          (0x8001)
+#define PHY_ANAR_REM_FAULT          (0x2001)
+#define PHY_ANAR_PAUSE              (0x0401)
+#define PHY_ANAR_100BT4             (0x0201)
+#define PHY_ANAR_100BTX_FDX         (0x0101)
+#define PHY_ANAR_100BTX             (0x0081)
+#define PHY_ANAR_10BT_FDX           (0x0041)
+#define PHY_ANAR_10BT               (0x0021)
+#define PHY_ANAR_802_3              (0x0001)
+
+/* Bit definitions and macros for PHY_ANLPAR */
+#define PHY_ANLPAR_NEXT_PAGE        (0x8000)
+#define PHY_ANLPAR_ACK              (0x4000)
+#define PHY_ANLPAR_REM_FAULT        (0x2000)
+#define PHY_ANLPAR_PAUSE            (0x0400)
+#define PHY_ANLPAR_100BT4           (0x0200)
+#define PHY_ANLPAR_100BTX_FDX       (0x0100)
+#define PHY_ANLPAR_100BTX           (0x0080)
+#define PHY_ANLPAR_10BTX_FDX        (0x0040)
+#define PHY_ANLPAR_10BT             (0x0020)
+
+
+/* Bit definition and macros for PHY_PHYCTRL1 */
+#define PHY_PHYCTRL1_LED_MASK       (0xC000)
+#define PHY_PHYCTRL1_POLARITY       (0x2000)
+#define PHY_PHYCTRL1_MDX_STATE      (0x0800)
+#define PHY_PHYCTRL1_REMOTE_LOOP    (0x0080)
+
+/* Bit definition and macros for PHY_PHYCTRL2 */
+#define PHY_PHYCTRL2_HP_MDIX        (0x8000)
+#define PHY_PHYCTRL2_MDIX_SELECT    (0x4000)
+#define PHY_PHYCTRL2_PAIRSWAP_DIS   (0x2000)
+#define PHY_PHYCTRL2_ENERGY_DET     (0x1000)
+#define PHY_PHYCTRL2_FORCE_LINK     (0x0800)
+#define PHY_PHYCTRL2_POWER_SAVING   (0x0400)
+#define PHY_PHYCTRL2_INT_LEVEL      (0x0200)
+#define PHY_PHYCTRL2_EN_JABBER      (0x0100)
+#define PHY_PHYCTRL2_AUTONEG_CMPLT  (0x0080)
+#define PHY_PHYCTRL2_ENABLE_PAUSE   (0x0040)
+#define PHY_PHYCTRL2_PHY_ISOLATE    (0x0020)
+#define PHY_PHYCTRL2_OP_MOD_MASK    (0x001C)
+#define PHY_PHYCTRL2_EN_SQE_TEST    (0x0002)
+#define PHY_PHYCTRL2_DATA_SCRAM_DIS (0x0001)
+
+
+/* Bit definitions of PHY_PHYCTRL2_OP_MOD_MASK */
+#define PHY_PHYCTRL2_OP_MOD_SHIFT             2
+#define PHY_PHYCTRL2_MODE_OP_MOD_STILL_NEG    0
+#define PHY_PHYCTRL2_MODE_OP_MOD_10MBPS_HD    1
+#define PHY_PHYCTRL2_MODE_OP_MOD_100MBPS_HD   2
+#define PHY_PHYCTRL2_MODE_OP_MOD_10MBPS_FD    5
+#define PHY_PHYCTRL2_MODE_OP_MOD_100MBPS_FD   6
+
+
+/******************************************************************************/
+#endif /* defined(FREESCALE_K60N512_TOWER_HW) || 
+          defined(FREESCALE_K60F120_TOWER_HW) */
+
+#endif /* !defined(HARDWARE_H) */
 
