@@ -785,7 +785,7 @@ static int enetWritePacket(enet_t *enet, uint8_t* buffer, unsigned len)
     unsigned written_len = 0;
     enet_map_ptr fec = enet->addr;
 
-    if (len < ETH_MIN_FRM) return -1;
+    /* if (len < ETH_MIN_FRM) return -1; */ /* MAC will autopad */
 
 	cur_txbd = next_txbd;
 	num_txbds = (len/ENET_TX_BUFFER_SIZE);

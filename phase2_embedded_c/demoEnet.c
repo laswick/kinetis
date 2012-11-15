@@ -36,7 +36,7 @@ static uint8_t rx_buffer[ETH_MAX_FRM];
 
 static uint8_t zero_addr[ETH_ADDR_LEN] = { 0, 0, 0, 0, 0, 0 };
 static uint8_t eff_addr[ETH_ADDR_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-static uint8_t my_addr[ETH_ADDR_LEN] = { 0x05, 0x05, 0x04, 0x03, 0x02, 0x01 };
+static uint8_t my_addr[ETH_ADDR_LEN] = { 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
 
 /*
  * My fake IP Address
@@ -101,9 +101,6 @@ void printIPAddr(uint8_t * addr)
  * Creat the appropriate reply to an incoming ARP request.
  * Per RFC, reflect it back to source with our MAC and IP,
  * Change the operand code to 0x2, ARP reply.
- * Note I had to zero and send an ETH_MIN_FRM packet here.
- * The Kinetis MAC is supposed to autopad but my arp replies
- * are ignored unless I zero pad to ETH_MIN_FRM.
  */
 
 void reply_arp(int fd, arp_packet_t *arp)
@@ -112,8 +109,7 @@ void reply_arp(int fd, arp_packet_t *arp)
     arp_packet_t *reply = (arp_packet_t *)(tx_buffer+ETH_HDR_LEN);
     iprintf("I've Been ARP'D, Forming Reply\n");
     
-    memset ((void *)tx_buffer, 0, ETH_MIN_FRM);
-    eth_hwaddr_copy(eth_reply->dest, eff_addr);
+    eth_hwaddr_copy(eth_reply->dest, arp->sha);
     eth_hwaddr_copy(eth_reply->src, my_addr);
     eth_reply->type = BSWAP16(ETHTYPE_ARP);
     reply->htype = BSWAP16(0x0001);
@@ -123,9 +119,9 @@ void reply_arp(int fd, arp_packet_t *arp)
     reply->oper = BSWAP16(0x0002);  /* ARP reply */
     eth_hwaddr_copy(reply->sha, my_addr);
     ipv4_addr_copy(reply->spa, my_ip);
-    eth_hwaddr_copy(reply->tha, zero_addr);
+    eth_hwaddr_copy(reply->tha, arp->sha);
     ipv4_addr_copy(reply->tpa, arp->spa);
-    write(fd, tx_buffer, ETH_MIN_FRM);
+    write(fd, tx_buffer, (ETH_HDR_LEN+ETH_ARP_LEN));
 }
 
 /*
@@ -205,12 +201,97 @@ void do_icmp (int fd, eth_header_t * eth, ipv4_packet_t * ipv4, uint8_t *buf)
 }
 
 /*
+ * Telnet
+ */
+
+typedef struct tcp_con_s {
+    uint32_t my_seq;
+    uint16_t back_port;
+    uint16_t state;
+} tcp_con_t;
+
+void do_telnet(int fd, eth_header_t *eth, ipv4_packet_t * ipv4, tcp_packet_t * tcp, uint8_t * buf)
+{
+    static tcp_con_t connection = { 0x100, 0, 0 };
+    uint16_t flags;
+    int tx_len;
+    int data_len;
+
+    eth_header_t *eth_reply = (eth_header_t *) tx_buffer;
+    ipv4_packet_t *ipv4_reply = (ipv4_packet_t *)(tx_buffer+ETH_HDR_LEN);
+    tcp_packet_t *tcp_reply = (tcp_packet_t *)(tx_buffer + ETH_HDR_LEN + ETH_IPV4_LEN);
+    eth_hwaddr_copy(eth_reply->dest, eth->src);
+    eth_hwaddr_copy(eth_reply->src, my_addr);
+    eth_reply->type = BSWAP16(ETHTYPE_IPV4);
+    ipv4_reply->ver_ihl = 0x45;
+    ipv4_reply->dscp_ecn = 0x00;
+    ipv4_reply->len = ipv4->len;
+    ipv4_reply->id = ipv4->id;
+    ipv4_reply->flg_off = ipv4->flg_off;
+    ipv4_reply->ttl = ipv4->ttl;
+    ipv4_reply->protocol = ETH_PROTO_TCP;
+    ipv4_reply->header_csum = 0x0000;   /* MAC will calculate */
+    ipv4_addr_copy(ipv4_reply->spa, my_ip);
+    ipv4_addr_copy(ipv4_reply->tpa, ipv4->spa);
+    tcp_reply->source_port = tcp->dest_port;
+    tcp_reply->dest_port = tcp->source_port;
+    tcp_reply->window = BSWAP16(0x100);
+    tcp_reply->csum = 0x0000;
+    tcp_reply->urgent = 0x0000;
+
+    flags = BSWAP16(tcp->flags);
+    tx_len = ETH_HDR_LEN + ETH_IPV4_LEN + (TCP_FLG_GET_DATA(flags) * 4);
+
+    data_len = BSWAP16(ipv4->len) - tx_len;
+    if (data_len > 0) {
+        buf[data_len] = 0;
+        iprintf("Telnet Data: %s\n", buf);
+    }
+
+    if (flags & TCP_FLG_SYN_MSK) {
+        connection.my_seq = 0x100;
+        connection.back_port = BSWAP16(tcp->source_port);
+        connection.state = 1;
+        tcp_reply->ack_number = BSWAP32(BSWAP32(tcp->tx_sequence) + 1);
+        tcp_reply->tx_sequence = BSWAP32(connection.my_seq++);
+        flags = (flags & TCP_FLG_DATA_MSK) | TCP_FLG_ACK_MSK | TCP_FLG_SYN_MSK;
+        tcp_reply->flags = BSWAP16(flags);
+        write(fd, tx_buffer, tx_len);
+    } else if (flags & TCP_FLG_ACK_MSK) {
+        tcp_reply->ack_number = tcp->tx_sequence;
+        tcp_reply->tx_sequence = BSWAP32(connection.my_seq);
+        flags = (flags & TCP_FLG_DATA_MSK) | TCP_FLG_ACK_MSK;
+        tcp_reply->flags = BSWAP16(flags);
+        write(fd, tx_buffer, tx_len);
+    } else if (flags & TCP_FLG_FIN_MSK) {
+        tcp_reply->ack_number = tcp->tx_sequence;
+        tcp_reply->tx_sequence = BSWAP32(connection.my_seq);
+        connection.state = 0;
+        flags = (flags & TCP_FLG_DATA_MSK) | TCP_FLG_ACK_MSK;
+        tcp_reply->flags = BSWAP16(flags);
+        write(fd, tx_buffer, tx_len);
+    } else {
+        tcp_reply->ack_number = tcp->tx_sequence;
+        tcp_reply->tx_sequence = BSWAP32(connection.my_seq);
+        flags = (flags & TCP_FLG_DATA_MSK) | TCP_FLG_ACK_MSK;
+        tcp_reply->flags = BSWAP16(flags);
+        write(fd, tx_buffer, tx_len);
+    }
+}
+
+/*
  * You'd play with TCP packets in here
  */
 
 void do_tcp (int fd, eth_header_t * eth, ipv4_packet_t * ipv4, uint8_t *buf)
 {
+    tcp_packet_t *tcp = (tcp_packet_t *)buf;
     iprintf("***** Processing TCP *****\n");
+    iprintf("Source Port : %04X, Dest Port %04X\n", BSWAP16(tcp->source_port), BSWAP16(tcp->dest_port));
+    iprintf("Seqence : %08X, Ack Num %08X\n", BSWAP32(tcp->tx_sequence), BSWAP32(tcp->ack_number));
+    iprintf("Flags : %04X, Window %04X\n", BSWAP16(tcp->flags), BSWAP16(tcp->window));
+    if (BSWAP16(tcp->dest_port) == 23)
+        do_telnet(fd, eth, ipv4, tcp, buf + (4 * TCP_FLG_GET_DATA(BSWAP16(tcp->flags))));
 }
 
 /* 

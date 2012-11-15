@@ -115,8 +115,7 @@ typedef struct tcp_packet_s {
     uint16_t dest_port;
     uint32_t tx_sequence;
     uint32_t ack_number;
-    uint8_t  offset;
-    uint8_t  flags;
+    uint16_t flags;
     uint16_t window;
     uint16_t csum;
     uint16_t urgent;
@@ -124,5 +123,20 @@ typedef struct tcp_packet_s {
 } tcp_packet_t;
 
 #define ETH_TCP_LEN (24)
+
+#define TCP_FLG_FIN_MSK (0x0001)
+#define TCP_FLG_SYN_MSK (0x0002)
+#define TCP_FLG_RST_MSK (0x0004)
+#define TCP_FLG_PSH_MSK (0x0008)
+#define TCP_FLG_ACK_MSK (0x0010)
+#define TCP_FLG_URG_MSK (0x0020)
+#define TCP_FLG_ECE_MSK (0x0040)
+#define TCP_FLG_CWR_MSK (0x0080)
+#define TCP_FLG_NS_MSK  (0x0100)
+#define TCP_FLG_DATA_MSK (0xF000)
+#define TCP_FLG_DATA_SHIFT (12)
+
+#define TCP_FLG_GET_DATA(data) ((data & TCP_FLG_DATA_MSK) >> TCP_FLG_DATA_SHIFT)
+#define TCP_FLG_SET_DATA(data) ((data << TCP_FLG_DATA_SHIFT) & TCP_FLG_DATA_MASK)
 
 #endif  /* !defined(ETH_FRAME_H) */
