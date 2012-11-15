@@ -66,7 +66,7 @@ PHASE 2: Embedded C Programming
 PHASE 3: Real Time Embedded C Programing
 
     RTOS Introduction, Build System, & Scheduler    Jan.24 : David
-    RTOS Interrupts, & Event Flags                  Jan.31 : ?
+    RTOS Interrupts, & Event Flags                  Jan.31 : Shaun
     RTOS Semaphores, & Message Queues               Feb.7  : Jan
 
     Loadable Module Design                          TBD : ?
