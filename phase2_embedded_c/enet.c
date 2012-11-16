@@ -681,8 +681,10 @@ static void enetInit (enet_t *enet)
     fec->ecr = 0;
     
     /* transmit auto calc and insert IP and Protocol checksums - leave 0 */
+    fec->tfwr = ENET_TFWR_STRFWD_MASK; /* must be enabled to use auto csums */
     fec->tacc = (ENET_TACC_IPCHK_MASK | ENET_TACC_PROCHK_MASK);
     /* rx,  toss packest with IP, Protocol or Line problems */
+    fec->rsfl = 0;  /* enable rx store and forward */
     fec->racc = (ENET_RACC_IPDIS_MASK | ENET_RACC_PRODIS_MASK 
         | ENET_RACC_LINEDIS_MASK);
 
@@ -740,25 +742,43 @@ static int enetWaitFrameRX(enet_t *enet, int timeout)
 static int enetReadPacket(enet_t *enet, uint8_t* buffer, unsigned maxlen )
 {
 	int last_buffer;
-	uint16_t status;
 	int cur_rxbd;
-    int read_length;
+    int accumulated_len;
+    int read_len;
     enet_descr_t* rx_packet = &(enet->last_rx_packet);
 
 	last_buffer = 0;
 	rx_packet->length = 0;
+    accumulated_len = 0;
+    read_len = 0;
 	cur_rxbd = next_rxbd;
 
     if (maxlen < ETH_MIN_FRM) return -1;
 	if(rxbds[cur_rxbd].status & ENET_BD_RX_E) return -1;	
 
-    rx_packet->buf_addr = (uint8_t *)BSWAP32((uint32_t)rxbds[cur_rxbd].buf_addr);
 
 	while(!last_buffer) {
-		status = rxbds[cur_rxbd].status;
+        rx_packet->buf_addr = (uint8_t *)BSWAP32((uint32_t)rxbds[cur_rxbd].buf_addr);
+		rx_packet->status = rxbds[cur_rxbd].status;
 		rx_packet->length = BSWAP16(rxbds[cur_rxbd].length);
-		last_buffer = (status & ENET_BD_RX_L);
-		if(status & ENET_BD_RX_W) {
+		last_buffer = (rx_packet->status & ENET_BD_RX_L);
+
+		if(last_buffer) {
+            read_len = (rx_packet->length - accumulated_len); /* On last BD len is total */
+        } else {
+            read_len = rx_packet->length; /* On intermediate BD's len is BUFFER_SIZE */
+        }
+
+        /* accumation of all reads cannot blow past passed maxlen, so clamp read_len */
+        read_len = ((accumulated_len + read_len) <= maxlen) ? read_len : (maxlen - accumulated_len);
+        if (read_len > 0) { /* Got data to copy, move it so buffer can be re-used */
+    	    memcpy((void *)buffer, (void *) rx_packet->buf_addr, read_len);
+            buffer += read_len;
+            accumulated_len += read_len;
+        }
+
+        /* Mark rxbd as empty so uDMA can re-use it */
+		if(rx_packet->status & ENET_BD_RX_W) {
 			rxbds[cur_rxbd].status = (ENET_BD_RX_W | ENET_BD_RX_E);
 			cur_rxbd = 0;
 		} else {
@@ -767,12 +787,9 @@ static int enetReadPacket(enet_t *enet, uint8_t* buffer, unsigned maxlen )
 		}
 	}
 
-    read_length = (rx_packet->length < maxlen) ? rx_packet->length : maxlen;
-
-	memcpy((void *)buffer, (void *) rx_packet->buf_addr, read_length);
+    enetBDStartRX(enet);
 	next_rxbd = cur_rxbd;
-	rx_packet->status = status;
-    return read_length;
+    return accumulated_len;
 }
 
 /********************************************************************/
@@ -785,8 +802,6 @@ static int enetWritePacket(enet_t *enet, uint8_t* buffer, unsigned len)
     unsigned written_len = 0;
     enet_map_ptr fec = enet->addr;
 
-    /* if (len < ETH_MIN_FRM) return -1; */ /* MAC will autopad */
-
 	cur_txbd = next_txbd;
 	num_txbds = (len/ENET_TX_BUFFER_SIZE);
 	if((num_txbds * ENET_TX_BUFFER_SIZE) < len) {
@@ -794,8 +809,14 @@ static int enetWritePacket(enet_t *enet, uint8_t* buffer, unsigned len)
 	}
     
 	for (i = 0; i < num_txbds; i++) {
+
+        /* Block while buffer is still in use, make sure xmit is on */
+        while (txbds[cur_txbd].status & ENET_BD_TX_R) {
+	        if (!(fec->tdar & ENET_TDAR_TDAR_MASK))  
+	            fec->tdar = ENET_TDAR_TDAR_MASK;
+        }
 		
-		txbds[cur_txbd].status = ENET_BD_TX_TC | ENET_BD_TX_R;
+		txbds[cur_txbd].status = ENET_BD_TX_TC;
 		if(i == num_txbds - 1) {
             buf_len = (uint16_t) len;
 		    txbds[cur_txbd].status |= ENET_BD_TX_L;		 
@@ -811,11 +832,15 @@ static int enetWritePacket(enet_t *enet, uint8_t* buffer, unsigned len)
         buffer += buf_len;
         written_len += buf_len;
 
-		if(++cur_txbd == ENET_NUM_TXBDS)
+        /* This buffer is ready to go, check for wrap condition */
+		if(cur_txbd == (ENET_NUM_TXBDS - 1))
 		{
-			txbds[ENET_NUM_TXBDS - 1].status |= ENET_BD_TX_W;
+			txbds[cur_txbd].status |= (ENET_BD_TX_W | ENET_BD_TX_R);
 			cur_txbd = 0;
-		}
+		} else {
+			txbds[cur_txbd].status |= ENET_BD_TX_R;
+			cur_txbd++;
+        }
 	}
 	
 	next_txbd = cur_txbd;
