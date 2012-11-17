@@ -523,6 +523,13 @@ void enet_posix_test(void)
 int main(void)
 {
     int fd;
+#if defined(K60N512)
+    clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_2, DIVIDE_BY_4);
+    clockConfigMcgOut(MCG_PLL_EXTERNAL_100MHZ);
+#elif defined(K60F120)
+    clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_3, DIVIDE_BY_5);
+    clockConfigMcgOut(MCG_PLL_EXTERNAL_120MHZ);
+#endif
     gpioConfig(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_YELLOW_PORT, N_LED_YELLOW_PIN, GPIO_OUTPUT | GPIO_LOW);
     gpioConfig(N_LED_GREEN_PORT,  N_LED_GREEN_PIN,  GPIO_OUTPUT | GPIO_LOW);

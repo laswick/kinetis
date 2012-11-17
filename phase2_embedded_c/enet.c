@@ -253,32 +253,34 @@ void eth_hwaddr_copy (uint8_t* dest, uint8_t* src)
 static void phyInit(enet_t *enet)
 {
     enet_map_ptr fec = enet->addr;
+    uint32_t clockHz = clockGetFreq(CLOCK_SYSTEM);
+    uint8_t mii_speed = (uint8_t)((clockHz/5000000) - 1);
 
-    fec->mscr = ENET_MSCR_MII_SPEED((2*50/5)+1);
+    fec->mscr = ENET_MSCR_MII_SPEED(mii_speed);
 }
 
 /********************************************************************/
 static int phyWrite(enet_t *enet, int reg_addr, int data)
 {
     enet_map_ptr fec = enet->addr;
-	int timeout;
+    int timeout;
 
-	/* Clear MII interrupt bit */
-	fec->eir = ENET_EIR_MII_MASK;
+    /* Clear MII interrupt bit */
+    fec->eir = ENET_EIR_MII_MASK;
 
-	/* Request phy write */
-	fec->mmfr = ENET_MMFR_ST(0x01) | ENET_MMFR_OP(0x01)
-	    | ENET_MMFR_PA(enet->config.phy_addr) 
+    /* Request phy write */
+    fec->mmfr = ENET_MMFR_ST(0x01) | ENET_MMFR_OP(0x01)
+        | ENET_MMFR_PA(enet->config.phy_addr) 
         | ENET_MMFR_RA(reg_addr) | ENET_MMFR_TA(0x02)
         | ENET_MMFR_DATA(data);
 
-	/* Poll for MII interrupt */
+    /* Poll for MII interrupt */
     for (timeout = 0; timeout < MII_TIMEOUT; timeout++) {
-		if (fec->eir & ENET_EIR_MII_MASK) {
-	        fec->eir = ENET_EIR_MII_MASK;
-	        return TRUE;
+        if (fec->eir & ENET_EIR_MII_MASK) {
+            fec->eir = ENET_EIR_MII_MASK;
+            return TRUE;
         }
-	}
+    }
 
     return FALSE;
 }
@@ -287,24 +289,24 @@ static int phyWrite(enet_t *enet, int reg_addr, int data)
 static int phyRead(enet_t *enet, int reg_addr, int *data)
 {
     enet_map_ptr fec = enet->addr;
-	int timeout;
+    int timeout;
 
-	/* Clear MII interrupt bit */
-	fec->eir = ENET_EIR_MII_MASK;
+    /* Clear MII interrupt bit */
+    fec->eir = ENET_EIR_MII_MASK;
 
-	/* Request phy read */
-	fec->mmfr = ENET_MMFR_ST(0x01) | ENET_MMFR_OP(0x2)
-		| ENET_MMFR_PA(enet->config.phy_addr)
-		| ENET_MMFR_RA(reg_addr) | ENET_MMFR_TA(0x02);
+    /* Request phy read */
+    fec->mmfr = ENET_MMFR_ST(0x01) | ENET_MMFR_OP(0x2)
+        | ENET_MMFR_PA(enet->config.phy_addr)
+        | ENET_MMFR_RA(reg_addr) | ENET_MMFR_TA(0x02);
 
-	/* Poll for the MII interrupt */
-	for (timeout = 0; timeout < MII_TIMEOUT; timeout++) {
-		if (fec->eir & ENET_EIR_MII_MASK) {
-	        fec->eir = ENET_EIR_MII_MASK;
-	        *data = fec->mmfr & 0x0000FFFF;
+    /* Poll for the MII interrupt */
+    for (timeout = 0; timeout < MII_TIMEOUT; timeout++) {
+        if (fec->eir & ENET_EIR_MII_MASK) {
+            fec->eir = ENET_EIR_MII_MASK;
+            *data = fec->mmfr & 0x0000FFFF;
             return TRUE;
-	    }
-	}
+        }
+    }
     
     return FALSE;
 }
@@ -514,41 +516,41 @@ static int phySetRemoteLoopback(enet_t *enet)
 /*******************************************************************************/
 static void enetBDRingInit()
 {
-	int i;
+    int i;
 
     next_rxbd = 0;
     next_txbd = 0;
 
-	for (i = 0; i < ENET_NUM_RXBDS; i++) {
-		rxbds[i].status = ENET_BD_RX_E;
-		rxbds[i].length = 0;
-		rxbds[i].buf_addr = (uint8_t *)BSWAP32((uint32_t)rxbuffers[i]);
-	}
-	for (i = 0; i < ENET_NUM_TXBDS; i++) {
-		txbds[i].status = 0x0000;
-		txbds[i].length = 0;		
+    for (i = 0; i < ENET_NUM_RXBDS; i++) {
+        rxbds[i].status = ENET_BD_RX_E;
+        rxbds[i].length = 0;
+        rxbds[i].buf_addr = (uint8_t *)BSWAP32((uint32_t)rxbuffers[i]);
+    }
+    for (i = 0; i < ENET_NUM_TXBDS; i++) {
+        txbds[i].status = 0x0000;
+        txbds[i].length = 0;        
         txbds[i].buf_addr = (uint8_t *)BSWAP32((uint32_t)txbuffers[i]);
-	}
+    }
 
-	/* Last buffer descriptor in each ring needs the wrap bit on */
-	rxbds[ENET_NUM_RXBDS - 1].status |= ENET_BD_RX_W;
-	rxbds[ENET_NUM_TXBDS - 1].status |= ENET_BD_TX_W;
+    /* Last buffer descriptor in each ring needs the wrap bit on */
+    rxbds[ENET_NUM_RXBDS - 1].status |= ENET_BD_RX_W;
+    rxbds[ENET_NUM_TXBDS - 1].status |= ENET_BD_TX_W;
 }
 
 /********************************************************************/
 static void enetBDInit(enet_t *enet)
 {
     enet_map_ptr fec = enet->addr;
-	fec->mrbr = (uint16_t)ENET_RX_BUFFER_SIZE;  
-	fec->rdsr = (uint32_t)rxbds;
-	fec->tdsr = (uint32_t)txbds;
+    fec->mrbr = (uint16_t)ENET_RX_BUFFER_SIZE;  
+    fec->rdsr = (uint32_t)rxbds;
+    fec->tdsr = (uint32_t)txbds;
 }
 /********************************************************************/
 static void enetBDStartRX(enet_t *enet)
 {
     enet_map_ptr fec = enet->addr;
 
-	fec->rdar= ENET_RDAR_RDAR_MASK;
+    fec->rdar= ENET_RDAR_RDAR_MASK;
     while( !fec->rdar ) { /* if this gets stuck there is a DMA engine problem */
     }
 }
@@ -725,45 +727,45 @@ static void enetSetState (enet_t *enet, int new_state)
 /*******************************************************************************/
 static int enetWaitFrameRX(enet_t *enet, int timeout)
 {
-	int i;
+    int i;
     enet_map_ptr fec = enet->addr;
         
-	for (i=0; i < timeout; i++) {
-		if (fec->eir & ENET_EIR_RXF_MASK) {
-			fec->eir = ENET_EIR_RXF_MASK;
-			return TRUE;		
-		}
-	}
-	return FALSE;
+    for (i=0; i < timeout; i++) {
+        if (fec->eir & ENET_EIR_RXF_MASK) {
+            fec->eir = ENET_EIR_RXF_MASK;
+            return TRUE;        
+        }
+    }
+    return FALSE;
 }
 
 
 /*******************************************************************************/
 static int enetReadPacket(enet_t *enet, uint8_t* buffer, unsigned maxlen )
 {
-	int last_buffer;
-	int cur_rxbd;
+    int last_buffer;
+    int cur_rxbd;
     int accumulated_len;
     int read_len;
     enet_descr_t* rx_packet = &(enet->last_rx_packet);
 
-	last_buffer = 0;
-	rx_packet->length = 0;
+    last_buffer = 0;
+    rx_packet->length = 0;
     accumulated_len = 0;
     read_len = 0;
-	cur_rxbd = next_rxbd;
+    cur_rxbd = next_rxbd;
 
     if (maxlen < ETH_MIN_FRM) return -1;
-	if(rxbds[cur_rxbd].status & ENET_BD_RX_E) return -1;	
+    if(rxbds[cur_rxbd].status & ENET_BD_RX_E) return -1;    
 
 
-	while(!last_buffer) {
+    while(!last_buffer) {
         rx_packet->buf_addr = (uint8_t *)BSWAP32((uint32_t)rxbds[cur_rxbd].buf_addr);
-		rx_packet->status = rxbds[cur_rxbd].status;
-		rx_packet->length = BSWAP16(rxbds[cur_rxbd].length);
-		last_buffer = (rx_packet->status & ENET_BD_RX_L);
+        rx_packet->status = rxbds[cur_rxbd].status;
+        rx_packet->length = BSWAP16(rxbds[cur_rxbd].length);
+        last_buffer = (rx_packet->status & ENET_BD_RX_L);
 
-		if(last_buffer) {
+        if(last_buffer) {
             read_len = (rx_packet->length - accumulated_len); /* On last BD len is total */
         } else {
             read_len = rx_packet->length; /* On intermediate BD's len is BUFFER_SIZE */
@@ -772,60 +774,60 @@ static int enetReadPacket(enet_t *enet, uint8_t* buffer, unsigned maxlen )
         /* accumation of all reads cannot blow past passed maxlen, so clamp read_len */
         read_len = ((accumulated_len + read_len) <= maxlen) ? read_len : (maxlen - accumulated_len);
         if (read_len > 0) { /* Got data to copy, move it so buffer can be re-used */
-    	    memcpy((void *)buffer, (void *) rx_packet->buf_addr, read_len);
+            memcpy((void *)buffer, (void *) rx_packet->buf_addr, read_len);
             buffer += read_len;
             accumulated_len += read_len;
         }
 
         /* Mark rxbd as empty so uDMA can re-use it */
-		if(rx_packet->status & ENET_BD_RX_W) {
-			rxbds[cur_rxbd].status = (ENET_BD_RX_W | ENET_BD_RX_E);
-			cur_rxbd = 0;
-		} else {
-			rxbds[cur_rxbd].status = ENET_BD_RX_E;
-			cur_rxbd++;
-		}
-	}
+        if(rx_packet->status & ENET_BD_RX_W) {
+            rxbds[cur_rxbd].status = (ENET_BD_RX_W | ENET_BD_RX_E);
+            cur_rxbd = 0;
+        } else {
+            rxbds[cur_rxbd].status = ENET_BD_RX_E;
+            cur_rxbd++;
+        }
+    }
 
     enetBDStartRX(enet);
-	next_rxbd = cur_rxbd;
+    next_rxbd = cur_rxbd;
     return accumulated_len;
 }
 
 /********************************************************************/
 static int enetWritePacket(enet_t *enet, uint8_t* buffer, unsigned len)
 {
-	int num_txbds;
-	int cur_txbd;
+    int num_txbds;
+    int cur_txbd;
     int i;
     uint16_t buf_len;
     unsigned written_len = 0;
     enet_map_ptr fec = enet->addr;
 
-	cur_txbd = next_txbd;
-	num_txbds = (len/ENET_TX_BUFFER_SIZE);
-	if((num_txbds * ENET_TX_BUFFER_SIZE) < len) {
-		num_txbds = num_txbds + 1;
-	}
+    cur_txbd = next_txbd;
+    num_txbds = (len/ENET_TX_BUFFER_SIZE);
+    if((num_txbds * ENET_TX_BUFFER_SIZE) < len) {
+        num_txbds = num_txbds + 1;
+    }
     
-	for (i = 0; i < num_txbds; i++) {
+    for (i = 0; i < num_txbds; i++) {
 
         /* Block while buffer is still in use, make sure xmit is on */
         while (txbds[cur_txbd].status & ENET_BD_TX_R) {
-	        if (!(fec->tdar & ENET_TDAR_TDAR_MASK))  
-	            fec->tdar = ENET_TDAR_TDAR_MASK;
+            if (!(fec->tdar & ENET_TDAR_TDAR_MASK))  
+                fec->tdar = ENET_TDAR_TDAR_MASK;
         }
-		
-		txbds[cur_txbd].status = ENET_BD_TX_TC;
-		if(i == num_txbds - 1) {
+        
+        txbds[cur_txbd].status = ENET_BD_TX_TC;
+        if(i == num_txbds - 1) {
             buf_len = (uint16_t) len;
-		    txbds[cur_txbd].status |= ENET_BD_TX_L;		 
-		} else {
+            txbds[cur_txbd].status |= ENET_BD_TX_L;      
+        } else {
             buf_len = (uint16_t) ENET_TX_BUFFER_SIZE;
             len -= ENET_TX_BUFFER_SIZE;
-		}
-		txbds[cur_txbd].length = BSWAP16(buf_len);
-		
+        }
+        txbds[cur_txbd].length = BSWAP16(buf_len);
+        
         memcpy((void *)BSWAP32((uint32_t)txbds[cur_txbd].buf_addr), 
             (void *)((uint32_t) buffer), buf_len); 
 
@@ -833,18 +835,18 @@ static int enetWritePacket(enet_t *enet, uint8_t* buffer, unsigned len)
         written_len += buf_len;
 
         /* This buffer is ready to go, check for wrap condition */
-		if(cur_txbd == (ENET_NUM_TXBDS - 1))
-		{
-			txbds[cur_txbd].status |= (ENET_BD_TX_W | ENET_BD_TX_R);
-			cur_txbd = 0;
-		} else {
-			txbds[cur_txbd].status |= ENET_BD_TX_R;
-			cur_txbd++;
+        if(cur_txbd == (ENET_NUM_TXBDS - 1))
+        {
+            txbds[cur_txbd].status |= (ENET_BD_TX_W | ENET_BD_TX_R);
+            cur_txbd = 0;
+        } else {
+            txbds[cur_txbd].status |= ENET_BD_TX_R;
+            cur_txbd++;
         }
-	}
-	
-	next_txbd = cur_txbd;
-	fec->tdar = ENET_TDAR_TDAR_MASK; /* Tell FEC to let 'r rip */
+    }
+    
+    next_txbd = cur_txbd;
+    fec->tdar = ENET_TDAR_TDAR_MASK; /* Tell FEC to let 'r rip */
     return written_len;
 }
 
@@ -866,6 +868,7 @@ static int enetOpen(devoptab_t *dot)
 
     /* Enable the module in the SIM */
     *enet->simBBPtr = 1;
+    SIM_SCGC7 |= SIM_SCGC7_MPU_MSK;
     MPU_CESR = 0;    /* MPU off */
 
     /* Throw the Pin Muxes to connect the module to external I/O */
@@ -877,6 +880,7 @@ static int enetOpen(devoptab_t *dot)
     for (i = 0; i < NUM_PINS; i++) {
         PORT_PCR(pin[i].port, pin[i].num) = pin[i].mux;
     }
+    enetReset(enet);
     status->on_off = ENET_OFF;
     return TRUE;
 }

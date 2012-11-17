@@ -451,8 +451,10 @@ enum {
                                                               /* Bit Numbers */
 #define SIM_SCGC7_DMA_BIT       1
 #define SIM_SCGC7_FLEXBUS_ENABLE BIT_0
+#define SIM_SCGC7_MPU_BIT       2
                                                                     /* Masks */
 #define SIM_SCGC7_DMA_MSK       (1<<SIM_SCGC7_DMA_BIT)
+#define SIM_SCGC7_MPU_MSK       (1<<SIM_SCGC7_MPU_BIT)
                                                      /* Bit-Banded Addresses */
 #define SIM_SCGC7_DMA_BB_ADDR    (SIM_SCGC7_BB_ADDR +(SIM_SCGC7_DMA_BIT  * 4))
                                                       /* Bit-Banded Pointers */
@@ -2131,12 +2133,12 @@ typedef struct {
 
 #define DAC_CR0_DACEN     BIT_7 /* Enable */
 #define DAC_CR0_DACRFS    BIT_6 /* Reference select, 0 = DACREF_1
-			    	                     1 = DACREF_2 */
+                                         1 = DACREF_2 */
 #define DAC_CR0_DACTRGSEL BIT_5 /* Trigger select, 0 = HW trigger
-				                   1 = SW trigger */
+                                   1 = SW trigger */
 #define DAC_CR0_DACSWTRG  BIT_4 /* Software trigger, active high, WO */
 #define DAC_CR0_LPEN      BIT_3 /* Low power control, 0 = high power
-				                      1 = low power */
+                                      1 = low power */
 #define DAC_CR0_DACBWIEN  BIT_2 /* Buffer watermark interrupt enable */
 #define DAC_CR0_DACBTIEN  BIT_1 /* Buffer read pointer top flag enable */
 #define DAC_CR0_DACBBIEN  BIT_0 /* Buffer read pointer bottom flag enable */
@@ -2162,7 +2164,7 @@ enum {
 #define PIT_CTRL_BASE 0x40037000
 #define PIT_CH_OFFSET 0x010
 #define PIT_LDVALN_OFFSET 0x100
-#define	PIT_CVALN_OFFSET 0x104
+#define PIT_CVALN_OFFSET 0x104
 #define PIT_TCTRLN_OFFSET 0x108
 #define PIT_TFLGN_OFFSET 0x10C
 
@@ -2179,7 +2181,7 @@ enum {
 #define TFLG_TIF (1 << 0)
 
 #define PIT_ENABLE (1 << 23)
-#define	SIM_SCGC6_FLAGS (PIT_ENABLE)
+#define SIM_SCGC6_FLAGS (PIT_ENABLE)
 
 /*******************************************************************************
 * FTM
@@ -2628,6 +2630,15 @@ typedef struct {
     uint8_t const _unused2;     /*                                        0x9 */
     uint8_t atcvh;              /* Auto Trim Compare Value High Register  0xA */
     uint8_t atcvl;              /* Auto Trim Compare Value Low Register   0xB */
+#if defined(K60F120)
+    uint8_t c7;                 /* Control 7 Register                     0xC */
+    uint8_t c8;                 /* Control 8 Register                     0xD */
+    uint8_t const _unused3;     /*                                        0xE */
+    uint8_t c10;                /* Control 10 Register                    0xF */
+    uint8_t c11;                /* Control 11 Register                   0x10 */
+    uint8_t c12;                /* Control 12 Register                   0x11 */
+    uint8_t s2;                 /* Status Register 2                     0x12 */
+#endif
 } mcg_t;
 
 #define MCG_BASE_ADDR 0x40064000
@@ -2655,12 +2666,20 @@ typedef enum {
     /* MCG Control 5 Register */
     MCG_C5_PLLCLKEN       = BIT_6,
     MCG_C5_PLLSTEN        = BIT_5,
+#if defined(K60N512)
     MCG_C5_PRDIV_MASK     = 0x1F,
+#elif defined(K60F120)
+    MCG_C5_PRDIV_MASK     = 0x07,
+#endif
     /* MCG Control 6 Register */
     MCG_C6_LOLIE          = BIT_7,
     MCG_C6_PLLS           = BIT_6,
     MCG_C6_CME            = BIT_5,
     MCG_C6_VDIV_MASK      = 0x1F,
+#if defined(K60F120)
+    /* MCG Control 7 Register */
+    MCG_C7_OSCSEL         = BIT_0,
+#endif
 } mcgControlReg_t;
 
 /* MCG Status Register */
@@ -2690,7 +2709,16 @@ typedef struct {
     uint8_t cr;                  /* Control Register                      0x0 */
 } osc_t;
 
+#if defined(K60N512)
+
 #define OSC_BASE_ADDR 0x40065000
+
+#elif defined(K60F120)
+
+#define OSC0_BASE_ADDR 0x40065000
+#define OSC1_BASE_ADDR 0x400E5000
+
+#endif
 
 /* OSC Control register */
 typedef enum {

@@ -30,13 +30,23 @@
 
 typedef struct {
     volatile mcg_t *mcg;
+#if defined(K60N512)
     volatile osc_t *osc;
+#elif defined(K60F120)
+    volatile osc_t *osc0;
+    volatile osc_t *osc1;
+#endif
     volatile rtc_t *rtc;
 } clockReg_t;
 
 static clockReg_t clock = {
     .mcg     = (volatile mcg_t *) MCG_BASE_ADDR,
+#if defined(K60N512)
     .osc     = (volatile osc_t *) OSC_BASE_ADDR,
+#elif defined(K60F120)
+    .osc0    = (volatile osc_t *) OSC0_BASE_ADDR,
+    .osc1    = (volatile osc_t *) OSC1_BASE_ADDR,
+#endif
     .rtc     = (volatile rtc_t *) RTC_BASE_ADDR,
 };
 
@@ -70,7 +80,7 @@ typedef struct {
  * Any additional configurations must be listed in clockConfig_t of hardware.h
  */
 clockConfigParam_t clockConfigParam[MAX_MCG_CLOCK_OPTIONS] = {
-
+#if defined(K60N512)
     [MCG_PLL_EXTERNAL_100MHZ] = {
         .clockMode   = MODE_PEE,
         /*
@@ -85,7 +95,6 @@ clockConfigParam_t clockConfigParam[MAX_MCG_CLOCK_OPTIONS] = {
         .freqSource  = EXTERNAL_OSC_50MHZ,        /* Must be external for PLL */
         .clockHz     = 100000000,        /* The resulting MCGOUTCLK frequency */
     },
-
     [MCG_PLL_EXTERNAL_48MHZ] = {
         .clockMode   = MODE_PEE,
         .divider     = MCG_C5_PRDIV_MASK & 0x18,  /* divide 50MHz by 25 = 2MHz*/
@@ -93,6 +102,26 @@ clockConfigParam_t clockConfigParam[MAX_MCG_CLOCK_OPTIONS] = {
         .freqSource  = EXTERNAL_OSC_50MHZ,
         .clockHz     = 48000000,        /* The resulting MCGOUTCLK frequency */
     },
+#elif defined(K60F120)
+    [MCG_PLL_EXTERNAL_100MHZ] = {
+        .clockMode   = MODE_PEE,
+        /* Fext/PRDIV must be in range 8-16 MHz, PRDIV is only 3 bits on K60F120 */
+        /* Fext/PRDIV * VDIV must be in range 180-360 MHz, PLL /2 os MCGOUTCLK */
+        .divider     = MCG_C5_PRDIV_MASK & 0x4,  /* divide 50MHz by 5 = 10MHz*/
+        .multiplier  = MCG_C6_VDIV_MASK & 0x4, /* multiply 10MHz by 20 =200MHz*/
+        .freqSource  = EXTERNAL_OSC_50MHZ,        /* Must be external for PLL */
+        .clockHz     = 100000000,        /* The resulting MCGOUTCLK frequency */
+    },
+    [MCG_PLL_EXTERNAL_120MHZ] = {
+        .clockMode   = MODE_PEE,
+        /* Fext/PRDIV must be in range 8-16 MHz, PRDIV is only 3 bits on K60F120 */
+        /* Fext/PRDIV * VDIV must be in range 180-360 MHz, PLL /2 os MCGOUTCLK */
+        .divider     = MCG_C5_PRDIV_MASK & 0x4,  /* divide 50MHz by 5 = 10MHz*/
+        .multiplier  = MCG_C6_VDIV_MASK & 0x8, /* multiply 10MHz by 24 =240MHz*/
+        .freqSource  = EXTERNAL_OSC_50MHZ,        /* Must be external for PLL */
+        .clockHz     = 120000000,        /* The resulting MCGOUTCLK frequency */
+    },
+#endif
 
     [MCG_FLL_INTERNAL_24MHZ] = {
         .clockMode   = MODE_FEI,
@@ -170,9 +199,14 @@ static void fei2fee(clockConfig_t cc)
 
 static void fei2pee(clockConfig_t cc)
 {
+#if defined(K60F120)
+    /* K60F120 has some major clocking differences... */
+    clock.mcg->c7 &= ~MCG_C7_OSCSEL;
+#elif defined(K60N512)
                                                     /* External crystal setup */
     /* Select the OSCCLK */
     SIM_SOPT2 &= ~SIM_SOPT2_MCGCLKSEL;
+#endif
 
     /*
      * Enabling the XTAL for 50MHz
@@ -198,7 +232,6 @@ static void fei2pee(clockConfig_t cc)
     clock.mcg->c1 = ((MCG_C1_CLKS_MASK & (0x2 << 6)) |
                     (MCG_C1_FRDIV_MASK & (0x3 << 3))) &
                     (~MCG_C1_IREFS);
-
                                                     /* Wait for status update */
     /* Wait for oscillator to initialize */
     while (!(clock.mcg->s & MCG_S_OSCINIT)) {}

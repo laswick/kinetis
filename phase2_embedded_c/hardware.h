@@ -728,8 +728,8 @@ typedef enum enet_speed_e {
 } enet_speed_t;
 
 typedef enum enet_duplex_e {
-	ENET_DUPLEX_HALF,
-	ENET_DUPLEX_FULL
+    ENET_DUPLEX_HALF,
+    ENET_DUPLEX_FULL
 } enet_duplex_t;
 
 typedef enum enet_loopback_e {
@@ -761,9 +761,9 @@ typedef struct enet_status_s {
 } enet_status_t;
 
 typedef struct enet_descr_s {
-  	uint16_t status;	/* control and status */
-  	uint16_t length;	/* transfer length */
-  	uint8_t  *buf_addr;	/* buffer address NOTE Big Endian!!!*/
+    uint16_t status;    /* control and status */
+    uint16_t length;    /* transfer length */
+    uint8_t  *buf_addr; /* buffer address NOTE Big Endian!!!*/
 } enet_descr_t;
 
 /*******************************************************************************
@@ -800,10 +800,21 @@ typedef struct enet_descr_s {
 #define FLEXBUS_DIVIDER_DFLT    DIVIDE_BY_2
 #define FLASH_DIVIDER_DFLT      DIVIDE_BY_2
 
+#if defined(K60N512)
+
 #define MAX_SYSTEM_FREQ         100000000
 #define MAX_BUS_FREQ            50000000
 #define MAX_FLEXBUS_FREQ        MAX_BUS_FREQ
 #define MAX_FLASH_FREQ          25000000
+    
+#elif defined(K60F120)
+
+#define MAX_SYSTEM_FREQ         120000000
+#define MAX_BUS_FREQ            60000000
+#define MAX_FLEXBUS_FREQ        50000000
+#define MAX_FLASH_FREQ          25000000
+    
+#endif
 
         /* Dividers are used to configure the system/bus/flexbus/flash clocks */
 typedef enum {
@@ -828,6 +839,7 @@ typedef enum {
 
 
 typedef enum {
+    MCG_PLL_EXTERNAL_120MHZ,
     MCG_PLL_EXTERNAL_100MHZ,
     MCG_PLL_EXTERNAL_48MHZ,
     MCG_FLL_INTERNAL_24MHZ,
@@ -987,7 +999,7 @@ enum {
  * they are in the PHY on the Tower Serial Board (Micrel)
  */
 
-#define MII_TIMEOUT		    0x1FFFF     /* Timeout when talking MII to PHY */
+#define MII_TIMEOUT         0x1FFFF     /* Timeout when talking MII to PHY */
 #define MII_LINK_TIMEOUT    0x1FFFF     /* Timeout when resetting PHY */
 
 /* MII Register Addresses */
