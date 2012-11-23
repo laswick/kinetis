@@ -326,8 +326,23 @@ enum {
 #define SIM_SOPT2_ADDR  0x40048004
 #define SIM_SOPT2_PTR (volatile uint32_t *) SIM_SOPT2_ADDR
 #define SIM_SOPT2   (*(volatile uint32_t *) SIM_SOPT2_ADDR)
+    
+#if defined(K60N512)
 #define SIM_SOPT2_PLLFLLSEL  BIT_16
 #define SIM_SOPT2_MCGCLKSEL  BIT_0
+
+#elif defined(K60F120)
+enum {
+    MCGFLLCLK = 0x00,
+    MCGPLL0CLK = 0x01,
+    MCGPLL1CLK = 0x02,
+    SYSPLATCLK = 0x03
+};
+#define SIM_SOPT2_PLLFLLSEL_SHIFT 16
+#define SIM_SOPT2_PLLFLLSEL_MSK (0x3 << SIM_SOPT2_PLLFLLSEL_SHIFT);
+#define SIM_SOPT2_PLLFLLSEL(i) (i << SIM_SOPT2_PLLFLLSEL_SHIFT);
+
+#endif
 
 
 /********** SIM_SCGC1 **********/
@@ -343,7 +358,7 @@ enum {
 #define SIM_SCGC2       (*(volatile uint32_t *) SIM_SCGC2_ADDR)
 #define SIM_SCGC2_BB_ADDR       (MEMMAP_BB_GPIO_PBRIDGE_ADDR + (0x4802C * 32U))
 #define SIM_SCGC2_DAC0_ENABLE   BIT_12
-#define SIM_SCGC2_ENET_BIT      BIT_0
+#define SIM_SCGC2_ENET_BIT      0
 #define SIM_SCGC2_ENET_MSK      (1<<SIM_SCGC2_ENET_BIT)
 #define SIM_SCGC2_ENET_BB_ADDR  (SIM_SCGC2_BB_ADDR +(SIM_SCGC2_ENET_BIT  * 4))
 #define SIM_SCGC2_ENET_BB_PTR   ((volatile uint32_t *) SIM_SCGC2_ENET_BB_ADDR)

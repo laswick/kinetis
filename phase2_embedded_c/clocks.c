@@ -202,10 +202,12 @@ static void fei2pee(clockConfig_t cc)
 #if defined(K60F120)
     /* K60F120 has some major clocking differences... */
     clock.mcg->c7 &= ~MCG_C7_OSCSEL;
+    clock.osc0->cr = 0; /* No crystals to be found on osc0 */
 #elif defined(K60N512)
                                                     /* External crystal setup */
     /* Select the OSCCLK */
     SIM_SOPT2 &= ~SIM_SOPT2_MCGCLKSEL;
+    clock.osc->cr = 0;        /* No crystals present on osc */
 #endif
 
     /*
@@ -214,8 +216,11 @@ static void fei2pee(clockConfig_t cc)
      * HGO=1,   set for high gain operation (best against noise)
      * EREFS=1, enable the external oscillator
      */
-    clock.mcg->c2 = (MCG_C2_RANGE_MASK & (0x1 << 4)) |
-                    (MCG_C2_HGO) | (MCG_C2_EREFS);
+    clock.mcg->c2 = 0;  /* Osc needs to stay off, we don't have an xtal */
+                        /* This frees up XTAL (Pin A19) for switch usage */
+                        /* on K60N512 board */
+    /* clock.mcg->c2 = (MCG_C2_RANGE_MASK & (0x1 << 4)) |
+                     (MCG_C2_HGO) | (MCG_C2_EREFS); */
 
                                                             /* Enter FBE mode */
     /*
@@ -233,8 +238,10 @@ static void fei2pee(clockConfig_t cc)
                     (MCG_C1_FRDIV_MASK & (0x3 << 3))) &
                     (~MCG_C1_IREFS);
                                                     /* Wait for status update */
+    /* S.H. - The osc is off, there is no crystal, not sure what it was
+     * waiting on, but we're not waiting any more... */
     /* Wait for oscillator to initialize */
-    while (!(clock.mcg->s & MCG_S_OSCINIT)) {}
+    /* while (!(clock.mcg->s & MCG_S_OSCINIT)) {} */
     /* Wait for reference clock's to become the external reference */
     while (clock.mcg->s & MCG_S_IREFST) {}
     /* Wait for the indicator that MCGOTUCLK is fed by the external ref clock */
@@ -264,6 +271,11 @@ static void fei2pee(clockConfig_t cc)
     while ((clock.mcg->s & MCG_S_CLKST_MASK) != (0x3 << 2)) {}
 
     mcgState.currentMode = MODE_PEE;
+#if defined(K60N512)
+    SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL;
+#elif defined(K60F120)
+    SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL(MCGPLL0CLK); 
+#endif
 }
 
 static void fei2blpi(clockConfig_t cc)

@@ -880,6 +880,8 @@ static int enetOpen(devoptab_t *dot)
     for (i = 0; i < NUM_PINS; i++) {
         PORT_PCR(pin[i].port, pin[i].num) = pin[i].mux;
     }
+    /* RXER - PIN5 is just floating, pull it down */
+    PORT_PCR(PORTA, 5) |= PORT_PULLDOWN_ENABLE;
     enetReset(enet);
     status->on_off = ENET_OFF;
     return TRUE;
