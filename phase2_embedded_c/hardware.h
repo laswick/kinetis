@@ -253,8 +253,8 @@ typedef struct {
     uint32_t resp[4];
 } sdhcCmd_t;
 
-/* 
- * Command Types 
+/*
+ * Command Types
  */
 enum {
     SDHC_CMD_TYPE_NORMAL,
@@ -542,7 +542,46 @@ extern void pitInit(int timer, void *isr, uint32_t initCount);
 
 /* FTM ************************************************************************/
 /* TODO ftm interface functions coming soon... */
-extern void ftmInit(int timer, void *isr, uint32_t initCount);
+typedef struct {
+    uint32_t mode;
+    uint16_t initCount;
+    uint16_t mod;
+    uint8_t  channels[MAX_FTM_CH];
+    int      pwmFreq;
+    int      dutyScaled[MAX_FTM_CH];
+} ftmCfg_t;
+enum {
+    FTM_MODE_INPUT_CAPTURE,
+    FTM_MODE_QUADRATURE_DECODE,
+    FTM_MODE_OUTPUT_COMPARE,
+    FTM_MODE_PWM,
+};
+
+enum {
+    FTM_INPUT_CAPTURE_RISING_EDGE,
+    FTM_INPUT_CAPTURE_FALLING_EDGE,
+    FTM_INPUT_CAPTURE_EITHER_EDGE,
+};
+
+enum {
+    FTM_OUTPUT_COMPARE_MATCH_SET,
+    FTM_OUTPUT_COMPARE_MATCH_CLEAR,
+    FTM_OUTPUT_COMPARE_MATCH_TOGGLE,
+};
+
+enum {
+    FTM_PWM_EDGE_ALIGNED,
+    FTM_PWM_CENTER_ALINGNED,
+};
+
+
+
+extern void ftmInit(int timer, void *isr, ftmCfg_t *ftmCfg);
+extern uint16_t ftmRead(int timer);
+extern uint16_t ftmWrite(int timer, uint16_t mod, uint16_t initCount);
+extern void ftmPwmWrite(int timer, int ch, int32_t duty);
+void ftmSetQDPolarity(int timer, int invPolarity);
+void ftmSetQDFilter(int timer, uint8_t level);
 
 /* ADC ***********************************************************************/
 
@@ -602,8 +641,8 @@ enum {
     IO_IOCTL_ADC_RESOLUTION_FLAGS_16BIT,
 };
 
-#define IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_B (1 << 31)
-#define IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A (0 << 31)
+#define IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_B (1 << 31)
+#define IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_A (0 << 31)
 #define IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK  0x1F
 enum {
     IO_IOCTL_ADC_CONVERSION_TIME_FLAGS_SHORT_SAMPLE   = -1,
@@ -655,7 +694,7 @@ enum {
      IO_IOCTL_ADC_DIFF_FLAGS_SINGLE_ENDED = FALSE,
      IO_IOCTL_ADC_DIFF_FLAGS_DIFFERENTIAL = TRUE,
 };
-
+#define IO_IOCTL_ADC_DIFF_FLAGS_MASK  0xF
 enum {
     IO_IOCTL_ADC_VREF_FLAGS_DEFAULT,
     IO_IOCTL_ADC_VREF_FLAGS_ALT,
@@ -889,7 +928,7 @@ extern void clockConfigLpo();
 #define N_SWITCH_1_PIN   19
 
 /* UART for STDIO  ************************************************************/
-#if defined(FREESCALE_K60N512_TOWER_HW) 
+#if defined(FREESCALE_K60N512_TOWER_HW)
 #define STDIO_UART "uart3"
 #elif defined(FREESCALE_K60F120_TOWER_HW)
 #define STDIO_UART "uart5"

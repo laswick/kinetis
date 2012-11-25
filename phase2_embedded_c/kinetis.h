@@ -386,9 +386,10 @@ enum {
 #define SIM_SCGC3_ADC1_BB        (*(SIM_SCGC3_ADC1_BB_PTR))
 #define SIM_SCGC3_SPI2_BB        (*(SIM_SCGC3_SPI2_BB_PTR))
 
-#define SIM_SCGC3_SPI2_ENABLE  BIT_12
 #define SIM_SCGC3_ADC1_ENABLE  BIT_27
+#define SIM_SCGC3_FTM2_ENABLE  BIT_24
 #define SIM_SCGC3_SDHC_ENABLE  BIT_17
+#define SIM_SCGC3_SPI2_ENABLE  BIT_12
 
 /********** SIM_SCGC4 **********/
 #define SIM_SCGC4_ADDR  0x40048034
@@ -425,6 +426,8 @@ enum {
 #define SIM_SCGC6               (*(SIM_SCGC6_PTR))
 #define SIM_SCGC6_BB_ADDR       (MEMMAP_BB_GPIO_PBRIDGE_ADDR + (0x4803C * 32U))
                                                               /* Bit Numbers */
+#define SIM_SCGC6_FTM1_ENABLE  BIT_25
+#define SIM_SCGC6_FTM0_ENABLE  BIT_24
 #define SIM_SCGC6_PIT_BIT       23
 #define SIM_SCGC6_CRC_BIT       18
 #define SIM_SCGC6_SPI1_BIT      13
@@ -2202,7 +2205,9 @@ enum {
 * FTM
 *******************************************************************************/
 
-#define FTM_BASE_ADDR 0x40038000
+#define FTM0_CTRL_BASE 0x40038000
+#define FTM1_CTRL_BASE 0x40039000
+#define FTM2_CTRL_BASE 0x400B8000
 
 typedef struct {
     uint32_t sc;      /* Status & control                     R/W, 0x00000000 */
@@ -2255,13 +2260,30 @@ enum {
     MAX_FTM,
 };
 
+enum {
+    FTM_CH_0,
+    FTM_CH_1,
+    FTM_CH_2,
+    FTM_CH_3,
+    FTM_CH_4,
+    FTM_CH_5,
+    FTM_CH_6,
+    FTM_CH_7,
+
+    MAX_FTM_CH,
+    FTM_CH_NONE = 0xFF,
+};
+
+#if 0
 typedef struct {
-    ftm_t ftm[3];
+    ftm_t ftm0;
+    ftm_t ftm1;
+    ftm_t reserved;
+    ftm_t ftm2;
 } ftmCtrl_t;
 
 extern volatile ftmCtrl_t * const ftmCtrl;
-
-
+#endif
 
 /* FTMx_SC */
 enum {
@@ -2276,7 +2298,7 @@ enum {
     FTM_SC_CLKS_NONE,
     FTM_SC_CLKS_BUS,
     FTM_SC_CLKS_FIXED_FREQ, /* Fixed freq is MCGFFCLK on K60N512 */
-    FMT_SC_CLKS_EXTERNAL_CLOCK,
+    FTM_SC_CLKS_EXTERNAL_CLOCK,
 };
 enum {
     FTM_SC_PS_1,
@@ -2290,15 +2312,16 @@ enum {
 };
 
 /* FTMx_CNT */
-#define FMT_CNT_COUNT_MASK 0xFFFF
+#define FTM_CNT_COUNT_MASK 0xFFFF
 
 /* FTMx_MOD */
-#define FMT_CNT_MOD_MASK 0xFFFF
+#define FTM_CNT_MOD_MASK 0xFFFF
 
 /* FTMx_CnSC */
 enum {
     FTM_CH_CS_CHF_BIT   = 1 << 7,
     FTM_CH_CS_CHIE_BIT  = 1 << 6,
+    FTM_CH_CS_MSB_BIT   = 1 << 5,
     FTM_CH_CS_MSA_BIT   = 1 << 4,
     FTM_CH_CS_ELSB_BIT  = 1 << 3,
     FTM_CH_CS_ELSA_BIT  = 1 << 2,
@@ -2307,9 +2330,10 @@ enum {
 };
 
 /* FTMx_CV */
-#define FMT_CH_VALUE_MASK 0xFFFF
+#define FTM_CH_VALUE_MASK 0xFFFF
 
 /* FTMx_STATUS */
+#define FTM_STATUS_MASK 0xFF
 enum {
     FTM_STATUS_CH7_EVENT_BIT    = 1 << 7,
     FTM_STATUS_CH6_EVENT_BIT    = 1 << 6,
@@ -2330,8 +2354,8 @@ enum {
     FTM_MODE_INIT_BIT           = 1 << 1,
     FTM_MODE_FTMEN_BIT          = 1 << 0,
 };
-#define FMT_MODE_FAULT_MODE_MASK  0x3
-#define FMT_MODE_FAULT_MODE_SHIFT 5
+#define FTM_MODE_FAULT_MODE_MASK  0x3
+#define FTM_MODE_FAULT_MODE_SHIFT 5
 enum {
     FTM_MODE_FAULT_MODE_DISABLED,
     FTM_MODE_FAULT_MODE_EVEN_CHANNELS,
@@ -2496,6 +2520,13 @@ enum {
     FTM_CONF_GTBEOUT_BIT        = 1 << 10,
     FTM_CONF_GTBEEN_BIT         = 1 <<  9,
 };
+enum {
+    FTM_CONF_BDMMODE_STOPED_SET_VALUE,
+    FTM_CONF_BDMMODE_STOPED_SAFE_VALUES,
+    FTM_CONF_BDMMODE_STOPED_FROZEN_VALUES,
+    FTM_CONF_BDMMODE_FUNCTIONAL,
+};
+
 #define FTM_CONF_BDMMODE_MASK  0x3
 #define FTM_CONF_BDMMODE_SHIFT 6
 
@@ -2543,25 +2574,25 @@ enum {
 
 /* FTMx_SYNCONF */
 enum {
-    FMT_SYNCONF_HWSOC_BIT       = 1 << 20,
-    FMT_SYNCONF_HWINVC_BIT      = 1 << 19,
-    FMT_SYNCONF_HWOM_BIT        = 1 << 18,
-    FMT_SYNCONF_HWWRBUF_BIT     = 1 << 17,
-    FMT_SYNCONF_HWRSTCNT_BIT    = 1 << 16,
+    FTM_SYNCONF_HWSOC_BIT       = 1 << 20,
+    FTM_SYNCONF_HWINVC_BIT      = 1 << 19,
+    FTM_SYNCONF_HWOM_BIT        = 1 << 18,
+    FTM_SYNCONF_HWWRBUF_BIT     = 1 << 17,
+    FTM_SYNCONF_HWRSTCNT_BIT    = 1 << 16,
 
-    FMT_SYNCONF_SWSOC_BIT       = 1 << 12,
-    FMT_SYNCONF_SWINVC_BIT      = 1 << 11,
-    FMT_SYNCONF_SWOM_BIT        = 1 << 10,
-    FMT_SYNCONF_SWWRBUF_BIT     = 1 <<  9,
-    FMT_SYNCONF_SWRSTCNT_BIT    = 1 <<  8,
-    FMT_SYNCONF_SYNCMODE_BIT    = 1 <<  7,
+    FTM_SYNCONF_SWSOC_BIT       = 1 << 12,
+    FTM_SYNCONF_SWINVC_BIT      = 1 << 11,
+    FTM_SYNCONF_SWOM_BIT        = 1 << 10,
+    FTM_SYNCONF_SWWRBUF_BIT     = 1 <<  9,
+    FTM_SYNCONF_SWRSTCNT_BIT    = 1 <<  8,
+    FTM_SYNCONF_SYNCMODE_BIT    = 1 <<  7,
 
-    FMT_SYNCONF_SWOC_BIT        = 1 <<  5,
-    FMT_SYNCONF_INVC_BIT        = 1 <<  4,
+    FTM_SYNCONF_SWOC_BIT        = 1 <<  5,
+    FTM_SYNCONF_INVC_BIT        = 1 <<  4,
 
-    FMT_SYNCONF_CNTINC_BIT      = 1 <<  2,
+    FTM_SYNCONF_CNTINC_BIT      = 1 <<  2,
 
-    FMT_SYNCONF_HWTRIGMODE_BIT  = 1 <<  0,
+    FTM_SYNCONF_HWTRIGMODE_BIT  = 1 <<  0,
 };
 
 /* FTMx_INVCTRL */

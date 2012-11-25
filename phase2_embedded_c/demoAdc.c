@@ -58,7 +58,7 @@ enum {
 * Parse RX messages.
 *
 ******************************************************************************/
-static void potCallBackHandler(uint32_t const *buf, int len)
+static void potCallBackHandler(int32_t adcRegister, uint32_t const *buf, int len)
 {
     len = len > MAX_SAMPLES ? MAX_SAMPLES : len;
     if (len) {
@@ -82,7 +82,7 @@ static msg_t tcMsg = {
 * Parse RX messages.
 *
 ******************************************************************************/
-static void tcCallBackHandler(uint32_t const *buf, int len)
+static void tcCallBackHandler(int32_t adcRegister, uint32_t const *buf, int len)
 {
     len = len > MAX_SAMPLES ? MAX_SAMPLES : len;
     if (len) {
@@ -183,14 +183,14 @@ int main(void)
     ioctl(fdPot, IO_IOCTL_ADC_RESOLUTION_SELECT, IO_IOCTL_ADC_RES_FLAGS_12_BIT);
     ioctl(fdPot, IO_IOCTL_ADC_CLOCK_SELECT, IO_IOCTL_ADC_FLAGS_ADICLK_BUS);
     ioctl(fdPot, IO_IOCTL_ADC_DIFFERENTIAL_SET,
-                (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+                (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_A
                   | IO_IOCTL_ADC_DIFF_FLAGS_SINGLE_ENDED));
 
     ioctl(fdPot, IO_IOCTL_ADC_COMPARE_HIGH_LOW_SET,
                  IO_IOCTL_ADC_COMPARE_HIGH_LOW_FLAG_GREATER);
 
     ioctl(fdPot, IO_IOCTL_ADC_CHANNEL_SELECT,
-                 (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+                 (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_A
                     | (IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DM1
                        & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK)));
 
@@ -218,12 +218,12 @@ int main(void)
     ioctl(fdThrmCpl, IO_IOCTL_ADC_AVERAGE_SELECT, IO_IOCTL_ADC_FLAGS_AVGS_32);
     ioctl(fdThrmCpl, IO_IOCTL_ADC_CLOCK_SELECT, IO_IOCTL_ADC_FLAGS_ADICLK_BUS);
     ioctl(fdThrmCpl, IO_IOCTL_ADC_DIFFERENTIAL_SET,
-                    (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+                    (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_A
                       | IO_IOCTL_ADC_DIFF_FLAGS_DIFFERENTIAL));
 
 
     ioctl(fdThrmCpl, IO_IOCTL_ADC_CHANNEL_SELECT,
-                     (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+                     (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_A
 //                        | (IO_IOCTL_ADC0_CHANNEL_FLAGS_ADC0_DP0
                           | (IO_IOCTL_ADC0_CHANNEL_FLAGS_PGA0_DP1
                            & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK)));
@@ -277,7 +277,7 @@ int main(void)
             /* Set the channel again trigger - needed because changing the
              * compare setpoint breaks the continous conversion mode */
             ioctl(fdPot, IO_IOCTL_ADC_CHANNEL_SELECT,
-                 (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_A
+                 (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_A
                     | (IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DM1
                        & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK)));
 

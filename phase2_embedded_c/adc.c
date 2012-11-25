@@ -47,8 +47,9 @@ typedef struct {
     unsigned           simScgcEnBit;
     unsigned           simScgc5PortEn;
     int32_t            numSamples;
-    int32_t          (*callBack)(uint32_t const *buf, int len);
-    adcBuffer_t        adcBuffer;
+    int32_t          (*callBack)(int32_t adcRegister,
+                                 uint32_t const *buf, int len);
+    adcBuffer_t        adcBuffer[2];
 #if 0
     unsigned             port;
     unsigned             sim;
@@ -87,7 +88,8 @@ static adcDev_t adcList[NUM_ADC_MODULES] = {
 };
 
 
-static void adcNotify(adcDev_t *adc, adcBuffer_t *bufferPtr)
+static void adcNotify(adcDev_t *adc, int32_t adcRegister,
+                                     adcBuffer_t *bufferPtr)
 {
     uint32_t buf[bufferPtr->length];
     int i;
@@ -96,7 +98,7 @@ static void adcNotify(adcDev_t *adc, adcBuffer_t *bufferPtr)
         bufferPtr->headIdx = (bufferPtr->headIdx + 1)
             & ADC_BUFFER_WRAP;
     }
-    adcList[adc->minor].callBack(buf, bufferPtr->length);
+    adcList[adc->minor].callBack(adcRegister, buf, bufferPtr->length);
     bufferPtr->length = 0;
     return;
 }
@@ -110,26 +112,31 @@ static void isrHandler(int minor)
 {
     adcDev_t *adc = &adcList[minor];
     uint32_t data;
-    adcBuffer_t *bufferPtr = &adcList[minor].adcBuffer;
+    adcBuffer_t *bufferPtr;
+    int32_t adcRegister;
 
 
     if (adc->reg->sc1a & ADC_SC1_COCO_BIT) {
         data = adc->reg->ra;
+        adcRegister = 0;
     }
     else if (adc->reg->sc1b & ADC_SC1_COCO_BIT) {
         data = adc->reg->rb;
+        adcRegister = 1;
     }
     else {
         /* Cant' happed ? */
         assert(0);
         return;
     }
+
+    bufferPtr = &adcList[minor].adcBuffer[adcRegister];
     bufferPtr->buffer[bufferPtr->tailIdx] = data;
     bufferPtr->tailIdx = (bufferPtr->tailIdx + 1) & ADC_BUFFER_WRAP;
     bufferPtr->length++;
 
     if (adc->callBack && (bufferPtr->length >= adc->numSamples)) {
-        adcNotify(adc, bufferPtr);
+        adcNotify(adc, adcRegister, bufferPtr);
     }
     return;
 }
@@ -535,15 +542,14 @@ int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
 {
     adcDev_t *adc;
     volatile uint32_t *adcSc1xPtr;
-    adcBuffer_t *bufferPtr;
     uint32_t value;
+    uint32_t value2;
     int retVal = !ERROR;
 
 
     if (!dot || !dot->priv) return FALSE;
     else adc = (adcDev_t *) dot->priv;
 
-    bufferPtr = &adcList[adc->minor].adcBuffer;
 
     switch (cmd) {
     case IO_IOCTL_ADC_CALL_BACK_SET:
@@ -613,12 +619,12 @@ int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
         break;
     case IO_IOCTL_ADC_DIFFERENTIAL_SET:
 
-        if (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_B) {
+        if (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_B) {
             adcSc1xPtr = &adc->reg->sc1b;
         } else {
             adcSc1xPtr = &adc->reg->sc1a;
         }
-        if (flags) {
+        if (flags & IO_IOCTL_ADC_DIFF_FLAGS_MASK) {
             *adcSc1xPtr |= ADC_SC1_DIFF_BIT;
         }
         else {
@@ -626,7 +632,7 @@ int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
         }
         break;
     case IO_IOCTL_ADC_CHANNEL_SELECT:
-        if (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_B) {
+        if (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_B) {
             value = adc->reg->sc1b;
         }
         else {
@@ -634,10 +640,20 @@ int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
         }
         value &= ~IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK;
         value |= (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_CH_MASK);
-        if (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_REGISER_B) {
+        if (flags & IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_B) {
+            value2  = adc->reg->cfg2;
+            value2 |= ADC_CFG2_MUXSEL_BIT;
+            adc->reg->cfg2 = value2;
+            /* Channel select has to be done last to start triggering as
+             * setting MUXSEL invalidates the previous channel select */
             adc->reg->sc1b = value;
         }
         else {
+            value2  = adc->reg->cfg2;
+            value2 &= ~ADC_CFG2_MUXSEL_BIT;
+            adc->reg->cfg2 = value2;
+            /* Channel select has to be done last to start triggering as
+             * setting MUXSEL invalidates the previous channel select */
             adc->reg->sc1a = value;
         }
         break;
@@ -645,12 +661,17 @@ int adc_ioctl(devoptab_t *dot, int cmd,  int flags)
     case IO_IOCTL_ADC_FLUSH_FIFO:
         {
             int32_t valueA, valueB;
+            adcBuffer_t *bufferPtrA = &adcList[adc->minor].adcBuffer[0];
+            adcBuffer_t *bufferPtrB = &adcList[adc->minor].adcBuffer[1];
+
             valueA = adc->reg->sc1a;
             valueB = adc->reg->sc1b;
             adc->reg->sc1a &= ~ADC_SC1_AIEN_BIT;
             adc->reg->sc1b &= ~ADC_SC1_AIEN_BIT;
-            bufferPtr->tailIdx = 0;
-            bufferPtr->length  = 0;
+            bufferPtrA->tailIdx = 0;
+            bufferPtrA->length  = 0;
+            bufferPtrB->tailIdx = 0;
+            bufferPtrB->length  = 0;
             adc->reg->sc1a = valueA;
             adc->reg->sc1b = valueB;
         }
