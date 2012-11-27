@@ -93,16 +93,14 @@ static uart_t uartList[NUM_UART_MODULES] = {
     [UART_MODULE_2] = {
         .minor          = UART_MODULE_2,
         .reg            = UART2_REG_PTR,
+        .port           = UART2_PORT,
         .simScgcPtr     = SIM_SCGC4_PTR,
         .simScgcEnBit   = SIM_SCGC4_UART2_ENABLE,
-#if 0 /* RFI */
-        .port           = UART2_PORT
         .simScgc5PortEn = UART2_PORT_ENABLE,
         .txPin          = UART2_TX_PIN,
         .rxPin          = UART2_RX_PIN,
         .txPortCtrlBits = UART2_TX_MUX,
         .rxPortCtrlBits = UART2_RX_MUX,
-#endif
     },
     [UART_MODULE_3] = {
         .minor          = UART_MODULE_3,

@@ -32,7 +32,7 @@ typedef struct {
     volatile mcg_t *mcg;
 #if defined(K60N512)
     volatile osc_t *osc;
-#elif defined(K60F120)
+#elif defined(K60F120) || defined(K70F120)
     volatile osc_t *osc0;
     volatile osc_t *osc1;
 #endif
@@ -43,7 +43,7 @@ static clockReg_t clock = {
     .mcg     = (volatile mcg_t *) MCG_BASE_ADDR,
 #if defined(K60N512)
     .osc     = (volatile osc_t *) OSC_BASE_ADDR,
-#elif defined(K60F120)
+#elif defined(K60F120) || defined(K70F120)
     .osc0    = (volatile osc_t *) OSC0_BASE_ADDR,
     .osc1    = (volatile osc_t *) OSC1_BASE_ADDR,
 #endif
@@ -102,7 +102,7 @@ clockConfigParam_t clockConfigParam[MAX_MCG_CLOCK_OPTIONS] = {
         .freqSource  = EXTERNAL_OSC_50MHZ,
         .clockHz     = 48000000,        /* The resulting MCGOUTCLK frequency */
     },
-#elif defined(K60F120)
+#elif defined(K60F120) || defined (K70F120)
     [MCG_PLL_EXTERNAL_100MHZ] = {
         .clockMode   = MODE_PEE,
         /* Fext/PRDIV must be in range 8-16 MHz, PRDIV is only 3 bits on K60F120 */
@@ -199,7 +199,7 @@ static void fei2fee(clockConfig_t cc)
 
 static void fei2pee(clockConfig_t cc)
 {
-#if defined(K60F120)
+#if defined(K60F120) || defined (K70F120)
     /* K60F120 has some major clocking differences... */
     clock.mcg->c7 &= ~MCG_C7_OSCSEL;
     clock.osc0->cr = 0; /* No crystals to be found on osc0 */
@@ -273,7 +273,7 @@ static void fei2pee(clockConfig_t cc)
     mcgState.currentMode = MODE_PEE;
 #if defined(K60N512)
     SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL;
-#elif defined(K60F120)
+#elif defined(K60F120) || defined (K70F120)
     SIM_SOPT2 |= SIM_SOPT2_PLLFLLSEL(MCGPLL0CLK); 
 #endif
 }

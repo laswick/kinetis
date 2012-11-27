@@ -331,7 +331,7 @@ enum {
 #define SIM_SOPT2_PLLFLLSEL  BIT_16
 #define SIM_SOPT2_MCGCLKSEL  BIT_0
 
-#elif defined(K60F120)
+#elif defined(K60F120) || defined(K70F120)
 enum {
     MCGFLLCLK = 0x00,
     MCGPLL0CLK = 0x01,
@@ -1701,7 +1701,7 @@ typedef enum {
 
 #if defined(K60N512)
 #define FTFL_FLASH_SECTOR_SIZE 0x800   /* 2   KBytes */
-#elif defined(K60F120)
+#elif defined(K60F120) || defined(K70F120)
 #define FTFL_FLASH_SECTOR_SIZE 0x1000   /* 4   KBytes */
 #endif
 
@@ -2676,7 +2676,7 @@ typedef struct {
     uint8_t const _unused2;     /*                                        0x9 */
     uint8_t atcvh;              /* Auto Trim Compare Value High Register  0xA */
     uint8_t atcvl;              /* Auto Trim Compare Value Low Register   0xB */
-#if defined(K60F120)
+#if defined(K60F120) || defined(K70F120)
     uint8_t c7;                 /* Control 7 Register                     0xC */
     uint8_t c8;                 /* Control 8 Register                     0xD */
     uint8_t const _unused3;     /*                                        0xE */
@@ -2714,7 +2714,7 @@ typedef enum {
     MCG_C5_PLLSTEN        = BIT_5,
 #if defined(K60N512)
     MCG_C5_PRDIV_MASK     = 0x1F,
-#elif defined(K60F120)
+#elif defined(K60F120) || defined(K70F120)
     MCG_C5_PRDIV_MASK     = 0x07,
 #endif
     /* MCG Control 6 Register */
@@ -2722,7 +2722,7 @@ typedef enum {
     MCG_C6_PLLS           = BIT_6,
     MCG_C6_CME            = BIT_5,
     MCG_C6_VDIV_MASK      = 0x1F,
-#if defined(K60F120)
+#if defined(K60F120)  || defined(K70F120)
     /* MCG Control 7 Register */
     MCG_C7_OSCSEL         = BIT_0,
 #endif
@@ -2759,7 +2759,7 @@ typedef struct {
 
 #define OSC_BASE_ADDR 0x40065000
 
-#elif defined(K60F120)
+#elif defined(K60F120) || defined(K70F120)
 
 #define OSC0_BASE_ADDR 0x40065000
 #define OSC1_BASE_ADDR 0x400E5000

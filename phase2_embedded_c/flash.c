@@ -174,7 +174,7 @@ int32_t flashWrite(uint32_t addr, uint32_t *dataPtr, uint32_t numWords)
         FTFL_FCCOB7 = (uint8_t)(value);
         addr += 4;
 
-#elif defined(K60F120)
+#elif defined(K60F120) || defined (K70F120)
     while (numWords) {
         FTFL_FCCOB0 = FTFL_CMD_PRGRM_PHRASE;
         FTFL_FCCOB1 = (uint8_t)(addr >> 16);

@@ -526,7 +526,7 @@ int main(void)
 #if defined(K60N512)
     clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_2, DIVIDE_BY_4);
     clockConfigMcgOut(MCG_PLL_EXTERNAL_100MHZ);
-#elif defined(K60F120)
+#elif defined(K60F120) || defined(K70F120)
     clockSetDividers(DIVIDE_BY_1, DIVIDE_BY_2, DIVIDE_BY_3, DIVIDE_BY_5);
     clockConfigMcgOut(MCG_PLL_EXTERNAL_120MHZ);
 #endif

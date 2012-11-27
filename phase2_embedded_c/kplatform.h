@@ -27,6 +27,10 @@
 
 #define K60F120
 
+#elif defined(FREESCALE_K70F120_TOWER_HW) /* FP, 1024K Flash, 1Gig DDR2 Tower Board */
+
+#define K70F120
+
 #else 
 
 #error Undefined Hardware Platform

@@ -278,7 +278,7 @@ enum {
 enum {
     FLASH_BLOCK_0,
     FLASH_BLOCK_1,
-#if defined(K60F120)
+#if defined(K60F120) || defined(K70F120)
     FLASH_BLOCK_2,
     FLASH_BLOCK_3,
 #endif
@@ -467,6 +467,13 @@ extern bool32_t mpuCheckFaults(void);
 #define UART3_TX_PIN  17
 #define UART3_RX_MUX  PORT_MUX_ALT3
 #define UART3_TX_MUX  PORT_MUX_ALT3
+
+#define UART2_PORT    PORTE
+#define UART2_PORT_ENABLE SIM_SCGC5_PORTE_ENABLE
+#define UART2_RX_PIN  17
+#define UART2_TX_PIN  16
+#define UART2_RX_MUX  PORT_MUX_ALT3
+#define UART2_TX_MUX  PORT_MUX_ALT3
 
 #define DEVOPTAB_UART0_STR "uart0"
 #define DEVOPTAB_UART1_STR "uart1"
@@ -810,8 +817,10 @@ typedef struct enet_descr_s {
 * CCA Hardware Defines
 *
 *******************************************************************************/
-#if defined(FREESCALE_K60N512_TOWER_HW) || defined(FREESCALE_K60F120_TOWER_HW)
-
+#if defined(FREESCALE_K60N512_TOWER_HW) || \
+    defined(FREESCALE_K60F120_TOWER_HW) || \
+    defined(FREESCALE_K70F120_TOWER_HW)
+  
 /*
  * TODO
  *
@@ -846,7 +855,7 @@ typedef struct enet_descr_s {
 #define MAX_FLEXBUS_FREQ        MAX_BUS_FREQ
 #define MAX_FLASH_FREQ          25000000
     
-#elif defined(K60F120)
+#elif defined(K60F120) || defined(K70F120)
 
 #define MAX_SYSTEM_FREQ         120000000
 #define MAX_BUS_FREQ            60000000
@@ -924,14 +933,21 @@ extern void clockConfigLpo();
 #define N_SWITCH_0_PORT  PORTE
 #define N_SWITCH_0_PIN   26
 
+#if defined(FREESCALE_K60N512_TOWER_HW) || defined(FREESCALE_K60F120_TOWER_HW)
 #define N_SWITCH_1_PORT  PORTA
 #define N_SWITCH_1_PIN   19
+#elif defined(FREESCALE_K70F120_TOWER_HW)
+#define N_SWITCH_1_PORT  PORTD
+#define N_SWITCH_1_PIN   0
+#endif
 
 /* UART for STDIO  ************************************************************/
 #if defined(FREESCALE_K60N512_TOWER_HW)
 #define STDIO_UART "uart3"
 #elif defined(FREESCALE_K60F120_TOWER_HW)
 #define STDIO_UART "uart5"
+#elif defined(FREESCALE_K70F120_TOWER_HW)
+#define STDIO_UART "uart2"
 #endif
 
 /* TSI  ***********************************************************************/
@@ -1142,7 +1158,8 @@ enum {
 
 /******************************************************************************/
 #endif /* defined(FREESCALE_K60N512_TOWER_HW) || 
-          defined(FREESCALE_K60F120_TOWER_HW) */
+          defined(FREESCALE_K60F120_TOWER_HW) || 
+          defined(FREESCALE_K70F120_TOWER_HW) */
 
 #endif /* !defined(HARDWARE_H) */
 
