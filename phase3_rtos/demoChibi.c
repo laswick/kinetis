@@ -2,12 +2,6 @@
 #include "kinetis.h"
 #include "hardware.h"
 
-#define TSI_ORANGE_INDEX  5
-#define TSI_ORANGE_BIT    BIT_5
-
-#define TSI_YELLOW_INDEX  8
-#define TSI_YELLOW_BIT    BIT_8
-
 void assert_(const char *file, const int line) { }
 
 static WORKING_AREA(waThread1, 128);
