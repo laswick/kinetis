@@ -23,12 +23,33 @@
 #include "globalDefs.h"
 
 
-#define FTM0_PORT PORTC
-#define FTM0_PWM1_PIN 1
-#define FTM0_PWM2_PIN 2
-#define FTM0_PWM3_PIN 3
-#define FTM0_PWM4_PIN 4
-#define FTM0_PWM_MUX  (PORT_MUX_ALT4)
+#define FTM0_PWM0_PORT PORTC
+#define FTM0_PWM0_PIN 1
+#define FTM0_PWM0_MUX (PORT_MUX_ALT4)
+
+#define FTM0_PWM1_PORT PORTC
+#define FTM0_PWM1_PIN 2
+#define FTM0_PWM1_MUX (PORT_MUX_ALT4)
+
+#define FTM0_PWM2_PORT PORTC
+#define FTM0_PWM2_PIN 3
+#define FTM0_PWM2_MUX (PORT_MUX_ALT4)
+
+#define FTM0_PWM3_PORT PORTA
+#define FTM0_PWM3_PIN 6
+#define FTM0_PWM3_MUX (PORT_MUX_ALT3)
+
+#define FTM0_PWM4_PORT PORTA
+#define FTM0_PWM4_PIN 7
+#define FTM0_PWM4_MUX (PORT_MUX_ALT3)
+
+#define FTM0_PWM5_PORT PORTD
+#define FTM0_PWM5_PIN 5
+#define FTM0_PWM5_MUX (PORT_MUX_ALT4)
+
+
+
+
 
 #define FTM1_PORT PORTB
 #define FTM1_QD_PHA_PIN 0
@@ -47,13 +68,26 @@ typedef struct {
     unsigned pinQDPhA;
     unsigned pinQDPhB;
     unsigned pinQDMux;
-    unsigned pinCh[4];
-    unsigned pinChMux;
-    unsigned port;
+    unsigned pinCh[8];
+    unsigned pinChMux[8];
+    unsigned port[8];
     void (*isr)(void);
     int  ftmMode;
+    uint32_t cfgBits;
+    int32_t pwmAlign;
     void (*callBack)(int32_t index);
 } ftmCtrl_t;
+
+enum {
+    PWM_EDGE_ALIGNED,
+    PWM_CENTER_ALIGNED,
+};
+enum {
+    PWM_COMBINED_CHS_0_1_IDX,
+    PWM_COMBINED_CHS_2_3_IDX,
+    PWM_COMBINED_CHS_4_5_IDX,
+    PWM_COMBINED_CHS_6_7_IDX,
+};
 
 static void isrFtm0(void);
 static void isrFtm1(void);
@@ -64,17 +98,19 @@ static ftmCtrl_t ftmCtrl[MAX_FTM] = {
         .ftm = ((volatile ftm_t * const) FTM0_CTRL_BASE),
         .simScgcPtr   = SIM_SCGC6_PTR,
         .simScgcEnBit = SIM_SCGC6_FTM0_ENABLE,
-        .port         = FTM0_PORT,
-        .pinCh        = { FTM0_PWM1_PIN, FTM0_PWM2_PIN,
-                          FTM0_PWM3_PIN, FTM0_PWM4_PIN},
-        .pinChMux     = FTM0_PWM_MUX,
+        .port         = { FTM0_PWM0_PORT, FTM0_PWM1_PORT, FTM0_PWM2_PORT,
+                          FTM0_PWM3_PORT, FTM0_PWM4_PORT, FTM0_PWM5_PORT },
+        .pinCh        = { FTM0_PWM0_PIN,  FTM0_PWM1_PIN,  FTM0_PWM2_PIN,
+                          FTM0_PWM3_PIN,  FTM0_PWM4_PIN,  FTM0_PWM5_PIN},
+        .pinChMux     = { FTM0_PWM0_MUX,  FTM0_PWM1_MUX,  FTM0_PWM2_MUX,
+                          FTM0_PWM3_MUX,  FTM0_PWM4_MUX,  FTM0_PWM5_MUX},
         .isr          = isrFtm0,
     },
     [FTM_1] = {
         .ftm = ((volatile ftm_t * const) FTM1_CTRL_BASE),
         .simScgcPtr   = SIM_SCGC6_PTR,
         .simScgcEnBit = SIM_SCGC6_FTM1_ENABLE,
-        .port         = FTM1_PORT,
+        .port         = { FTM1_PORT },
         .pinQDPhA     = FTM1_QD_PHA_PIN,
         .pinQDPhB     = FTM1_QD_PHB_PIN,
         .pinQDMux     = FTM1_MUX_QD,
@@ -84,7 +120,7 @@ static ftmCtrl_t ftmCtrl[MAX_FTM] = {
         .ftm = ((volatile ftm_t * const) FTM2_CTRL_BASE),
         .simScgcPtr   = SIM_SCGC3_PTR,
         .simScgcEnBit = SIM_SCGC3_FTM2_ENABLE,
-        .port         = FTM2_PORT,
+        .port         = { FTM2_PORT },
         .pinQDPhA     = FTM2_QD_PHA_PIN,
         .pinQDPhB     = FTM2_QD_PHB_PIN,
         .pinQDMux     = FTM2_MUX_QD,
@@ -218,6 +254,8 @@ uint16_t ftmWrite(int timer, uint16_t mod, uint16_t initCount)
     /* Writing any value to cnt resets to cntin */
     ftm->cnt = 0;
 
+    ftm->sync |= FTM_SYNC_SWSYNC_BIT;
+
     return ftm->cnt;
 }
 
@@ -242,6 +280,29 @@ static int portEnable(uint32_t port)
     return retVal;
 }
 
+static uint32_t deadCounts(uint32_t deadTime)
+{
+    uint8_t  dtps;
+    uint32_t clockCounts  = deadTime * (clockGetFreq(CLOCK_BUS) / 1000000);
+
+    if (clockCounts > 63) {
+        dtps = FTM_DEADTIME_DTPS_4;
+        clockCounts /= 4;
+    }
+
+    if (clockCounts > 63) {
+        dtps = FTM_DEADTIME_DTPS_16;
+        clockCounts /= 4;
+    }
+
+    if (clockCounts > 63) {
+        clockCounts = 63;
+    }
+
+    clockCounts |= dtps << FTM_DEADTIME_DTPS_SHIFT;
+
+    return clockCounts;
+}
 
 static uint16_t calcFreqPS(int32_t pwmFreq)
 {
@@ -319,29 +380,97 @@ static uint16_t dutyToCv(int32_t dutyScaled, uint16_t mod)
     return (uint16_t) ((mod * dutyScaled)/32768);
 }
 
+void ftmSetOutputMask(int timer, uint32_t mask)
+{
+    volatile ftm_t *ftm = getFtmHandle(timer);
+    ftm->outmask = mask;
+    ftm->sync |= FTM_SYNC_SWSYNC_BIT;
+}
+
+void ftmSetOutput(int timer, int ch, int setOn)
+{
+    volatile ftm_t *ftm = getFtmHandle(timer);
+    uint32_t value = ftm->swoctrl;
+
+    if (ftm->combine & FTM_COMBINED_BIT && ch < FTM_CH_NONE) {
+
+        assert(ch < MAX_FTM_CH);
+
+        value |= (FTM_SWOCTRL_OC_BIT << ch);
+        if (setOn) {
+            value |= (FTM_SWOCTRL_OCV_BIT << ch);
+        } else {
+            value &= ~(FTM_SWOCTRL_OCV_BIT << ch);
+        }
+    } else {
+        value &= ~(FTM_SWOCTRL_OC_BIT << ch);
+    }
+    ftm->swoctrl = value;
+}
+
 void ftmPwmWrite(int timer, int ch, int32_t dutyScaled)
 {
     volatile ftm_t *ftm = getFtmHandle(timer);
     volatile uint32_t *cvPtr;
+    volatile uint32_t *cvPtrCombo = NULL;
+    int32_t master;
 
     switch (ch) {
     case FTM_CH_0:
-        cvPtr  = &ftm->c0v;
+        cvPtr = &ftm->c0v;
+        if (ftm->combine & FTM_COMBINED_BIT) {
+            cvPtrCombo  = &ftm->c1v;
+            master = FALSE;
+        }
         break;
     case FTM_CH_1:
-        cvPtr  = &ftm->c1v;
+        cvPtr = &ftm->c1v;
+        if (ftm->combine & FTM_COMBINED_BIT) {
+            cvPtrCombo  = &ftm->c0v;
+            master = TRUE;
+        }
         break;
     case FTM_CH_2:
+        cvPtr = &ftm->c2v;
+        if (ftm->combine & (FTM_COMBINED_BIT << 8)) {
+            cvPtrCombo  = &ftm->c3v;
+            master = FALSE;
+        }
         break;
     case FTM_CH_3:
+        cvPtr = &ftm->c3v;
+        if (ftm->combine & (FTM_COMBINED_BIT << 8)) {
+            cvPtrCombo  = &ftm->c2v;
+            master = TRUE;
+        }
         break;
     case FTM_CH_4:
+        cvPtr = &ftm->c4v;
+        if (ftm->combine & (FTM_COMBINED_BIT << 16)) {
+            cvPtrCombo  = &ftm->c5v;
+            master = FALSE;
+        }
         break;
     case FTM_CH_5:
+        cvPtr = &ftm->c5v;
+        if (ftm->combine & (FTM_COMBINED_BIT << 16)) {
+            cvPtrCombo  = &ftm->c4v;
+            master = TRUE;
+        }
         break;
     case FTM_CH_6:
+        cvPtr = &ftm->c6v;
+        if (ftm->combine & (FTM_COMBINED_BIT << 24)) {
+            cvPtrCombo  = &ftm->c7v;
+            master = FALSE;
+        }
         break;
     case FTM_CH_7:
+        cvPtr = &ftm->c7v;
+        if (ftm->combine & (FTM_COMBINED_BIT << 24)) {
+            cvPtrCombo  = &ftm->c6v;
+            master = TRUE;
+        }
         break;
     default:
         assert(0);
@@ -349,10 +478,19 @@ void ftmPwmWrite(int timer, int ch, int32_t dutyScaled)
         break;
     }
     if (cvPtr) {
-        ftm->cnt = 0;
-        ftm->mode  = FTM_MODE_WPDIS_BIT;
-        *cvPtr  = dutyToCv(dutyScaled, ftm->mod);
-        ftm->pwmload |= FTM_PWMLOAD_LDOK_BIT;
+        uint32_t cv = dutyToCv(dutyScaled, ftm->mod);
+        if (cvPtrCombo) {
+            if (master) {
+                *cvPtrCombo = 0;
+                *cvPtr  = cv;
+            } else {
+                *cvPtr = 0;
+                *cvPtrCombo = cv;
+            }
+        } else {
+            *cvPtr  = cv;
+        }
+        ftm->sync |= FTM_SYNC_SWSYNC_BIT;
     }
 
 }
@@ -362,29 +500,34 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
     volatile ftm_t *ftm = getFtmHandle(timer);
     uint8_t chIdx;
     int freqPS;
+    uint32_t mod;
+    uint32_t outmask = 0;
     *ftmCtrl[timer].simScgcPtr |= ftmCtrl[timer].simScgcEnBit;
+#if 1
     if (callBack) {
         ftmCtrl[timer].callBack = callBack;
         hwInstallISRHandler(ISR_FTM0 + timer, ftmCtrl[timer].isr);
         ftm->sc |= FTM_SC_TOIE_BIT;
     }
-
+#endif
     ftm->conf |= FTM_CONF_BDMMODE_FUNCTIONAL << FTM_CONF_BDMMODE_SHIFT;
-    ftm->mod   = ftmCfg->mod;
     ftm->cntin = ftmCfg->initCount;
     ftmCtrl[timer].ftmMode = ftmCfg->mode;
+
+    ftm->outmask = FTM_OUTMASK_ALL;
     switch (ftmCfg->mode) {
     case FTM_MODE_INPUT_CAPTURE:
         break;
     case FTM_MODE_QUADRATURE_DECODE:
+        ftm->mod   = ftmCfg->mod;
         if (timer != FTM_0) {
             /* TODO Add QD support on FTM_0 - check pinout */
             ftm->sc |= FTM_SC_CLKS_EXTERNAL_CLOCK << FTM_SC_CLKS_SHIFT;
-            if (portEnable(ftmCtrl[timer].port) != ERROR) {
+            if (portEnable(ftmCtrl[timer].port[0]) != ERROR) {
                 ftm->qdctrl = FTM_QDCTRL_QUADEN_BIT;
-                PORT_PCR(ftmCtrl[timer].port, ftmCtrl[timer].pinQDPhA)
-                    = PORT_IRQC_DISABLED | ftmCtrl[timer].pinQDMux;
-                PORT_PCR(ftmCtrl[timer].port, ftmCtrl[timer].pinQDPhB)
+                PORT_PCR(ftmCtrl[timer].port[0], ftmCtrl[timer].pinQDPhA)
+                                 = PORT_IRQC_DISABLED | ftmCtrl[timer].pinQDMux;
+                PORT_PCR(ftmCtrl[timer].port[0], ftmCtrl[timer].pinQDPhB)
                                  = PORT_IRQC_DISABLED | ftmCtrl[timer].pinQDMux;
             }
         }
@@ -393,49 +536,133 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
         break;
     case FTM_MODE_PWM:
         freqPS = calcFreqPS(ftmCfg->pwmFreq);
-        ftm->sc |= (FTM_SC_CLKS_BUS << FTM_SC_CLKS_SHIFT) | freqPS;
+
+        if (ftmCfg->pwmCfgBits & FTM_PWM_CFG_CENTER_ALINGNED) {
+            ftmCtrl[timer].pwmAlign = PWM_CENTER_ALIGNED;
+            ftm->sc |= FTM_SC_CPWMS_BIT;
+        } else {
+            ftmCtrl[timer].pwmAlign = PWM_EDGE_ALIGNED;
+            ftm->sc &= ~FTM_SC_CPWMS_BIT;
+        }
+        ftm->synconf =  ( FTM_SYNCONF_SYNCMODE_BIT
+                        | FTM_SYNCONF_SWWRBUF_BIT);
+        ftm->sync  =  FTM_SYNC_CNTMAX_BIT;
+        ftm->sync |=  FTM_SYNC_SWSYNC_BIT;
+        if (ftmCfg->pwmCfgBits & FTM_PWM_CFG_OUTPUT_MASK) {
+            ftm->synconf |= FTM_SYNCONF_SWOM_BIT;
+            ftm->sync |= FTM_SYNC_SYNCHOM_BIT;
+        }
+        if (ftmCfg->deadTime) {
+            ftm->mode  = FTM_MODE_WPDIS_BIT;
+            ftm->deadtime = deadCounts(ftmCfg->deadTime);
+        }
+
+        /* need local mod as you can't read ftm->mod until it is latched over */
+        mod = freqToMod(ftmCfg->pwmFreq, freqPS);
+        if (ftmCtrl[timer].pwmAlign == PWM_CENTER_ALIGNED) {
+            mod /= 2;
+        } else {
+            mod -= 1;
+        }
+        ftm->mod   = mod;
+        ftm->cntin = 0;
+        ftm->qdctrl &= ~FTM_QDCTRL_QUADEN_BIT;
+
+
+        ftm->exttrig = ftmCfg->triggerBits;
+
+
         for (chIdx = FTM_CH_0; chIdx < MAX_FTM_CH; chIdx++) {
             volatile uint32_t *ccsPtr;
             volatile uint32_t *cvPtr;
-            uint32_t mod;
-            if (ftmCfg->channels[chIdx] == FTM_CH_NONE) {
+            int32_t combinedBit;
+            int32_t complementaryBit;
+            int32_t combinedIdx;
+            uint8_t channel   = ftmCfg->channels[chIdx] ;
+            int     activeLow = ftmCfg->activeLow[chIdx];
+
+            if (channel == FTM_CH_NONE) {
                 break;
             }
-
-            if (ftmCfg->channels[chIdx] < FTM_CH_4) {
-                /* TODO Add upper channel support - if pins support */
-                if (portEnable(ftmCtrl[timer].port) != ERROR) {
-                    PORT_PCR(ftmCtrl[timer].port,
-                            ftmCtrl[timer].pinCh[ftmCfg->channels[chIdx]])
-                        = PORT_IRQC_DISABLED | ftmCtrl[timer].pinChMux;
-                }
+            if (portEnable(ftmCtrl[timer].port[channel]) == ERROR) {
+                assert(0);
+                break;
             }
+            PORT_PCR(ftmCtrl[timer].port[channel],
+                                                  ftmCtrl[timer].pinCh[channel])
+                                 = PORT_IRQC_DISABLED
+                                   | ftmCtrl[timer].pinChMux[channel];
+
             ftm->cnt = 0;
             ftm->mode  = FTM_MODE_WPDIS_BIT;
-            /* need local mod as you can't read ftm->mod until it is latched over */
-            ftm->mod   = mod = freqToMod(ftmCfg->pwmFreq, freqPS);
-            ftm->cntin = 0;
-            ftm->qdctrl &= ~FTM_QDCTRL_QUADEN_BIT;
-            switch (ftmCfg->channels[chIdx]) {
+            if (activeLow) {
+                ftm->pol |=  (1 << channel);
+            } else {
+                ftm->pol &= ~(1 << channel);
+            }
+
+            if (ftmCfg->pwmCfgBits & FTM_PWM_CFG_OUTPUT_MASK) {
+                outmask |=  (1 << channel);
+            } else {
+                outmask &= ~(1 << channel);
+            }
+            printf("outMask %x \n", outmask);
+
+            switch (channel) {
             case FTM_CH_0:
                 ccsPtr = &ftm->c0cs;
                 cvPtr  = &ftm->c0v;
+                combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_0_1;
+                complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_0_1;
                break;
             case FTM_CH_1:
                 ccsPtr = &ftm->c1cs;
                 cvPtr  = &ftm->c1v;
+                combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_0_1;
+                complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_0_1;
+                combinedIdx      = PWM_COMBINED_CHS_0_1_IDX;
                 break;
             case FTM_CH_2:
+                ccsPtr = &ftm->c2cs;
+                cvPtr  = &ftm->c2v;
+                combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_2_3;
+                complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_2_3;
+                combinedIdx      = PWM_COMBINED_CHS_2_3_IDX;
                 break;
             case FTM_CH_3:
+                ccsPtr = &ftm->c3cs;
+                cvPtr  = &ftm->c3v;
+                combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_2_3;
+                complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_2_3;
+                combinedIdx      = PWM_COMBINED_CHS_2_3_IDX;
                 break;
             case FTM_CH_4:
+                ccsPtr = &ftm->c4cs;
+                cvPtr  = &ftm->c4v;
+                combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_4_5;
+                complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_4_5;
+                combinedIdx      = PWM_COMBINED_CHS_4_5_IDX;
                 break;
             case FTM_CH_5:
+                ccsPtr = &ftm->c5cs;
+                cvPtr  = &ftm->c5v;
+                combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_4_5;
+                complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_4_5;
+                combinedIdx      = PWM_COMBINED_CHS_4_5_IDX;
                 break;
             case FTM_CH_6:
+                ccsPtr = &ftm->c6cs;
+                cvPtr  = &ftm->c6v;
+                combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_6_7;
+                complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_6_7;
+                combinedIdx      = PWM_COMBINED_CHS_6_7_IDX;
                 break;
             case FTM_CH_7:
+                ccsPtr = &ftm->c7cs;
+                cvPtr  = &ftm->c7v;
+                combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_6_7;
+                complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_6_7;
+                combinedIdx      = PWM_COMBINED_CHS_6_7_IDX;
                 break;
             default:
                 assert(0);
@@ -443,6 +670,7 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
                 cvPtr  = NULL;
                 break;
             }
+
             if (ccsPtr && cvPtr) {
                 *ccsPtr = FTM_CH_CS_MSB_BIT | FTM_CH_CS_ELSB_BIT;
 #if 0
@@ -456,15 +684,45 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
                  * input capture mode.
                  *
                  */
-                if (callBack) { // Maybe limit to first ch?  && chIdx == 0) {
+                if (callBack) { // Maybe limit to first ch?  && chIdx == 0)
                     *ccsPtr |= FTM_CH_CS_CHIE_BIT;
                 }
 #endif
-                *cvPtr  = dutyToCv(ftmCfg->dutyScaled[chIdx], mod);
-                ftm->pwmload |= FTM_PWMLOAD_LDOK_BIT;
-            }
 
+
+                if (ftmCfg->pwmCfgBits & combinedBit) {
+                    uint32_t combine = ftm->combine;
+
+                    combine |= (FTM_COMBINED_BIT << (8 * combinedIdx));
+                    combine |= (FTM_SYNCEN_BIT   << (8 * combinedIdx));
+                    if (ftmCfg->pwmCfgBits & complementaryBit) {
+                        combine |=  (FTM_COMP_BIT << (8 * combinedIdx));
+                    } else {
+                        combine &= ~(FTM_COMP_BIT << (8 * combinedIdx));
+                    }
+                    if (ftmCfg->deadTime) {
+                        ftm->mode  = FTM_MODE_WPDIS_BIT;
+                        combine |= (FTM_DEADTIME_BIT << (8 * combinedIdx));
+                    }
+                    ftm->mode  = FTM_MODE_WPDIS_BIT;
+                    ftm->combine = combine;
+
+                } else {
+                    ftm->mode  = FTM_MODE_WPDIS_BIT;
+                    ftm->combine &= ~(FTM_COMBINED_BIT << (8 * combinedIdx));
+                    ftm->combine &= ~(FTM_COMP_BIT << (8 * combinedIdx));
+                    ftm->combine |= (FTM_SYNCEN_BIT   << (8 * combinedIdx));
+                }
+
+                ftm->mode  = FTM_MODE_WPDIS_BIT;
+                *cvPtr  = dutyToCv(ftmCfg->dutyScaled[chIdx], mod);
+            }
         }
+        ftm->mode |= FTM_MODE_INIT_BIT;
+        ftm->outmask = outmask;
+        ftm->pwmload |= FTM_PWMLOAD_LDOK_BIT | FTM_PWMLOAD_ALL_MASK;
+        ftm->sync |= FTM_SYNC_SWSYNC_BIT;
+        ftm->sc |= (FTM_SC_CLKS_BUS << FTM_SC_CLKS_SHIFT) | freqPS;
         break;
     }
     ftm->mode |= FTM_MODE_FTMEN_BIT;

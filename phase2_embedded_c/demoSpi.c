@@ -78,7 +78,7 @@ int main(void)
 
     /* Install spi into the device table before using it */
     spi_install();
-    spiFd0 = open("spi0", 0, 0);
+    spiFd0 = open("spi2", 0, 0);
     assert(spiFd0 != -1);
 #if 0
     spiFd1 = open("spi1", 0, 0);

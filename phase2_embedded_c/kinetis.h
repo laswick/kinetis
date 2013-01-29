@@ -322,13 +322,18 @@ enum {
 #define SIM_SOPT1_ADDR  0x40047000
 #define SIM_SOPT1_PTR (volatile uint32_t *) SIM_SOPT1_ADDR
 #define SIM_SOPT1   (*(volatile uint32_t *) SIM_SOPT1_ADDR)
+#define SIM_SOPT1_USBREGEN   BIT_31
+#define SIM_SOPT1_USBSTRBY   BIT_30
 #define SIM_SOPT1_OSC32KSEL  BIT_19
+
+
 #define SIM_SOPT2_ADDR  0x40048004
 #define SIM_SOPT2_PTR (volatile uint32_t *) SIM_SOPT2_ADDR
 #define SIM_SOPT2   (*(volatile uint32_t *) SIM_SOPT2_ADDR)
-    
+
 #if defined(K60N512)
 #define SIM_SOPT2_PLLFLLSEL  BIT_16
+#define SIM_SOPT2_USBSRC     BIT_18
 #define SIM_SOPT2_MCGCLKSEL  BIT_0
 
 #elif defined(K60F120) || defined(K70F120)
@@ -477,6 +482,7 @@ enum {
 #define SIM_SCGC7_DMA_BB_ADDR    (SIM_SCGC7_BB_ADDR +(SIM_SCGC7_DMA_BIT  * 4))
                                                       /* Bit-Banded Pointers */
 #define SIM_SCGC7_DMA_BB_PTR    ((volatile uint32_t *) SIM_SCGC7_DMA_BB_ADDR)
+#define SIM_SCGC7_DMA_BB        (*(SIM_SCGC7_DMA_BB_PTR))
                                          /* Bit-Banded Dereferenced Pointers */
 
 
@@ -489,6 +495,14 @@ enum {
 #define SIM_CLKDIV1_OUTDIV2_MASK  0xF << 24 /* Bus/Peripheral clock divider */
 #define SIM_CLKDIV1_OUTDIV3_MASK  0xF << 20 /* FlexBus clock divider */
 #define SIM_CLKDIV1_OUTDIV4_MASK  0xF << 16 /* Flash clock divider */
+
+#define SIM_CLKDIV2_ADDR  0x40048048
+#define SIM_CLKDIV2_PTR (volatile uint32_t *) SIM_CLKDIV2_ADDR
+#define SIM_CLKDIV2   (*(volatile uint32_t *) SIM_CLKDIV2_ADDR)
+#define SIM_CLKDIV2_USBFRAC_BIT 1
+#define SIM_CLKDIV2_USBDIV_MASK 0x7
+#define SIM_CLKDIV2_USBDIV_SHIFT 1
+
 
 
 /*******************************************************************************
@@ -2398,6 +2412,7 @@ enum {
     FTM_OUTMASK_CH1_OI_BIT      = 1 << 1,
     FTM_OUTMASK_CH0_OI_BIT      = 1 << 0,
 };
+#define FTM_OUTMASK_ALL 0xFF
 
 /* FTMx_COMBINE */
 enum {
@@ -2433,6 +2448,11 @@ enum {
     FTM_COMBINE_CH0_CH1_COMP_BIT     = 1 << 1,
     FTM_COMBINE_CH0_CH1_COMBINE_BIT  = 1 << 0,
 };
+#define FTM_COMBINED_BIT (1 << 0)
+#define FTM_COMP_BIT     (1 << 1)
+#define FTM_DEADTIME_BIT (1 << 4)
+#define FTM_SYNCEN_BIT   (1 << 5)
+
 
 /* FTMx_DEADTIME */
 #define FTM_DEADTIME_DTPS_MASK 0x3
@@ -2623,7 +2643,8 @@ enum {
     FTM_SWOCTRL_CH1_OC_BIT      = 1 <<  1,
     FTM_SWOCTRL_CH0_OC_BIT      = 1 <<  0,
 };
-
+#define FTM_SWOCTRL_OC_BIT  (1 << 0)
+#define FTM_SWOCTRL_OCV_BIT (1 << 8)
 /* FMTx_PWMLOAD */
 enum {
     FTM_PWMLOAD_LDOK_BIT        = 1 << 9,
@@ -2637,6 +2658,7 @@ enum {
     FTM_PWMLOAD_CH1SEL_BIT      = 1 << 1,
     FTM_PWMLOAD_CH0SEL_BIT      = 1 << 0,
 };
+#define FTM_PWMLOAD_ALL_MASK 0xFF
 
 /*******************************************************************************
 * CLOCKS
@@ -3667,18 +3689,18 @@ typedef struct enet_map {
 #define ENET_BD_TX_ABC      0x0002
 
 /* Enhanced TX Buffer Descriptors */
-#define ENET_BD_TX_INT      0x00000040 
-#define ENET_BD_TX_TS       0x00000020 
-#define ENET_BD_TX_PINS     0x00000010 
-#define ENET_BD_TX_IINS     0x00000008 
-#define ENET_BD_TX_TXE      0x00800000 
-#define ENET_BD_TX_UE       0x00200000 
+#define ENET_BD_TX_INT      0x00000040
+#define ENET_BD_TX_TS       0x00000020
+#define ENET_BD_TX_PINS     0x00000010
+#define ENET_BD_TX_IINS     0x00000008
+#define ENET_BD_TX_TXE      0x00800000
+#define ENET_BD_TX_UE       0x00200000
 #define ENET_BD_TX_EE       0x00100000
-#define ENET_BD_TX_FE       0x00080000 
-#define ENET_BD_TX_LCE      0x00040000 
-#define ENET_BD_TX_OE       0x00020000 
-#define ENET_BD_TX_TSE      0x00010000 
-#define ENET_BD_TX_BDU      0x00000080    
+#define ENET_BD_TX_FE       0x00080000
+#define ENET_BD_TX_LCE      0x00040000
+#define ENET_BD_TX_OE       0x00020000
+#define ENET_BD_TX_TSE      0x00010000
+#define ENET_BD_TX_BDU      0x00000080
 
 /* Standard RX Buffer Descriptors */
 #define ENET_BD_RX_E        0x0080
@@ -3696,17 +3718,17 @@ typedef struct enet_map {
 #define ENET_BD_RX_TR       0x0100
 
 /* Enhanced RX Buffer Descriptors */
-#define ENET_BD_RX_ME       0x00000080    
-#define ENET_BD_RX_PE       0x00000004    
-#define ENET_BD_RX_CE       0x00000002    
+#define ENET_BD_RX_ME       0x00000080
+#define ENET_BD_RX_PE       0x00000004
+#define ENET_BD_RX_CE       0x00000002
 #define ENET_BD_RX_UC       0x00000001
-#define ENET_BD_RX_INT      0x00008000    
-#define ENET_BD_RX_ICE      0x20000000    
-#define ENET_BD_RX_PCR      0x10000000    
-#define ENET_BD_RX_VLAN     0x04000000    
-#define ENET_BD_RX_IPV6     0x02000000    
-#define ENET_BD_RX_FRAG     0x01000000    
-#define ENET_BD_RX_BDU      0x00000080    
+#define ENET_BD_RX_INT      0x00008000
+#define ENET_BD_RX_ICE      0x20000000
+#define ENET_BD_RX_PCR      0x10000000
+#define ENET_BD_RX_VLAN     0x04000000
+#define ENET_BD_RX_IPV6     0x02000000
+#define ENET_BD_RX_FRAG     0x01000000
+#define ENET_BD_RX_BDU      0x00000080
 
 
 #endif /* !defined(KINETIS_H) */

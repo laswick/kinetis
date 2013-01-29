@@ -129,6 +129,7 @@ enum {
     IO_IOCTL_SPI_FLUSH_RX_BUFF,        /* */
     IO_IOCTL_SPI_FLUSH_TX_BUFF,        /* */
     IO_IOCTL_SPI_WRITE_READ,           /* */
+    IO_IOCTL_SPI_FUCKING_SET_CTAR0,           /* */
     MAX_IO_IOCTRL_SPI_CMDS,            /* Name of this enum is pending... */
 };
 
@@ -548,15 +549,36 @@ extern volatile pitCtrl_t * const pitCtrl;
 extern void pitInit(int timer, void *isr, uint32_t initCount);
 
 /* FTM ************************************************************************/
-/* TODO ftm interface functions coming soon... */
+/*
+ * FTM API
+ *
+ * ftmInit(timer, *isr, ftmCfg)  Initialization of FTM
+ *   timer : The timer instance FTM_0 ... FTM 1.
+ *   *isr  : pointer to your timer interrupt handler see demoFtm.c for example.
+ *   ftmCfg: ftmCfg_t of timer options.  See e.g. demoFtm.c and demoBldc.c.
+ * ftmRead(timer) returns the current count.
+ * ftmWrtire(timer, mod, initCount) sets the modulus and intial count.
+ * ftmPwmWrite(timer, ch, duty) sets the duty cycle of the ch on timer.
+ * ftmSetOutput(timer, ch, setOn) sets the output channel ch
+ *   to a 0:1 setOn value.  Turn off sw set for all ch's by sending
+ *   ch = FTM_CH_NONE.
+ * ftmSetOutputMask(int timer, int mask) sets the output mask
+ *   (disables logic change on the pin output).
+ */
+
 typedef struct {
     uint32_t mode;
     uint16_t initCount;
     uint16_t mod;
     uint8_t  channels[MAX_FTM_CH];
     int      pwmFreq;
+    uint32_t pwmCfgBits;
+    uint32_t triggerBits;
+    uint32_t deadTime; /* microSeconds - NB: Keep < the period of pwmFreq */
     int      dutyScaled[MAX_FTM_CH];
+    int      activeLow[MAX_FTM_CH];
 } ftmCfg_t;
+
 enum {
     FTM_MODE_INPUT_CAPTURE,
     FTM_MODE_QUADRATURE_DECODE,
@@ -577,16 +599,40 @@ enum {
 };
 
 enum {
-    FTM_PWM_EDGE_ALIGNED,
-    FTM_PWM_CENTER_ALINGNED,
+    FTM_PWM_CFG_CENTER_ALINGNED       = 1 << 0, /* clear for edge alinged */
+    FTM_PWM_CFG_COMBINED_MODE_CHS_0_1 = 1 << 1,
+    FTM_PWM_CFG_COMPLEMENTARY_CH_0_1  = 1 << 2,
+    FTM_PWM_CFG_COMBINED_MODE_CHS_2_3 = 1 << 3,
+    FTM_PWM_CFG_COMPLEMENTARY_CH_2_3  = 1 << 4,
+    FTM_PWM_CFG_COMBINED_MODE_CHS_4_5 = 1 << 5,
+    FTM_PWM_CFG_COMPLEMENTARY_CH_4_5  = 1 << 6,
+    FTM_PWM_CFG_COMBINED_MODE_CHS_6_7 = 1 << 7,
+    FTM_PWM_CFG_COMPLEMENTARY_CH_6_7  = 1 << 8,
+    FTM_PWM_CFG_OUTPUT_MASK           = 1 << 9, /* Disable outputs */
 };
+#define FTM_PWM_CFG_COMBINED_MASK 0xAA
 
-
+enum {
+    /* This follows the FTMx_EXTTRIG reg format (they are, apparently, very
+     * fond of the Newfie Screech over at Freescale...).  Anyway, if you change
+     * this enum, be sure to update the triggerBits section in ftmInit to handle
+     * the mapping.  Cheers.
+     */
+    FTM_TRIGGER_CH0  = 1 << 4,
+    FTM_TRIGGER_CH1  = 1 << 5,
+    FTM_TRIGGER_CH2  = 1 << 0,
+    FTM_TRIGGER_CH3  = 1 << 1,
+    FTM_TRIGGER_CH4  = 1 << 2,
+    FTM_TRIGGER_CH5  = 1 << 3,
+    FTM_TRIGGER_INIT = 1 << 6,
+};
 
 extern void ftmInit(int timer, void *isr, ftmCfg_t *ftmCfg);
 extern uint16_t ftmRead(int timer);
 extern uint16_t ftmWrite(int timer, uint16_t mod, uint16_t initCount);
-extern void ftmPwmWrite(int timer, int ch, int32_t duty);
+extern void ftmPwmWrite(int timer,  int ch, int32_t duty);
+extern void ftmSetOutput(int timer, int ch, int setOn);
+extern void ftmSetOutputMask(int timer, uint32_t mask);
 void ftmSetQDPolarity(int timer, int invPolarity);
 void ftmSetQDFilter(int timer, uint8_t level);
 
@@ -750,7 +796,7 @@ enum {
     IO_IOCTL_ENET_GET_PHY_STATUS,       /* Return current phy status struct */
     IO_IOCTL_ENET_GET_PHY_REG,          /* Read a raw phy register */
     IO_IOCTL_ENET_GET_LAST_RXBD,        /* Return contents of last rxbd */
-    MAX_IO_IOCTRL_ENET_CMDS,            
+    MAX_IO_IOCTRL_ENET_CMDS,
 };
 
 typedef enum enet_state_e {
@@ -820,7 +866,7 @@ typedef struct enet_descr_s {
 #if defined(FREESCALE_K60N512_TOWER_HW) || \
     defined(FREESCALE_K60F120_TOWER_HW) || \
     defined(FREESCALE_K70F120_TOWER_HW)
-  
+
 /*
  * TODO
  *
@@ -854,14 +900,14 @@ typedef struct enet_descr_s {
 #define MAX_BUS_FREQ            50000000
 #define MAX_FLEXBUS_FREQ        MAX_BUS_FREQ
 #define MAX_FLASH_FREQ          25000000
-    
+
 #elif defined(K60F120) || defined(K70F120)
 
 #define MAX_SYSTEM_FREQ         120000000
 #define MAX_BUS_FREQ            60000000
 #define MAX_FLEXBUS_FREQ        50000000
 #define MAX_FLASH_FREQ          25000000
-    
+
 #endif
 
         /* Dividers are used to configure the system/bus/flexbus/flash clocks */
@@ -1157,8 +1203,8 @@ enum {
 
 
 /******************************************************************************/
-#endif /* defined(FREESCALE_K60N512_TOWER_HW) || 
-          defined(FREESCALE_K60F120_TOWER_HW) || 
+#endif /* defined(FREESCALE_K60N512_TOWER_HW) ||
+          defined(FREESCALE_K60F120_TOWER_HW) ||
           defined(FREESCALE_K70F120_TOWER_HW) */
 
 #endif /* !defined(HARDWARE_H) */
