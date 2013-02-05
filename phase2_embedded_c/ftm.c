@@ -380,12 +380,25 @@ static uint16_t dutyToCv(int32_t dutyScaled, uint16_t mod)
     return (uint16_t) ((mod * dutyScaled)/32768);
 }
 
-void ftmSetOutputMask(int timer, uint32_t mask)
+void ftmSetOutputMask(int timer, uint32_t mask, int32_t sync)
 {
     volatile ftm_t *ftm = getFtmHandle(timer);
     ftm->outmask = mask;
-    ftm->sync |= FTM_SYNC_SWSYNC_BIT;
+    if (sync) {
+        ftm->sync |= FTM_SYNC_SWSYNC_BIT;
+    }
 }
+
+
+void ftmSetInvCtrl(int timer, uint32_t mask, int32_t sync)
+{
+    volatile ftm_t *ftm = getFtmHandle(timer);
+    ftm->invctrl = mask;
+    if (sync) {
+        ftm->sync |= FTM_SYNC_SWSYNC_BIT;
+    }
+}
+
 
 void ftmSetOutput(int timer, int ch, int setOn)
 {
@@ -408,7 +421,7 @@ void ftmSetOutput(int timer, int ch, int setOn)
     ftm->swoctrl = value;
 }
 
-void ftmPwmWrite(int timer, int ch, int32_t dutyScaled)
+void ftmPwmWrite(int timer, int ch, int32_t dutyScaled, int32_t sync)
 {
     volatile ftm_t *ftm = getFtmHandle(timer);
     volatile uint32_t *cvPtr;
@@ -490,7 +503,9 @@ void ftmPwmWrite(int timer, int ch, int32_t dutyScaled)
         } else {
             *cvPtr  = cv;
         }
-        ftm->sync |= FTM_SYNC_SWSYNC_BIT;
+        if (sync) {
+            ftm->sync |= FTM_SYNC_SWSYNC_BIT;
+        }
     }
 
 }
@@ -545,7 +560,8 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
             ftm->sc &= ~FTM_SC_CPWMS_BIT;
         }
         ftm->synconf =  ( FTM_SYNCONF_SYNCMODE_BIT
-                        | FTM_SYNCONF_SWWRBUF_BIT);
+                        | FTM_SYNCONF_SWWRBUF_BIT
+                        | FTM_SYNCONF_INVC_BIT | FTM_SYNCONF_SWINVC_BIT);
         ftm->sync  =  FTM_SYNC_CNTMAX_BIT;
         ftm->sync |=  FTM_SYNC_SWSYNC_BIT;
         if (ftmCfg->pwmCfgBits & FTM_PWM_CFG_OUTPUT_MASK) {
@@ -606,7 +622,6 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
             } else {
                 outmask &= ~(1 << channel);
             }
-            printf("outMask %x \n", outmask);
 
             switch (channel) {
             case FTM_CH_0:

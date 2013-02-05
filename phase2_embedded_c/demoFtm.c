@@ -55,10 +55,10 @@ static int32_t driveMode;
 enum {
     DRIVE_MODE_OFF,
     DRIVE_MODE_OPEN_LOOP,
-    DRIVE_MODE_SKID_STEER, /* Speed setpoint to each motor */
     DRIVE_MODE_POSITION, /* Distance setpoint and open loop rate input */
 
     MAX_DRIVE_MODE,
+    DRIVE_MODE_SKID_STEER, /* Speed setpoint to each motor */
 };
 #define DRIVE_MODE_STRINGS "OFF", "OPEN_LOOP", "SKID STEER", "POSITION"
 static const char * const driveModeStrings[] = { DRIVE_MODE_STRINGS };
@@ -160,8 +160,8 @@ static void callBackFtm2(int index)
 
 static void driveOff(void)
 {
-    ftmPwmWrite(FTM_0, FTM_CH_0, 0);
-    ftmPwmWrite(FTM_0, FTM_CH_1, 0);
+    ftmPwmWrite(FTM_0, FTM_CH_0, 0, FALSE);
+    ftmPwmWrite(FTM_0, FTM_CH_1, 0, TRUE);
     gpioClear(MOTOR_STDBY_PORT, MOTOR_STDBY_PIN);
 
 
@@ -194,8 +194,8 @@ static void driveOpenLoop(void)
 
     gpioSet(MOTOR_STDBY_PORT, MOTOR_STDBY_PIN);
 
-    ftmPwmWrite(FTM_0, FTM_CH_0, dutyM1);
-    ftmPwmWrite(FTM_0, FTM_CH_1, dutyM2);
+    ftmPwmWrite(FTM_0, FTM_CH_0, dutyM1, FALSE);
+    ftmPwmWrite(FTM_0, FTM_CH_1, dutyM2, TRUE);
 }
 
 static void driveSkidSteer(void)
@@ -231,8 +231,8 @@ static void driveSkidSteer(void)
             skidDuty[i] = 32768;
         }
     }
-    ftmPwmWrite(FTM_0, FTM_CH_0, skidDuty[0]);
-    ftmPwmWrite(FTM_0, FTM_CH_1, skidDuty[1]);
+    ftmPwmWrite(FTM_0, FTM_CH_0, skidDuty[0], FALSE);
+    ftmPwmWrite(FTM_0, FTM_CH_1, skidDuty[1], TRUE);
 }
 
 
@@ -240,24 +240,31 @@ static void drivePosition(void)
 {
     int i;
     int pos   = (setPoint[0] * MAX_DIST)  / 32768;
-    int mPosNow = mPos[1];
 
-    if ((pos - mPosNow) >= 0) {
-        gpioSet(  MOTOR_AIN_1_PORT, MOTOR_AIN_1_PIN);
-        gpioClear(MOTOR_AIN_2_PORT, MOTOR_AIN_2_PIN);
-
-        gpioClear(MOTOR_BIN_2_PORT, MOTOR_BIN_2_PIN);
-        gpioSet(MOTOR_BIN_1_PORT, MOTOR_BIN_1_PIN);
-    } else {
-        gpioClear(MOTOR_AIN_1_PORT, MOTOR_AIN_1_PIN);
-        gpioSet(  MOTOR_AIN_2_PORT, MOTOR_AIN_2_PIN);
-
-        gpioSet(  MOTOR_BIN_2_PORT, MOTOR_BIN_2_PIN);
-        gpioClear(MOTOR_BIN_1_PORT, MOTOR_BIN_1_PIN);
-    }
-
-    gpioSet(MOTOR_STDBY_PORT, MOTOR_STDBY_PIN);
     for (i = 0; i < 2; i++) {
+        int mPosNow = mPos[i];
+
+        if ((pos - mPosNow) >= 0) {
+            if (i == 0) {
+                gpioSet(  MOTOR_AIN_1_PORT, MOTOR_AIN_1_PIN);
+                gpioClear(MOTOR_AIN_2_PORT, MOTOR_AIN_2_PIN);
+            } else {
+
+                gpioClear(MOTOR_BIN_2_PORT, MOTOR_BIN_2_PIN);
+                gpioSet(MOTOR_BIN_1_PORT, MOTOR_BIN_1_PIN);
+            }
+        } else {
+            if (i == 0) {
+                gpioClear(MOTOR_AIN_1_PORT, MOTOR_AIN_1_PIN);
+                gpioSet(  MOTOR_AIN_2_PORT, MOTOR_AIN_2_PIN);
+            } else {
+
+                gpioSet(  MOTOR_BIN_2_PORT, MOTOR_BIN_2_PIN);
+                gpioClear(MOTOR_BIN_1_PORT, MOTOR_BIN_1_PIN);
+            }
+        }
+
+        gpioSet(MOTOR_STDBY_PORT, MOTOR_STDBY_PIN);
         posDuty[i]  =  500  * abs(pos -mPosNow);
         posError[i] = pos - mPosNow;
         if (posDuty[i] < 0) {
@@ -267,8 +274,8 @@ static void drivePosition(void)
             posDuty[i] = 32768;
         }
     }
-    ftmPwmWrite(FTM_0, FTM_CH_0, posDuty[1]);
-    ftmPwmWrite(FTM_0, FTM_CH_1, posDuty[1]);
+    ftmPwmWrite(FTM_0, FTM_CH_0, posDuty[0], FALSE);
+    ftmPwmWrite(FTM_0, FTM_CH_1, posDuty[1], TRUE);
 }
 
 int main(void)
@@ -392,7 +399,7 @@ int main(void)
 
     /* Drive mode handler */
     hwInstallISRHandler(ISR_GPIO_C, latchGo);
-#if 1
+#if 0
     /* Draw the ascii animation. Showing use of ms timer. */
     for (i=0 ; i < 512; i++) {
         printf("\r\n");

@@ -630,9 +630,10 @@ enum {
 extern void ftmInit(int timer, void *isr, ftmCfg_t *ftmCfg);
 extern uint16_t ftmRead(int timer);
 extern uint16_t ftmWrite(int timer, uint16_t mod, uint16_t initCount);
-extern void ftmPwmWrite(int timer,  int ch, int32_t duty);
+extern void ftmPwmWrite(int timer,  int ch, int32_t duty, int32_t sync);
 extern void ftmSetOutput(int timer, int ch, int setOn);
-extern void ftmSetOutputMask(int timer, uint32_t mask);
+extern void ftmSetOutputMask(int timer, uint32_t mask, int32_t sync);
+extern void ftmSetInvCtrl(int timer, uint32_t mask, int32_t sync);
 void ftmSetQDPolarity(int timer, int invPolarity);
 void ftmSetQDFilter(int timer, uint8_t level);
 

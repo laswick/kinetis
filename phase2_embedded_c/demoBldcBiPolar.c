@@ -165,45 +165,24 @@ enum {
 
 
 
-#define MASK_PHASE_HALL_011_CCW (  MASK_PHASE_A_HIGH | MASK_PHASE_B_LOW \
-                                | MASK_PHASE_C_HIGH | MASK_PHASE_C_LOW)
+#define MASK_PHASE_HALL_011 (MASK_PHASE_C_HIGH | MASK_PHASE_C_LOW)
+#define  INVCTRL_HALL_011  FTM_INVCTRL_INV0EN_BIT
 
-#define MASK_PHASE_HALL_010_CCW (  MASK_PHASE_A_HIGH | MASK_PHASE_A_LOW \
-                                | MASK_PHASE_B_LOW  | MASK_PHASE_C_HIGH)
+#define MASK_PHASE_HALL_010 (MASK_PHASE_A_HIGH | MASK_PHASE_A_LOW)
+#define   INVCTRL_HALL_010  FTM_INVCTRL_INV2EN_BIT
 
+#define MASK_PHASE_HALL_110 (MASK_PHASE_B_HIGH | MASK_PHASE_B_LOW)
+#define   INVCTRL_HALL_110  FTM_INVCTRL_INV2EN_BIT
 
-#define MASK_PHASE_HALL_110_CCW (  MASK_PHASE_A_LOW  | MASK_PHASE_B_HIGH \
-                                | MASK_PHASE_B_LOW  | MASK_PHASE_C_HIGH)
+#define MASK_PHASE_HALL_100 (MASK_PHASE_C_HIGH | MASK_PHASE_C_LOW)
+#define   INVCTRL_HALL_100  FTM_INVCTRL_INV1EN_BIT
 
-#define MASK_PHASE_HALL_100_CCW ( MASK_PHASE_A_LOW   | MASK_PHASE_B_HIGH \
-                               | MASK_PHASE_C_HIGH | MASK_PHASE_C_LOW)
+#define MASK_PHASE_HALL_101 (MASK_PHASE_A_HIGH | MASK_PHASE_A_LOW)
+#define   INVCTRL_HALL_101  FTM_INVCTRL_INV1EN_BIT
 
-#define MASK_PHASE_HALL_101_CCW (  MASK_PHASE_A_HIGH | MASK_PHASE_A_LOW \
-                                | MASK_PHASE_B_HIGH | MASK_PHASE_C_LOW)
+#define MASK_PHASE_HALL_001 (MASK_PHASE_B_HIGH | MASK_PHASE_B_LOW)
+#define   INVCTRL_HALL_001  FTM_INVCTRL_INV0EN_BIT
 
-#define MASK_PHASE_HALL_001_CCW (  MASK_PHASE_A_HIGH | MASK_PHASE_B_HIGH \
-                                | MASK_PHASE_B_LOW  | MASK_PHASE_C_LOW)
-
-
-
-
-#define MASK_PHASE_HALL_101_CW (  MASK_PHASE_A_HIGH | MASK_PHASE_A_LOW \
-                                 | MASK_PHASE_B_LOW  | MASK_PHASE_C_HIGH)
-
-#define MASK_PHASE_HALL_100_CW ( MASK_PHASE_A_HIGH  | MASK_PHASE_B_LOW \
-                                | MASK_PHASE_C_HIGH  | MASK_PHASE_C_LOW)
-
-#define MASK_PHASE_HALL_110_CW (  MASK_PHASE_A_HIGH | MASK_PHASE_B_HIGH \
-                                 | MASK_PHASE_B_LOW  | MASK_PHASE_C_LOW)
-
-#define MASK_PHASE_HALL_010_CW (  MASK_PHASE_A_HIGH | MASK_PHASE_A_LOW \
-                                 | MASK_PHASE_B_HIGH | MASK_PHASE_C_LOW)
-
-#define MASK_PHASE_HALL_011_CW (  MASK_PHASE_A_LOW  | MASK_PHASE_B_HIGH \
-                                 | MASK_PHASE_C_HIGH | MASK_PHASE_C_LOW)
-
-#define MASK_PHASE_HALL_001_CW (  MASK_PHASE_A_LOW  | MASK_PHASE_B_HIGH \
-                                 | MASK_PHASE_B_LOW  | MASK_PHASE_C_HIGH)
 
 enum {
     HALL_C_BIT = 1 << 0,
@@ -212,79 +191,53 @@ enum {
 };
 
 enum {
-    HALL_PHASE_011_CCW = 0,
-    HALL_PHASE_010_CCW,
-    HALL_PHASE_110_CCW,
-    HALL_PHASE_100_CCW,
-    HALL_PHASE_101_CCW,
-    HALL_PHASE_001_CCW,
+    HALL_PHASE_011 = 0,
+    HALL_PHASE_010,
+    HALL_PHASE_110,
+    HALL_PHASE_100,
+    HALL_PHASE_101,
+    HALL_PHASE_001,
     MAX_HALL_PHASE,
 
-    HALL_PHASE_110_CW = 0,
-    HALL_PHASE_010_CW,
-    HALL_PHASE_011_CW,
-    HALL_PHASE_001_CW,
-    HALL_PHASE_101_CW,
-    HALL_PHASE_100_CW,
-
 };
-
-enum {
-    COMMUTATE_CCW,
-    COMMUTATE_CW,
-};
-
 
 typedef struct {
     int ready;
-    int direction;
     int hallPosition;
-    int commutationMaskCCW[MAX_HALL_PHASE];
-    int commutationMaskCW[MAX_HALL_PHASE];
+    int commutationMask[MAX_HALL_PHASE];
+    int bipolarCompliment[MAX_HALL_PHASE];
 } commutator_t;
 
 static commutator_t commutator = {
-    .commutationMaskCCW = {
-        MASK_PHASE_HALL_011_CCW,
-        MASK_PHASE_HALL_010_CCW,
-        MASK_PHASE_HALL_110_CCW,
-        MASK_PHASE_HALL_100_CCW,
-        MASK_PHASE_HALL_101_CCW,
-        MASK_PHASE_HALL_001_CCW,
+    .commutationMask = {
+        MASK_PHASE_HALL_011,
+        MASK_PHASE_HALL_010,
+        MASK_PHASE_HALL_110,
+        MASK_PHASE_HALL_100,
+        MASK_PHASE_HALL_101,
+        MASK_PHASE_HALL_001,
     },
-    .commutationMaskCW = {
-        MASK_PHASE_HALL_110_CW,
-        MASK_PHASE_HALL_010_CW,
-        MASK_PHASE_HALL_011_CW,
-        MASK_PHASE_HALL_001_CW,
-        MASK_PHASE_HALL_101_CW,
-        MASK_PHASE_HALL_100_CW,
+    .bipolarCompliment = {
+        INVCTRL_HALL_011,
+        INVCTRL_HALL_010,
+        INVCTRL_HALL_110,
+        INVCTRL_HALL_100,
+        INVCTRL_HALL_101,
+        INVCTRL_HALL_001,
     },
 };
 
 
 
-static int commutationStepCCWFromHallPos[] = {
+static int commutationStepFromHallPos[] = {
     -1,              /* 0b000 is invalid */
-    HALL_PHASE_001_CCW,  /* 0b001 */
-    HALL_PHASE_010_CCW,
-    HALL_PHASE_011_CCW,
-    HALL_PHASE_100_CCW,
-    HALL_PHASE_101_CCW,
-    HALL_PHASE_110_CCW,
+    HALL_PHASE_001,  /* 0b001 */
+    HALL_PHASE_010,
+    HALL_PHASE_011,
+    HALL_PHASE_100,
+    HALL_PHASE_101,
+    HALL_PHASE_110,
 };
-
-static int commutationStepCWFromHallPos[] = {
-    -1,              /* 0b000 is invalid */
-    HALL_PHASE_001_CW,  /* 0b001 */
-    HALL_PHASE_010_CW,
-    HALL_PHASE_011_CW,
-    HALL_PHASE_100_CW,
-    HALL_PHASE_101_CW,
-    HALL_PHASE_110_CW,
-};
-
-
 
 static void portAIsr(void)
 {
@@ -316,15 +269,9 @@ static void portAIsr(void)
         int idx;
         commutator.hallPosition = value;
         if (commutator.ready) {
-            if (commutator.direction == COMMUTATE_CCW) {
-                idx = commutationStepCCWFromHallPos[commutator.hallPosition];
-                ftmSetOutputMask(FTM_0, commutator.commutationMaskCCW[idx],
-                                                                          TRUE);
-            } else {
-                idx = commutationStepCWFromHallPos[commutator.hallPosition];
-                ftmSetOutputMask(FTM_0, commutator.commutationMaskCW[idx],
-                                                                          TRUE);
-            }
+            idx = commutationStepFromHallPos[commutator.hallPosition];
+            ftmSetOutputMask(FTM_0, commutator.commutationMask[idx], FALSE);
+            ftmSetInvCtrl(FTM_0, commutator.bipolarCompliment[idx], TRUE);
         }
     } else {
         /* Motor Position Fault! */
@@ -374,7 +321,7 @@ static void __attribute__((optimize("O0"))) taskDelay(uint32_t delayMs) {
 
 static uint32_t pwmTick;
 #define BASE_TIME_BIT (1 << 8)
-#define PWM_FREQ 16000
+#define PWM_FREQ 20000
 static void callBackFtm0(int index)
 {
     static uint32_t updateTick;
@@ -435,7 +382,7 @@ static int initFetPreDriver(int timer, int spiFd)
                        | MASK1_WRITE_ERROR_BIT | MASK1_RESET_EVENT_BIT;
     ioctl(spiFd, IO_IOCTL_SPI_WRITE_READ, (int) &spiTxRx);
 
-#if 0
+#if 1
     /* Use zero deadtime at pre driver (ftm uses deadtime already) */
     cmd[0] = DEADTIME_CMD;
     printf("read %d \n", ioctl(spiFd, IO_IOCTL_SPI_WRITE_READ, (int) &spiTxRx));
@@ -456,8 +403,8 @@ static int initFetPreDriver(int timer, int spiFd)
 #endif
 
     /* Setup any special mode settings and lock mode */
-    //cmd[0] = MODE_CMD | MODE_FULLON_BIT | MODE_DESATURATION_FAULT_BIT;
-    cmd[0] = MODE_CMD | MODE_DESATURATION_FAULT_BIT;
+    cmd[0] = MODE_CMD | MODE_FULLON_BIT | MODE_DESATURATION_FAULT_BIT;
+    //cmd[0] = MODE_CMD | MODE_DESATURATION_FAULT_BIT;
     //| MODE_MODE_LOCK_BIT;
     ioctl(spiFd, IO_IOCTL_SPI_WRITE_READ, (int) &spiTxRx);
 
@@ -523,15 +470,9 @@ static int initFetPreDriver(int timer, int spiFd)
             int idx;
             commutator.ready = TRUE;
             commutator.hallPosition = value;
-            if (commutator.direction == COMMUTATE_CCW) {
-                idx = commutationStepCCWFromHallPos[commutator.hallPosition];
-                ftmSetOutputMask(FTM_0, commutator.commutationMaskCCW[idx],
-                                                                          TRUE);
-            } else {
-                idx = commutationStepCWFromHallPos[commutator.hallPosition];
-                ftmSetOutputMask(FTM_0, commutator.commutationMaskCW[idx],
-                                                                          TRUE);
-            }
+            idx = commutationStepFromHallPos[commutator.hallPosition];
+            ftmSetOutputMask(FTM_0, commutator.commutationMask[idx], FALSE);
+            ftmSetInvCtrl(FTM_0, commutator.bipolarCompliment[idx], TRUE);
         } else {
             /* Motor Position Fault! */
             printf("Motor Position Fault! %d \n", value);
@@ -556,11 +497,6 @@ int main(void)
 {
     int spiFd;
     uint32_t updateStatusTick = 0;
-#if 0
-    int i;
-    int tests[NUM_SPI_METHODS] = { FALSE };
-#endif
-
 
     ftmCfg_t ftmPWM = {
         .mode = FTM_MODE_PWM,
@@ -574,20 +510,16 @@ int main(void)
         .pwmCfgBits    = FTM_PWM_CFG_COMBINED_MODE_CHS_0_1
                        | FTM_PWM_CFG_COMBINED_MODE_CHS_2_3
                        | FTM_PWM_CFG_COMBINED_MODE_CHS_4_5
-#if 0
                        | FTM_PWM_CFG_COMPLEMENTARY_CH_0_1
                        | FTM_PWM_CFG_COMPLEMENTARY_CH_2_3
                        | FTM_PWM_CFG_COMPLEMENTARY_CH_4_5
-#endif
                        | FTM_PWM_CFG_OUTPUT_MASK,
         .triggerBits   = FTM_TRIGGER_INIT, /* TODO setup PDB off this trigger
                                             * to run ADC captures of current.
                                             */
-    //    .deadTime      = 1, /* 1 uSec */
-#if 1
-        .dutyScaled    = { 0.25 * UNITY, 0.75 * UNITY , 0.25 * UNITY ,
-                           0.75 * UNITY, 0.25 * UNITY , 0.75 * UNITY},
-#endif
+        .deadTime      = 1, /* 1 uSec */
+        .dutyScaled    = { 0.5 * UNITY, 0.5 * UNITY , 0.5 * UNITY ,
+                           0.5 * UNITY, 0.5 * UNITY , 0.5 * UNITY},
         .activeLow     = { TRUE, FALSE, TRUE, FALSE, TRUE, FALSE },
     };
 
@@ -601,8 +533,6 @@ int main(void)
     ioctl(fd1, IO_IOCTL_UART_BAUD_SET, 115200);
     assert(fd1 != -1);
 
-    printf("\r\n");
-    printf("\r\n = SPI TEST APPLICATION = \r\n");
 
     gpioConfig(FET_DRIVER_ENABLE_PORT, FET_DRIVER_ENABLE_PIN,
                                       GPIO_OUTPUT | GPIO_DSE | GPIO_PULLUP);
@@ -650,7 +580,7 @@ int main(void)
 
     initFetPreDriver(FTM_0, spiFd);
 
-    int pwmDuty = 0.2 * UNITY;
+    int pwmDuty = 0.5 * UNITY;
     int pwmRampUp = TRUE;
     while(1){
 
@@ -662,21 +592,21 @@ int main(void)
         if (tickGet() > updateStatusTick) {
             updateStatusTick = tickGet() + 5;
             if (pwmRampUp) {
-                pwmDuty += 0.004 * UNITY;
+                pwmDuty += 0.0005 * UNITY;
             } else {
-                pwmDuty -= 0.004 * UNITY;
+                pwmDuty -= 0.0005 * UNITY;
             }
-            if (pwmDuty > 0.9999 * UNITY) {
-                updateStatusTick = tickGet() + 2000;
+            if (pwmDuty > 1 * UNITY) {
+                pwmDuty = 1 * UNITY;
+                updateStatusTick = tickGet() + 1000;
                 pwmRampUp = FALSE;
-            } else if (pwmDuty < 0.4 * UNITY) {
+            } else if (pwmDuty < 0 * UNITY) {
+                pwmDuty = 0;
                 pwmRampUp = TRUE;
-                if (commutator.direction == COMMUTATE_CCW) {
-                    commutator.direction = COMMUTATE_CW;
-                } else {
-                    commutator.direction = COMMUTATE_CCW;
-                }
+                updateStatusTick = tickGet() + 1000;
             }
+
+
             ftmPwmWrite(FTM_0, FTM_CH_0, pwmDuty, FALSE);
             ftmPwmWrite(FTM_0, FTM_CH_3, pwmDuty, FALSE);
             ftmPwmWrite(FTM_0, FTM_CH_5, pwmDuty, TRUE);
