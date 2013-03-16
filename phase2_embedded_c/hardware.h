@@ -52,6 +52,7 @@ enum {                                               /* Major Device Numbers */
     DEV_MAJ_ADC,
     DEV_MAJ_SDHC,
     DEV_MAJ_ENET,
+    DEV_MAJ_I2C,
 };
 
 typedef struct devoptab_s {                       /* Device Operations Table */
@@ -1093,6 +1094,15 @@ enum {
     IO_IOCTL_ADC1_CHANNEL_FLAGS_VREFH           = 29,
     IO_IOCTL_ADC1_CHANNEL_FLAGS_VREFL           = 30,
     IO_IOCTL_ADC1_CHANNEL_FLAGS_MODULE_DISABLED = 31,
+};
+
+/* I2C  ***********************************************************************/
+int i2c_install (void);
+enum {
+    IO_IOCTL_I2C_SET_SPEED,     /* Set speed, in Hz */
+    IO_IOCTL_I2C_GET_SPEED,     /* Get speed, in Hz */
+    IO_IOCTL_I2C_SET_ADDRESS,   /* Set address (0-127) */
+    IO_IOCTL_I2C_GET_ADDRESS,   /* Get address */
 };
 
 /******************************************************************************/

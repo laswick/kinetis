@@ -3730,5 +3730,76 @@ typedef struct enet_map {
 #define ENET_BD_RX_FRAG     0x01000000
 #define ENET_BD_RX_BDU      0x00000080
 
+/*******************************************************************************
+* I2C
+*******************************************************************************/
+#define I2C0_BASE_ADDR 0x40066000
+#define I2C0_REG_PTR   ((volatile i2cPort_t *) I2C0_BASE_ADDR)
+#define I2C1_BASE_ADDR 0x40067000
+#define I2C1_REG_PTR   ((volatile i2cPort_t *) I2C1_BASE_ADDR)
+
+typedef struct {
+    uint8_t a1;  /* Slave Address            0x0 */
+    uint8_t f;   /* Frequency Divider        0x1 */
+    uint8_t c1;  /* Control 1                0x2 */
+    uint8_t s;   /* Status                   0x3 */
+    uint8_t d;   /* Data I/O                 0x4 */
+    uint8_t c2;  /* Control 2                0x5 */
+    uint8_t flt; /* Input Glitch Filter      0x6 */
+    uint8_t ra;  /* Range Address            0x7 */
+    uint8_t smb; /* SMBus Control and Status 0x8 */
+    uint8_t a2;  /* SMBus Address            0x9 */
+    uint8_t slth;/* SCL Low Timeout High     0xa */
+    uint8_t sltl;/* SCL Low Timeout Low      0xb */
+} i2cPort_t;
+
+enum {
+    I2C_A_SHIFT      = 1,
+    I2C_A_MASK       = 0x7F << I2C_A_SHIFT,
+
+    I2C_F_MULT_1     = 0 << 6,
+    I2C_F_MULT_2     = 1 << 6,
+    I2C_F_MULT_4     = 2 << 6,
+    I2C_F_ICR_SHIFT  = 0,
+    I2C_F_ICR_MASK   = 0x3F << I2C_F_ICR_SHIFT,
+
+    I2C_C1_IICEN     = 1 << 7,
+    I2C_C1_IICIE     = 1 << 6,
+    I2C_C1_MST       = 1 << 5,
+    I2C_C1_TX        = 1 << 4,
+    I2C_C1_TXAK      = 1 << 3,
+    I2C_C1_RSTA      = 1 << 2,
+    I2C_C1_WUEN      = 1 << 1,
+    I2C_C1_DMAEN     = 1 << 0,
+
+    I2C_S_TCF        = 1 << 7,
+    I2C_S_IAAS       = 1 << 6,
+    I2C_S_BUSY       = 1 << 5,
+    I2C_S_ARBL       = 1 << 4,
+    I2C_S_RAM        = 1 << 3,
+    I2C_S_SRW        = 1 << 2,
+    I2C_S_IICIF      = 1 << 1,
+    I2C_S_RXAK       = 1 << 0,
+
+    I2C_C2_GCAEN     = 1 << 7,
+    I2C_C2_ADEXT     = 1 << 6,
+    I2C_C2_HDRS      = 1 << 5,
+    I2C_C2_SBRC      = 1 << 4,
+    I2C_C2_RMEN      = 1 << 3,
+    I2C_C2_AD_SHIFT  = 0,
+    I2C_C2_AD_MASK   = 0x07 << I2C_C2_AD_SHIFT,
+
+    I2C_FLT_SHIFT    = 0,
+    I2C_FLT_MASK     = 0x1F << I2C_FLT_SHIFT,
+
+    I2C_SMB_FACK     = 1 << 7,
+    I2C_SMB_ALTEREN  = 1 << 6,
+    I2C_SMB_SIICAEN  = 1 << 5,
+    I2C_SMB_TCKSEL   = 1 << 4,
+    I2C_SMB_SLTF     = 1 << 3,
+    I2C_SMB_SHTF1    = 1 << 2,
+    I2C_SMB_SHTF2    = 1 << 1,
+    I2C_SMB_SHTF2IE  = 1 << 0,
+};
 
 #endif /* !defined(KINETIS_H) */
