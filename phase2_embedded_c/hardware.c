@@ -79,3 +79,16 @@ void hwInstallISRHandler(uint32_t isr, void *isrHandler)
         break;
     }
 }
+
+void hwSetISRPriority(uint32_t irq, uint8_t priority)
+{
+    volatile uint8_t *nvicIP  = (uint8_t *)NVIC_IP_BASE_ADDR;
+
+    priority  &= 0xF;
+    priority <<= 4;
+
+    nvicIP[irq] = priority;
+
+
+
+}

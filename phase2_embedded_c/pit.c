@@ -25,7 +25,18 @@
 volatile pitCtrl_t * const pitCtrl
                          = ((volatile pitCtrl_t * const) PIT_CTRL_BASE);
 
-void pitInit(int timer, void *isr, uint32_t initCount)
+static uint32_t freqToCount(int32_t pitFreq)
+{
+    int32_t clockHz = clockGetFreq(CLOCK_BUS);
+    uint32_t count;
+
+    count = (clockHz / pitFreq) - 1;
+
+    return count;
+}
+
+
+void pitInit(int timer, void *isr, int32_t pitFreqHz)
 {
     assert(timer >= 0);
     assert(timer < MAX_PIT);
@@ -35,7 +46,7 @@ void pitInit(int timer, void *isr, uint32_t initCount)
     hwInstallISRHandler(ISR_PIT0 + timer, isr);
 
     pitCtrl->mcr = 1;
-    pitCtrl->pit[timer].loadVal = initCount;
+    pitCtrl->pit[timer].loadVal = freqToCount(pitFreqHz);
     pitCtrl->pit[timer].ctrl = 0x3;
 }
 

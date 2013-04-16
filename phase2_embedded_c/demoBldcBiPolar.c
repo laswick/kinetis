@@ -513,7 +513,8 @@ int main(void)
                        | FTM_PWM_CFG_COMPLEMENTARY_CH_0_1
                        | FTM_PWM_CFG_COMPLEMENTARY_CH_2_3
                        | FTM_PWM_CFG_COMPLEMENTARY_CH_4_5
-                       | FTM_PWM_CFG_OUTPUT_MASK,
+                       | FTM_PWM_CFG_OUTPUT_MASK
+                       | FTM_PWM_CFG_CENTER_ALINGNED,
         .triggerBits   = FTM_TRIGGER_INIT, /* TODO setup PDB off this trigger
                                             * to run ADC captures of current.
                                             */

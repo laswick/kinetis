@@ -90,6 +90,7 @@ extern int deviceInstall(
 #define hwInterruptsDisable() asm volatile ("cpsid i")
 
 extern void hwInstallISRHandler(uint32_t isr, void *isrHandler);
+extern void hwSetISRPriority(uint32_t isr, uint8_t priority);
 
 /* GPIO ***********************************************************************/
 
@@ -547,7 +548,7 @@ typedef struct {
 
 extern volatile pitCtrl_t * const pitCtrl;
 
-extern void pitInit(int timer, void *isr, uint32_t initCount);
+extern void pitInit(int timer, void *isr, int32_t pitFreqHz);
 
 /* FTM ************************************************************************/
 /*
@@ -574,8 +575,9 @@ typedef struct {
     uint8_t  channels[MAX_FTM_CH];
     int      pwmFreq;
     uint32_t pwmCfgBits;
+    uint32_t quadCfg;
     uint32_t triggerBits;
-    uint32_t deadTime; /* microSeconds - NB: Keep < the period of pwmFreq */
+    uint32_t deadTime; /* 1/10 microSeconds - NB: Keep < the period of pwmFreq */
     int      dutyScaled[MAX_FTM_CH];
     int      activeLow[MAX_FTM_CH];
 } ftmCfg_t;
@@ -612,6 +614,14 @@ enum {
     FTM_PWM_CFG_OUTPUT_MASK           = 1 << 9, /* Disable outputs */
 };
 #define FTM_PWM_CFG_COMBINED_MASK 0xAA
+
+enum {
+    FTM_QUAD_CONFIG_FILTER_NONE,
+    FTM_QUAD_CONFIG_FILTER_LOW  = 2,
+    FTM_QUAD_CONFIG_FILTER_MED  = 5,
+    FTM_QUAD_CONFIG_FILTER_HIGH = 10,
+};
+
 
 enum {
     /* This follows the FTMx_EXTTRIG reg format (they are, apparently, very

@@ -99,10 +99,10 @@ int main(void)
 	dac0->data[i].high = (uint8_t)(dacData[i] >> 8);
     }
 
-    pitInit(PIT_0, pit0ISR, count);
-    pitInit(PIT_1, pit1ISR, count/2);
-    pitInit(PIT_2, pit2ISR, count/3);
-    pitInit(PIT_3, pit3ISR, count/4);
+    pitInit(PIT_0, pit0ISR, clockGetFreq(CLOCK_BUS) / count );
+    pitInit(PIT_1, pit1ISR, clockGetFreq(CLOCK_BUS) / count/2);
+    pitInit(PIT_2, pit2ISR, clockGetFreq(CLOCK_BUS) / count/3);
+    pitInit(PIT_3, pit3ISR, clockGetFreq(CLOCK_BUS) / count/4);
 
     while (1) {
 //	if (gpioRead(N_SWITCH_1_PORT, N_SWITCH_1_PIN))

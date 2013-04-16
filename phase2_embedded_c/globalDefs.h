@@ -26,12 +26,19 @@ typedef unsigned long  uint32_t;
 
 typedef signed char    int8_t;
 typedef signed short   int16_t;
+
 typedef signed long    int32_t;
 
 typedef unsigned char  bool8_t;
 typedef unsigned short bool16_t;
 typedef unsigned int   bool32_t;
 typedef unsigned int   bool;
+
+
+#define UNITY 32768
+typedef int32_t scaled_t;
+
+
 
 #if defined(TRUE)
 #undef  TRUE

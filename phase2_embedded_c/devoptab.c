@@ -148,7 +148,7 @@ static int fdTable[MAX_FD] = {
 /******************************************************************************/
 /* DEVOPTAB Section */
 /******************************************************************************/
-#define MAX_POSIX_DEVICES       10
+#define MAX_POSIX_DEVICES       20
 #define MAX_DEVICE_NAME_SIZE    10
 static devoptab_t devoptab[MAX_POSIX_DEVICES];
 static devlist_t devlist[MAX_POSIX_DEVICES];

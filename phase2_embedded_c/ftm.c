@@ -283,7 +283,7 @@ static int portEnable(uint32_t port)
 static uint32_t deadCounts(uint32_t deadTime)
 {
     uint8_t  dtps;
-    uint32_t clockCounts  = deadTime * (clockGetFreq(CLOCK_BUS) / 1000000);
+    uint32_t clockCounts  = deadTime * (clockGetFreq(CLOCK_BUS) / 10000000);
 
     if (clockCounts > 63) {
         dtps = FTM_DEADTIME_DTPS_4;
@@ -297,6 +297,10 @@ static uint32_t deadCounts(uint32_t deadTime)
 
     if (clockCounts > 63) {
         clockCounts = 63;
+    }
+
+    if (clockCounts < 2) {
+        clockCounts = 2;
     }
 
     clockCounts |= dtps << FTM_DEADTIME_DTPS_SHIFT;
@@ -330,7 +334,7 @@ static uint16_t calcFreqPS(int32_t pwmFreq)
         freqPS = FTM_SC_PS_1;
     }
     return freqPS;
-};
+}
 static uint16_t freqToMod(int32_t pwmFreq, int32_t freqPS)
 {
     int32_t clockHz = clockGetFreq(CLOCK_BUS);
@@ -491,13 +495,19 @@ void ftmPwmWrite(int timer, int ch, int32_t dutyScaled, int32_t sync)
         break;
     }
     if (cvPtr) {
-        uint32_t cv = dutyToCv(dutyScaled, ftm->mod);
+        uint16_t cv = dutyToCv(dutyScaled, ftm->mod);
+        uint16_t altCv;
+        if (ftmCtrl[timer].pwmAlign == PWM_CENTER_ALIGNED) {
+            altCv = -cv;
+        } else {
+            altCv = 0;
+        }
         if (cvPtrCombo) {
             if (master) {
-                *cvPtrCombo = 0;
+                *cvPtrCombo = altCv;
                 *cvPtr  = cv;
             } else {
-                *cvPtr = 0;
+                *cvPtr = altCv;
                 *cvPtrCombo = cv;
             }
         } else {
@@ -515,8 +525,11 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
     volatile ftm_t *ftm = getFtmHandle(timer);
     uint8_t chIdx;
     int freqPS;
-    uint32_t mod;
+    uint16_t mod;
+    uint16_t cntin;
     uint32_t outmask = 0;
+    uint32_t value;
+
     *ftmCtrl[timer].simScgcPtr |= ftmCtrl[timer].simScgcEnBit;
 #if 1
     if (callBack) {
@@ -545,6 +558,22 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
                 PORT_PCR(ftmCtrl[timer].port[0], ftmCtrl[timer].pinQDPhB)
                                  = PORT_IRQC_DISABLED | ftmCtrl[timer].pinQDMux;
             }
+            switch (ftmCfg->quadCfg) {
+            default:
+            case FTM_QUAD_CONFIG_FILTER_NONE:
+                ftm->qdctrl &= ~(FTM_QDCTRL_PHAFLTREN_BIT
+                               | FTM_QDCTRL_PHBFLTREN_BIT);
+                break;
+            case FTM_QUAD_CONFIG_FILTER_LOW:
+            case FTM_QUAD_CONFIG_FILTER_MED:
+            case FTM_QUAD_CONFIG_FILTER_HIGH:
+                ftm->qdctrl |= FTM_QDCTRL_PHAFLTREN_BIT;
+                ftm->qdctrl |= FTM_QDCTRL_PHBFLTREN_BIT;
+                value  = ftmCfg->quadCfg << FTM_FILTER_VALUE_CH0_SHIFT;
+                value |= ftmCfg->quadCfg << FTM_FILTER_VALUE_CH1_SHIFT;
+                ftm->filter = value;
+                break;
+            }
         }
         break;
     case FTM_MODE_OUTPUT_COMPARE:
@@ -554,7 +583,16 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
 
         if (ftmCfg->pwmCfgBits & FTM_PWM_CFG_CENTER_ALINGNED) {
             ftmCtrl[timer].pwmAlign = PWM_CENTER_ALIGNED;
-            ftm->sc |= FTM_SC_CPWMS_BIT;
+            /* The Freescale ref manual indicates that one should set
+             * the FTM_SC_CPWMS_BIT for center aligned PWM.  However, this
+             * doesn't work in combined mode (the channels setup the realtive
+             * triggering to center the pulse).
+             */
+            if (ftmCfg->pwmCfgBits & FTM_PWM_CFG_COMBINED_MASK) {
+                ftm->sc &= ~FTM_SC_CPWMS_BIT;
+            } else {
+                ftm->sc |=  FTM_SC_CPWMS_BIT;
+            }
         } else {
             ftmCtrl[timer].pwmAlign = PWM_EDGE_ALIGNED;
             ftm->sc &= ~FTM_SC_CPWMS_BIT;
@@ -576,12 +614,16 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
         /* need local mod as you can't read ftm->mod until it is latched over */
         mod = freqToMod(ftmCfg->pwmFreq, freqPS);
         if (ftmCtrl[timer].pwmAlign == PWM_CENTER_ALIGNED) {
-            mod /= 2;
+            cntin = -mod / 2;
+            mod   =  mod / 2 - 1;
         } else {
-            mod -= 1;
+            mod   = mod - 1;
+            cntin = 0;
         }
+
         ftm->mod   = mod;
-        ftm->cntin = 0;
+        ftm->cntin = cntin;
+
         ftm->qdctrl &= ~FTM_QDCTRL_QUADEN_BIT;
 
 
@@ -629,6 +671,7 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
                 cvPtr  = &ftm->c0v;
                 combinedBit      = FTM_PWM_CFG_COMBINED_MODE_CHS_0_1;
                 complementaryBit = FTM_PWM_CFG_COMPLEMENTARY_CH_0_1;
+                combinedIdx      = PWM_COMBINED_CHS_0_1_IDX;
                break;
             case FTM_CH_1:
                 ccsPtr = &ftm->c1cs;
@@ -687,7 +730,11 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
             }
 
             if (ccsPtr && cvPtr) {
-                *ccsPtr = FTM_CH_CS_MSB_BIT | FTM_CH_CS_ELSB_BIT;
+                if (ftmCtrl[timer].pwmAlign == PWM_CENTER_ALIGNED) {
+                    *ccsPtr = FTM_CH_CS_ELSB_BIT;
+                } else {
+                    *ccsPtr = FTM_CH_CS_MSB_BIT | FTM_CH_CS_ELSB_BIT;
+                }
 #if 0
                 /*
                  * TODO: It is possible to interrupt on each channel
@@ -730,7 +777,7 @@ void ftmInit(int timer, void *callBack, ftmCfg_t *ftmCfg)
                 }
 
                 ftm->mode  = FTM_MODE_WPDIS_BIT;
-                *cvPtr  = dutyToCv(ftmCfg->dutyScaled[chIdx], mod);
+                ftmPwmWrite(timer, channel, ftmCfg->dutyScaled[chIdx], TRUE);
             }
         }
         ftm->mode |= FTM_MODE_INIT_BIT;

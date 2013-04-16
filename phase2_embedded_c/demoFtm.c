@@ -1,8 +1,8 @@
 /*******************************************************************************
 *
-* demoAdc.c
+* demoFtm.c
 *
-* Simple adc demo.
+* Simple ftm demo.
 *
 * James McAnanama
 *
@@ -172,6 +172,8 @@ static void driveOpenLoop(void)
     int dutyM1 = abs(setPoint[0]);
     int dutyM2 = abs(setPoint[0]);
 
+
+    gpioClear(MOTOR_STDBY_PORT, MOTOR_STDBY_PIN);
     if (setPoint[0] >= 0) {
         gpioSet(  MOTOR_AIN_1_PORT, MOTOR_AIN_1_PIN);
         gpioClear(MOTOR_AIN_2_PORT, MOTOR_AIN_2_PIN);
@@ -265,7 +267,7 @@ static void drivePosition(void)
         }
 
         gpioSet(MOTOR_STDBY_PORT, MOTOR_STDBY_PIN);
-        posDuty[i]  =  500  * abs(pos -mPosNow);
+        posDuty[i]  =  100 * abs(pos -mPosNow);
         posError[i] = pos - mPosNow;
         if (posDuty[i] < 0) {
             posDuty[i] = 0;
@@ -502,8 +504,8 @@ int main(void)
         }
 
         if (tickGet() > updatePotTick) {
-            int32_t duty1;
-            int32_t duty2;
+            static int32_t duty1;
+            static int32_t duty2;
             ioctl(fdPot, IO_IOCTL_ADC_CHANNEL_SELECT,
                     (IO_IOCTL_ADC_CHANNEL_FLAGS_REGISTER_A
                      | (IO_IOCTL_ADC1_CHANNEL_FLAGS_ADC1_DP1
@@ -517,8 +519,8 @@ int main(void)
             read(fdPot, &pots[1], 1);
 
                          /* If I told you, they wouldn't be magic would they? */
-            duty1 = (pots[0] - 106) * 32768 / 106;
-            duty2 = (pots[1] - 106) * 32768 / 106;
+            duty1 = (int)(0.95 * duty1 + 0.05 * (pots[0] - 106) * 32768 / 106);
+            duty2 = (int)(0.95 * duty2 + 0.05 * (pots[1] - 106) * 32768 / 106);
 
             setPoint[0] = duty1; /* Hee hee hee... duty... */
             setPoint[1] = duty2;
