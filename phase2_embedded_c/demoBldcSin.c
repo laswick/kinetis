@@ -559,8 +559,8 @@ static void indexIsr(void)
 static pidFilter_t pid = {
     .iMin  = -MAX_DRIVE,
     .iMax  =  MAX_DRIVE,
-    .iGain = 0.02 * UNITY,
-    .pGain = 1 * UNITY,
+    .iGain = 0.01 * UNITY,
+    .pGain = 0.5 * UNITY,
 };
 
 static void filterDrive(void)
@@ -582,53 +582,35 @@ static void filterDrive(void)
         error += 360 * UNITY;
     }
 
-    if (error) {
 
-        error /= 100;
+    error /= 100;
 
-        motorOutput = pidFilter(&pid, error);
-        if (motorOutput > MAX_DRIVE) {
-            motorOutput = MAX_DRIVE;
-        } else if (motorOutput < -MAX_DRIVE) {
-            motorOutput = -MAX_DRIVE;
-        }
-
-
-        if (motorOutput > 0) {
-            theta += 1.8 * UNITY;
-        } else if (motorOutput < 0) {
-            theta -= 1.8 * UNITY;
-        }
-
-        phaseAdvance = theta - elecTheta;
-        if (phaseAdvance > 180 * UNITY) {
-            phaseAdvance -= 360 * UNITY;
-        }
-        if (phaseAdvance < -180 * UNITY) {
-            phaseAdvance += 360 * UNITY;
-        }
-
-        if (phaseAdvance < -MAX_PHASE_ADVANCE) {
-            theta = elecTheta - MAX_PHASE_ADVANCE;
-        } else if (phaseAdvance > MAX_PHASE_ADVANCE) {
-            theta = elecTheta + MAX_PHASE_ADVANCE;
-        }
-
-        if (theta < 0) {
-            theta += 360 * UNITY;
-        } else if (theta > 360 * UNITY) {
-            theta -= 360 * UNITY;
-        }
-
-        svmOutput = resolveSVM(abs(motorOutput), theta);
-
-        ftmPwmWrite(FTM_0, FTM_CH_1, svmOutput.pwmADuty, FALSE);
-        ftmPwmWrite(FTM_0, FTM_CH_3, svmOutput.pwmBDuty, FALSE);
-        ftmPwmWrite(FTM_0, FTM_CH_5, svmOutput.pwmCDuty, TRUE);
-
-
-        gpioToggle(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
+    motorOutput = pidFilter(&pid, error);
+    if (motorOutput > MAX_DRIVE) {
+        motorOutput = MAX_DRIVE;
+    } else if (motorOutput < -MAX_DRIVE) {
+        motorOutput = -MAX_DRIVE;
     }
+
+    if (motorOutput > 0) {
+        theta = elecTheta + 90 * UNITY;
+    } else if (motorOutput < 0) {
+        theta = elecTheta - 90 * UNITY;
+    }
+    if (theta < 0) {
+        theta += 360 * UNITY;
+    } else if (theta > 360 * UNITY) {
+        theta -= 360 * UNITY;
+    }
+
+    svmOutput = resolveSVM(abs(motorOutput), theta);
+
+    ftmPwmWrite(FTM_0, FTM_CH_1, svmOutput.pwmADuty, FALSE);
+    ftmPwmWrite(FTM_0, FTM_CH_3, svmOutput.pwmBDuty, FALSE);
+    ftmPwmWrite(FTM_0, FTM_CH_5, svmOutput.pwmCDuty, TRUE);
+
+
+    gpioToggle(N_LED_ORANGE_PORT, N_LED_ORANGE_PIN);
 
 
     return;
@@ -1052,7 +1034,7 @@ int main(void)
         if (tickGet() > updateUserTick) {
             int count  = ftmRead(FTM_2);
 
-            printf("%d, %3.2f, %3.2f, %3.2f,  0000, "
+            printf("%d,[%3.2f], %3.2f, %3.2f,  0000, "
                    "%d, <<%3.2f>>%3.2f, %3.2f, %3.2f\n",
                    // angleSetPoint / 32768.0,
                     count,
