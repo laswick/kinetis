@@ -6,6 +6,8 @@ www.laswick.net
 
 GETTING STARTED:
 
+    Read the project page at www.laswick.net/kinetis.html
+
     We'll be using the following:
 
       Freescale Kinetis K60 Tower Development Kit (TWR-K60N512-KIT):
@@ -35,7 +37,7 @@ DRIVERS:
     Windows Drivers: pemicro_osbdm_osjtag_tower_toolkit.exe
     Linux Drivers: PemicroLinuxDrivers_2012_01_19.tar.gz
 
-    I've posted them at www.laswick.net/kinetis/drivers.
+    I've posted them at www.laswick.net/public/kinetis/drivers.
 
 
 INSTALL THE LINUX USB DRIVERS:
@@ -48,7 +50,7 @@ INSTALL THE LINUX USB DRIVERS:
 INSTALL THE CODESOURCERY GNU TOOL CHAIN:
 
     I've posted the free "lite" version of the tools at
-    www.laswick.net/kinetis/tools.
+    www.laswick.net/public/kinetis/tools.
 
     Install the tools in /opt.  During the install, the tools will modify
     your PATH environment variable automatically.  If for some reason your
@@ -149,7 +151,7 @@ NOW WHAT?
 
     Enjoy, and happy hacking ;)
 
-    Rob
+    -- Rob --
 
 
 
