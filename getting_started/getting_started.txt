@@ -1,4 +1,8 @@
-Freescale Kinetis / ARM Cortex-M4 "Getting Started" guide.
+
+GETTING STARTED GUIDE
+
+Freescale Kinetis / ARM Cortex-M4 Project
+
 Rob Laswick
 April 20 2012
 www.laswick.net
@@ -21,7 +25,7 @@ GETTING STARTED:
 
 	      http://www.mentor.com/embedded-software/sourcery-tools/sourcery-codebench
 
-          Note: The free/lite version of the tools is sufficient.
+          Note: The free lite version of the tools is sufficient.
 
 
       openOCD (for programming & debugging):
@@ -34,7 +38,6 @@ DRIVERS:
     The software and drivers in the tower kit are all garbage.  You need to
     download and install the latest drivers.
 
-    Windows Drivers: pemicro_osbdm_osjtag_tower_toolkit.exe
     Linux Drivers: PemicroLinuxDrivers_2012_01_19.tar.gz
 
     I've posted them at www.laswick.net/public/kinetis/drivers.
@@ -49,11 +52,8 @@ INSTALL THE LINUX USB DRIVERS:
 
 INSTALL THE CODESOURCERY GNU TOOL CHAIN:
 
-    I've posted the free "lite" version of the tools at
-    www.laswick.net/public/kinetis/tools.
-
     Install the tools in /opt.  During the install, the tools will modify
-    your PATH environment variable automatically.  If for some reason your
+    your PATH environment variable automatically.
 
     Note: I've noticed the PATH variable isn't always updated in
           debian based distros such as Ubuntu and Mint.  This is because
@@ -67,7 +67,7 @@ INSTALL THE CODESOURCERY GNU TOOL CHAIN:
 
     The free tools only provide an assembler, compiler, and linker.  They
     do not provide any Kinetis specific support files, such as start code and
-    linker script(s) - BUT FEAR NOT - I've got you covered :)
+    linker script(s) - BUT FEAR NOT ... I've got you covered ;)
 
 
 DOWNLOAD AND BUILD OPENOCD:
@@ -84,7 +84,7 @@ DOWNLOAD AND BUILD OPENOCD:
     Note: You may need to install other libraries in order to complete the build
           successfully, depending on which Linux distro you're using (i.e. I'm
           running Mint, and I needed install libtool, libusb-1.0, automake,
-          and texinfo before openOCD would build properly.
+          and texinfo before openOCD would build properly).
 
     This will install openocd in /usr/local (with no need to modify your path).
 
@@ -102,12 +102,12 @@ DOWNLOAD AND BUILD OPENOCD:
 
 DOWNLOAD OUR SOURCE CODE:
 
-    git clone git://github.com/laswick/kinetis.git
+    git clone git://github.com/laswick/kinetis.git kinetis.git
 
 
 VERIFY YOUR TOOL CHAIN:
 
-    Enter our "kinetis" directory, then move into the "getting_started"
+    Enter our "kinetis.git" directory, then move into the "getting_started"
     directory.  You should see 4 files:
 
       getting_started.txt (this document)
