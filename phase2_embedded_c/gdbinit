@@ -16,3 +16,7 @@ b assert_
 define reset
 monitor reset init
 end
+#define load
+#monitor flash write_image erase "out.axf" 0 elf
+#reset
+#end
