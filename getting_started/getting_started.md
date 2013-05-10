@@ -3,8 +3,8 @@
 
 ## Freescale Kinetis / ARM Cortex M4 Project
 
-Rob Laswick    
-April 20 2012    
+Rob Laswick
+April 20 2012
 [www.laswick.net](http://www.laswick.net)
 
 
@@ -54,7 +54,7 @@ The software and drivers in the tower kit are all garbage.  You'll need to downl
 
 _I found the P&E Micro site very difficult to navigate and find what I was looking for.  To save you the near death experience of taking your own life I've posted the Linux driver [here](http://www.http://laswick.net/public/kinetis/drivers)_.
 
-      
+
 #### INSTALLING THE OSBDM USB DRIVER
 
 Extract the driver:
@@ -81,13 +81,13 @@ Enter the repo and run:
         mkdir build
         cd build
         ../configure --prefix=/home/rlaswick/opt/openocd --enable-osbdm \
-                    --enable-maintainer-mode
+                     --enable-maintainer-mode
         make
         make install
 
 #### NOTE
 
-As long as your development host is configured correctly, and contains all the _required_ packages, you should be fine and everything will build without error.  However, this is rarely the case so you may need to install other libraries in order to complete the build successfully, depending on which Linux distro you're using (i.e. at the time of writing this I'm running Mint 13 (32 bit), and I needed install `libtool`, `libusb-1.0`, `automake`, and `texinfo` before openOCD would build properly).
+As long as your development host is configured correctly, and contains all the _required_ packages, you should be fine and everything will build without error.  However, this is rarely the case so you may need to install other libraries in order to complete the build successfully, depending on which Linux distro you're using (i.e. at the time of writing this I'm running Mint 13 (32 bit), and I needed to install `libtool`, `libusb-1.0`, `automake`, and `texinfo` before openOCD would build properly).
 
 #### A LITTLE TLC...
 
@@ -108,7 +108,7 @@ The kinetis tower includes a USB JTAG interface for programming and debugging. A
 ***
 ## VERIFY YOUR TOOLCHAIN
 
-Enter our `kinetis.git` directory, then move into the `getting_started` directory. 
+Enter our `kinetis.git` directory, then move into the `getting_started` directory.
 
 You should see 4 files:
 
