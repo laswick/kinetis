@@ -28,7 +28,7 @@ _One thing to note is that regardless which toolchain you choose to use, you wil
 
 #### NOTE
 
-Typically non-commercial tools only provide an assembler, compiler, and linker.  They do not provide any processor specific support files, such as `start code` and `linker script`(s) and `processor header files` -- BUT FEAR NOT ... _I've got you covered ;)_
+Typically non-commercial tools only provide an assembler, compiler, and linker.  They do not provide any processor specific support files, such as `start code`, `linker script`(s), and `processor header files` -- BUT FEAR NOT ... _I've got you covered ;)_
 
 
 ***
@@ -87,7 +87,7 @@ Enter the repo and run:
 
 #### NOTE
 
-As long as your development host is configured correctly, and contains all the _required_ packages, you should be fine and everything will build without error.  However, this is rarely the case so you may need to install other libraries in order to complete the build successfully, depending on which Linux distro you're using (i.e. at the time of writing this I'm running Mint 13 (32 bit), and I needed install libtool, libusb-1.0, automake, and texinfo before openOCD would build properly).
+As long as your development host is configured correctly, and contains all the _required_ packages, you should be fine and everything will build without error.  However, this is rarely the case so you may need to install other libraries in order to complete the build successfully, depending on which Linux distro you're using (i.e. at the time of writing this I'm running Mint 13 (32 bit), and I needed install `libtool`, `libusb-1.0`, `automake`, and `texinfo` before openOCD would build properly).
 
 #### A LITTLE TLC...
 
