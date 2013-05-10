@@ -3,8 +3,8 @@
 
 ## Freescale Kinetis / ARM Cortex M4 Project
 
-Rob Laswick
-April 20 2012
+Rob Laswick  
+April 20 2012  
 [www.laswick.net](http://www.laswick.net)
 
 
@@ -61,7 +61,7 @@ Extract the driver:
 
         tar xvfz PemicroLinuxDrivers_2012_01_19.tar.gz
 
-Enter the `libusb_64_32` directory and run the `setup` script (_as root_).  It should install painlessly and without errors (_honestly_).
+Enter the `libusb_64_32` directory and run the `setup` script (_as root_).  It should install painlessly and without errors _(honestly)_.
 
 
 ***
