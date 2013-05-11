@@ -1,7 +1,7 @@
 
 # GETTING STARTED GUIDE
 
-## Freescale Kinetis / ARM Cortex M4 Project
+## Freescale Kinetis K60 / ARM Cortex M4 Project
 
 Rob Laswick  
 April 20 2012  
@@ -20,7 +20,7 @@ Read the [project page](http://www.laswick.net/kinetis.html).
 We'll be using the GNU tools, newlib, and openocd.
 
 You can download a free pre-built toolchain from Mentor Graphics
-[here](http://www.mentor.com/embedded-software/sourcery-tools/sourcery-codebench), or build your own toolchain from scratch, _which is much more fun :)_  In fact, I highly recommend building your own toolchain if you're up to it.  To help you get started checkout my [ARM Toolchain Project](http://www.laswick.net/arm-toolchain.html) for a complete set of scripts that will actually download, configure, patch, build, and install the entire toolchain for you _(binutils, gcc, newlib, gdb, and openocd)_!  These scripts are relatively simple and easy to modify should you feel the need to customize them.
+[here](http://www.mentor.com/embedded-software/sourcery-tools/sourcery-codebench), **or** build your own toolchain from scratch, _which is much more fun :)_  In fact, I highly recommend building your own toolchain if you're up to it.  To help you get started checkout my [ARM Toolchain Project](http://www.laswick.net/arm-toolchain.html) for a complete set of scripts that will actually download, configure, patch, build, and install the entire toolchain for you _(including `binutils`, `gcc`, `newlib`, `gdb`, and `openocd`)_!  These scripts are relatively simple and easy to modify should you feel the need to customize them.
 
 #### WARNING
 
@@ -28,7 +28,7 @@ _One thing to note is that regardless which toolchain you choose to use, you wil
 
 #### NOTE
 
-Typically non-commercial tools only provide an assembler, compiler, and linker.  They do not provide any processor specific support files, such as `start code`, `linker script`(s), and `processor header files` -- BUT FEAR NOT ... _I've got you covered ;)_
+Typically non-commercial tools only provide an assembler, compiler, and linker.  They do not provide any processor specific support files, such as `start code`, `linker scripts`, and `processor header files`...BUT FEAR NOT..._I've got you covered ;)_
 
 
 ***
@@ -52,7 +52,7 @@ The USB to JTAG bridge on the tower board uses the OSBDM protocol, and as such y
 
 The software and drivers in the tower kit are all garbage.  You'll need to download and install the latest driver from [P&E Micro](http://www.pemicro.com).
 
-_I found the P&E Micro site very difficult to navigate and find what I was looking for.  To save you the near death experience of taking your own life I've posted the Linux driver [here](http://www.http://laswick.net/public/kinetis/drivers)_.
+_I found the P&E Micro site very difficult to navigate and find what I was looking for.  To save you the near death experience of taking your own life I've posted their Linux driver [here](http://www.http://laswick.net/public/kinetis/drivers)_.
 
 
 #### INSTALLING THE OSBDM USB DRIVER
@@ -61,7 +61,7 @@ Extract the driver:
 
         tar xvfz PemicroLinuxDrivers_2012_01_19.tar.gz
 
-Enter the `libusb_64_32` directory and run the `setup` script (_as root_).  It should install painlessly and without errors _(honestly)_.
+Enter the `libusb_64_32` directory and run the `setup` script _(as root)_.  It should install painlessly and without errors _(honestly)_.
 
 
 ***
@@ -80,14 +80,13 @@ Enter the repo and run:
         ./bootstrap
         mkdir build
         cd build
-        ../configure --prefix=/home/rlaswick/opt/openocd --enable-osbdm \
-                     --enable-maintainer-mode
+        ../configure --prefix=$HOME/opt/openocd --enable-osbdm --enable-maintainer-mode
         make
         make install
 
 #### NOTE
 
-As long as your development host is configured correctly, and contains all the _required_ packages, you should be fine and everything will build without error.  However, this is rarely the case so you may need to install other libraries in order to complete the build successfully, depending on which Linux distro you're using (i.e. at the time of writing this I'm running Mint 13 (32 bit), and I needed to install `libtool`, `libusb-1.0`, `automake`, and `texinfo` before openOCD would build properly).
+As long as your development host is configured correctly, and contains all the _required_ packages, you should be fine and everything will build without error.  However, this is rarely the case so you may need to install other libraries in order to complete the build successfully, depending on which Linux distro you're using (i.e. at the time of writing this I'm running Mint 13 (32 bit), and I needed to install `libtool`, `libusb-1.0`, `automake`, and `texinfo` before `opencd` would build properly).
 
 #### A LITTLE TLC...
 
@@ -108,16 +107,18 @@ The kinetis tower includes a USB JTAG interface for programming and debugging. A
 ***
 ## VERIFY YOUR TOOLCHAIN
 
-Enter our `kinetis.git` directory, then move into the `getting_started` directory.
+Enter the `kinetis.git` directory, then move into the `getting_started` directory.
+
+        cd kinetis.git/getting_started
 
 You should see 4 files:
 
-        getting_started.md (this document)
-        getting_started.s
-        getting_started.ld
-        getting_started.mak
+        getting_started.md   (this document)
+        getting_started.s    (simplified start code)
+        getting_started.ld   (simplified linker script)
+        getting_started.mak  (Makefile)
 
-sym-link the makefile as "makefile" for convenience:
+`symlink` the Makefile as `makefile` for convenience:
 
         ln -s getting_started.mak makefile
 
@@ -130,7 +131,7 @@ Type `make`
 
 Connect the tower board to your computer via the supplied USB cable.
 
-Type `make openocd` to launch openocd.
+Type `make openocd` to launch openocd _(depending on your setup, you may need to do this as root)_.
 
 In a separate shell (in the same directory) type `make gdb` to launch gdb _(which should automatically connect to openocd)_.
 
@@ -147,25 +148,10 @@ Type `c` to allow the software to run.  gdb will halt at `first_break`.
 From here use the step instruction `si` to step through the rest of the program.
 
 
-#### A NOTE ABOUT USING gdb's load COMMAND
+***
+## Flash Memory Programming with gdb
 
-On some development hosts running `(gdb) load` fails to program the image into the flash memory on the target.  One way to work around this is to override and redefine the `load` command in your `.gdbinit` script.
-
-It's always a good idea to have a `.gdbinit` script when using gdb.  Create a file named `.gdbinit` in the directory you're working in, with the following contents:
-
-        target remote localhost:3333
-        b _default_fault_handler
-        b assert_
-        define reset
-        monitor reset init
-        end
-
-If you want to override the `load` command, add the following to the end of your `.gdbinit` script:
-
-        define load
-        monitor flash write_image erase "out.axf" 0 elf
-        reset
-        end
+I've found on some **development hosts**, _for whatever reason_, gdb's `load` command is unable to program the FLASH memory on the target.  A work around to this problem can be found [here](https://github.com/laswick/arm-toolchain/blob/master/README.md#gdb-init-scripts).
 
 
 ***
