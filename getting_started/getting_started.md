@@ -151,7 +151,7 @@ From here use the step instruction `si` to step through the rest of the program.
 ***
 ## Flash Memory Programming with gdb
 
-I've found on some **development hosts**, _for whatever reason_, gdb's `load` command is unable to program the FLASH memory on the target.  A work around to this problem can be found [here](https://github.com/laswick/arm-toolchain/blob/master/README.md#gdb-init-scripts).
+In some cases when using `gdb` with `openocd`,  gdb's `load` command is unable to program the FLASH memory on the target.  A work around to this problem can be found [here](https://github.com/laswick/arm-toolchain/blob/master/README.md#gdb-init-scripts).
 
 
 ***
