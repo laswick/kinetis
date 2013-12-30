@@ -52,7 +52,7 @@ The USB to JTAG bridge on the tower board uses the OSBDM protocol, and as such y
 
 The software and drivers in the tower kit are all garbage.  You'll need to download and install the latest driver from [P&E Micro](http://www.pemicro.com).
 
-_I found the P&E Micro site very difficult to navigate and find what I was looking for.  To save you the near death experience of taking your own life I've posted their Linux driver [here](http://www.http://laswick.net/public/kinetis/drivers)_.
+_I found the P&E Micro site very difficult to navigate and find what I was looking for.  To save you the near death experience of taking your own life I've posted their Linux driver [here](http://www.laswick.net/public/kinetis/drivers)_.
 
 
 #### INSTALLING THE OSBDM USB DRIVER
