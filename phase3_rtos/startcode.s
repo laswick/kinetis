@@ -117,7 +117,8 @@
     .weak _isr_ftm1
     .weak _isr_ftm2
     .weak _isr_cmt
-    .weak _isr_rtc
+    .weak _isr_rtc_alarm
+    .weak _isr_rtc_seconds
     .weak _isr_pit0
     .weak _isr_pit1
     .weak _isr_pit2
@@ -225,7 +226,8 @@
     .global _isr_ftm1
     .global _isr_ftm2
     .global _isr_cmt
-    .global _isr_rtc
+    .global _isr_rtc_alarm
+    .global _isr_rtc_seconds
     .global _isr_pit0
     .global _isr_pit1
     .global _isr_pit2
@@ -332,7 +334,8 @@
     .thumb_set _isr_ftm1,                       _default_irq_handler
     .thumb_set _isr_ftm2,                       _default_irq_handler
     .thumb_set _isr_cmt,                        _default_irq_handler
-    .thumb_set _isr_rtc,                        _default_irq_handler
+    .thumb_set _isr_rtc_alarm,                  _default_irq_handler
+    .thumb_set _isr_rtc_seconds,                _default_irq_handler
     .thumb_set _isr_pit0,                       _default_irq_handler
     .thumb_set _isr_pit1,                       _default_irq_handler
     .thumb_set _isr_pit2,                       _default_irq_handler
@@ -453,7 +456,8 @@ _vector_table:
     .word _isr_ftm1
     .word _isr_ftm2
     .word _isr_cmt
-    .word _isr_rtc
+    .word _isr_rtc_alarm
+    .word _isr_rtc_seconds
     .word _isr_pit0
     .word _isr_pit1
     .word _isr_pit2
