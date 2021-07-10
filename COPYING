@@ -17,40 +17,11 @@ applications.
 The license agreement we've chosen to associate with this project is the
 WTF Public License (WTFPL), as it very clearly conveys the restrictions
 (or lack thereof) placed upon the use of the software/source code provided
-in this project.  Despite its (arguably) offensive name, this license is
+in this project.  Despite its unfortunate and offensive name, this license is
 approved by the Free Software Foundation (FSF) and is fully GNU GPL compatible.
 
 Again, apologies to those who may be offended by Sam Hocevar's naming choice
 of this license agreement.
 
-A copy of the license is presented below.
-See http://sam.zoy.org/wtfpl for more details.
+    See http://sam.zoy.org/wtfpl for more details.
 
-
-/******************************************************************************/
-
-           DO WHAT THE F__K YOU WANT TO PUBLIC LICENSE
-                   Version 2, December 2004
-
-Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
-
-Everyone is permitted to copy and distribute verbatim or modified
-copies of this license document, and changing it is allowed as long
-as the name is changed.
-
-           DO WHAT THE F__K YOU WANT TO PUBLIC LICENSE
-  TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
-
-0. You just DO WHAT THE F__K YOU WANT TO.
-
-/******************************************************************************/
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-/******************************************************************************/
